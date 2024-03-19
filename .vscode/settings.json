@@ -1,0 +1,13 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "./mylib/Cargo.toml",
+        "./mylib/Cargo.toml",
+        "./mylib/Cargo.toml",
+        "./mylib/Cargo.toml",
+        "./mylib/Cargo.toml",
+        "./mylib/Cargo.toml",
+        "./mylib/Cargo.toml",
+        "./mylib/Cargo.toml",
+        "./mylib/Cargo.toml"
+    ]
+}
