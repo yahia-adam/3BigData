@@ -21,12 +21,12 @@ pub trait Predict<T, U> {
 }
 
 impl<T> Predict<T, i32> for SingleLayerPerceptron<T, i32>
-where &T: std::ops::Mul<&T>
+where T: std::ops::Mul<Output=T> +std::fmt::Display
 {
     fn predict(&self, inputs: &[T]) -> i32 {
         let mut sum = 0;
-        for (i,p) in self.params.iter().zip(inputs) {
-            sum = sum + i * p;
+        for (p,i) in self.params.iter().zip(inputs) {
+            println!("{}", i);
         }
         sum
     }
@@ -35,10 +35,10 @@ where &T: std::ops::Mul<&T>
 fn main()
 {
     let sp = SingleLayerPerceptron {
-        params: vec![12],
+        params: vec![1,2,3],
         results: vec![12]
     };
-    let test = vec![1,2,3]; 
+    let test = vec![1,2,3];
     println!("{}", sp.predict(&test));
 }
 // // entraîner le modèle sur un ensemble de données d'entraînement
