@@ -21,7 +21,7 @@ pub trait Predict<T, U> {
 }
 
 impl<T> Predict<T, i32> for SingleLayerPerceptron<T, i32>
-where T: std::ops::Mul<Output=T> +std::fmt::Display
+where T: std::ops::Mul<Output=T> + std::fmt::Display
 {
     fn predict(&self, inputs: &[T]) -> i32 {
         let mut sum = 0;
