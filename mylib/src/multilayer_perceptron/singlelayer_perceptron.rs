@@ -10,7 +10,6 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-#[allow(dead_code)]
 pub struct SingleLayerPerceptron<T, U> {
     params: Vec<T>,
     results: Vec<U>

@@ -6,8 +6,11 @@
         "./mylib/Cargo.toml",
         "./mylib/Cargo.toml",
         "./mylib/Cargo.toml",
+<<<<<<< HEAD
         "./mylib/Cargo.toml",
         "./mylib/Cargo.toml",
+=======
+>>>>>>> bfec3cb1de01084b5b62135838c01746ac866af7
         "./mylib/Cargo.toml"
     ]
 }
