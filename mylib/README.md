@@ -1,5 +1,5 @@
 Cargo uses conventions for file placement to make it easy to dive into a new Cargo package:
-.
+```.
 ├── Cargo.lock
 ├── Cargo.toml
 ├── src/
@@ -26,7 +26,7 @@ Cargo uses conventions for file placement to make it easy to dive into a new Car
     └── multi-file-test/
         ├── main.rs
         └── test_module.rs
-
+```
 
 - ``` Cargo.toml ``` and ``` Cargo.lock ``` are stored in the root of your package (package root).
 - Source code goes in the src directory.
