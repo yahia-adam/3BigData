@@ -9,15 +9,3 @@
 /*   Updated: 2024/03/22 20:12:47 by YA. Adam             ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
-
-// use std::error::Error;
-// use csv::Reader;
-
-// pub fn read_csv(filepath: &str)  -> Result<(), Box<dyn Error>> {
-//     let mut rdr = Reader::from_path(filepath)?;
-//     for result in rdr.records() {
-//         let record = result?;
-//         println!("{:?}", record);
-//     }
-//     Ok(())
-// }
