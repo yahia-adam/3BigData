@@ -9,10 +9,9 @@
 /*   Updated: 2024/03/18 21:39:57 by YA. Adam             ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
-mod multilayer_perceptron;
 
-#[no_mangle]
-extern "C" fn hello()
-{
-    println!("hello world!");
-}
+pub mod linear_model;
+pub mod multilayer_perceptron;
+pub mod radical_basis_function_network;
+pub mod support_vector_machine;
+pub mod utils;
