@@ -9,15 +9,10 @@
 /*   Updated: 2024/03/18 21:39:57 by YA. Adam             ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
+mod multilayer_perceptron;
 
 #[no_mangle]
 extern "C" fn hello()
 {
     println!("hello world!");
-}
-
-#[no_mangle]
-extern "C" fn my_add(a:i32, b:i32) -> i32
-{
-    a + b
 }

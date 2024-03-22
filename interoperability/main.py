@@ -13,7 +13,8 @@
 from ctypes import cdll
 
 if __name__ == "__main__":
-    lib_path = "./mylib/target/debug/libmylib.so"
+    lib_path = "./../mylib/target/debug/libmylib.so"
     lib = cdll.LoadLibrary(lib_path)
     lib.hello()
-    print(lib.my_add(3, 2))
+    sp = lib.multilayer_perceptron.singlelayer_perceptron.singlelayer_perceptron.new()
+    sp.to_string()
