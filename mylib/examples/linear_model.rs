@@ -41,7 +41,6 @@ fn main()
         -8.0, 91.4, -26.0, -37.4, -16.6, -54.2,
     ];
     
-    
     let datasets = (&celsius_temperatures, &fahrenheit_temperatures);
     sp.fit(datasets, 0.0001, 5, 0.5);
     // println!("5C = {}F", sp.guess(&[1.0, 5.0]));
