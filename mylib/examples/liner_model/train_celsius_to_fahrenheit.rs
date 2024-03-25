@@ -11,7 +11,7 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 use mylib::linear_model;
-use std::{env, ffi::{c_char, CString}};
+use std::ffi::{c_char, CString};
 
 fn celsius_to_fahrenheit(value: f32) -> f32 {
     value * 1.8 + 32.0
@@ -19,22 +19,8 @@ fn celsius_to_fahrenheit(value: f32) -> f32 {
 
 fn main()
 {
-    let model_path: Option<String> = env::args().nth(1);
-    
-    // if let Some(path) = model_path {
-    //     let filepath_cstr: CString = CString::new(path).expect("Failed to create CString");
-    //     let filepath_ptr: *const c_char = filepath_cstr.as_ptr();
-    //     let sp: *mut linear_model::LinearRegression = linear_model::load_model(filepath_ptr);
-    //     for i in 0..=100 {
-    //         let leak_celsius: *const f32 = Vec::leak(vec![i as f32]).as_ptr();
-    //         println!("{}C = prdicted_value={}, expected_value={}", i, linear_model::predict(sp, leak_celsius, 1), celsius_to_fahrenheit(i as f32));
-    //     }
-    // } else {
-    //     println!("No model path provided.");
-    // }
 
-    if let Some(path) = model_path {
-        let filepath_cstr: CString = CString::new(path).expect("Failed to create CString");
+        let filepath_cstr: CString = CString::new("../models/linear_model/celsius_to_fahrenheit.json").expect("Failed to create CString");
         let filepath_ptr: *const c_char = filepath_cstr.as_ptr();
 
         let sp:*mut linear_model::LinearRegression = linear_model::new();
@@ -64,12 +50,8 @@ fn main()
 
         for i in 0..=100 {
             let leak_celsius = Vec::leak(vec![i as f32]).as_ptr();
-            println!("{}C = prdicted_value={}, expected_value={}", i, linear_model::predict(sp, leak_celsius, 1), celsius_to_fahrenheit(i as f32));
+            println!("prdicted_value = {}, expected_value = {}", linear_model::predict(sp, leak_celsius, 1), celsius_to_fahrenheit(i as f32));
         }
-
         linear_model::save_model(sp, filepath_ptr);
-    } else {
-        println!("No model path provided.");
-    }
-
+   
 }

@@ -6,8 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[example]]
-name="celsius_to_fahrenheit"
-path="examples/liner_model/celsius_to_fahrenheit.rs"
+name="train_linear_model"
+path="examples/liner_model/train_celsius_to_fahrenheit.rs"
+
+[[example]]
+name="loads_linear_model"
+path="examples/liner_model/loads_celsius_to_fahrenheit.rs"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

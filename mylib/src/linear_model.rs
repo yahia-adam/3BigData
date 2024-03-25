@@ -82,6 +82,19 @@ pub extern "C" fn predict(model: *const LinearRegression, inputs: *const f32, in
 }
 
 #[no_mangle]
+pub extern "C" fn score_model(model: *const LinearRegression) -> *const c_char {
+    let model: &LinearRegression = unsafe { model.as_ref().unwrap() };
+    let weights: Vec<f32> = get_weights(model);
+    let json_obj: serde_json::Value = json!({
+        "weights": weights
+    });
+    let json_str: String = serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
+    let c_str: CString = CString::new(json_str).expect("Failed to convert string to CString");
+    let ptr: *const c_char = c_str.into_raw();
+    ptr
+}
+
+#[no_mangle]
 pub extern "C" fn to_json(model: *const LinearRegression) -> *const c_char {
     let model: &LinearRegression = unsafe { model.as_ref().unwrap() };
     let weights: Vec<f32> = get_weights(model);
@@ -104,15 +117,12 @@ pub extern "C" fn save_model(model: *const LinearRegression, filepath: *const st
             return;
         }
     };
-
-    // Call to_string to get the weights as a string
     let weights_str: &str = unsafe {
         let weights_ptr: *const c_char = to_json(model);
         std::ffi::CStr::from_ptr(weights_ptr).to_str().unwrap_or("")
     };
 
     if let Ok(mut file) = File::create(path_str) {
-        // Write the weights string to the file
         if let Err(_) = write!(file, "{}", weights_str) {
             println!("Unaible to save model error writing to file");
         }
@@ -125,7 +135,7 @@ pub extern "C" fn save_model(model: *const LinearRegression, filepath: *const st
 
 #[no_mangle]
 pub extern "C" fn load_model(json_str_ptr: *const c_char) -> *mut LinearRegression {
-    let json_str_cstr = unsafe { CStr::from_ptr(json_str_ptr) };
+    let json_str_cstr: &CStr = unsafe { CStr::from_ptr(json_str_ptr) };
     let json_str: &str = match json_str_cstr.to_str() {
         Ok(s) => s,
         Err(_) => {
@@ -138,9 +148,7 @@ pub extern "C" fn load_model(json_str_ptr: *const c_char) -> *mut LinearRegressi
         let data: String = fs::read_to_string(json_str).expect("LogRocket: error reading file");
         serde_json::from_str(&data).unwrap()
     };
-
-    // Box the model and return a raw pointer to it
-    let boxed_model = Box::new(model);
+    let boxed_model: Box<LinearRegression> = Box::new(model);
     Box::into_raw(boxed_model)
 }
 
@@ -157,20 +165,20 @@ pub extern "C" fn fit(model: *mut LinearRegression, labels: *const f32, label_ro
         model.as_mut().unwrap()
     };
     set_weights(model, vec![0.0; label_row + 1]);
-    let mut epochs = epochs;
-    let mut time = 0;
-    let data_size = if label_row < feature_size {label_row} else {feature_size};
+    let mut epochs: u32 = epochs;
+    let mut time: i32 = 0;
+    let data_size: usize = if label_row < feature_size {label_row} else {feature_size};
     while epochs != 0 {
-        let mut count_label = 0;
+        let mut count_label: usize = 0;
         for count_feature in 0..data_size {
-            let desired_output = features[count_feature];
+            let desired_output: f32 = features[count_feature];
             let mut input: Vec<f32> = vec![];
             for j in 0..label_col {
-                let elem = labels[count_label + j];
+                let elem: f32 = labels[count_label + j];
                 input.push(elem);
             }
             count_label  = count_label + label_col;
-            let predicted_output = guess(model, input.clone());
+            let predicted_output: f32 = guess(model, input.clone());
             let mut weights: Vec<f32> = vec![0.0];
             for j in 0..label_col {
                 weights.push(model_ref.weights[j+1] + learning_rate * (desired_output - predicted_output) * input[j]);
