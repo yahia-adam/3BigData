@@ -16,6 +16,7 @@ mod tests {
         
         let model2: LinearRegression = LinearRegression {
             weights: vec![],
+            activate: "identity".to_string()
         };
     
         let boxed_model: Box<LinearRegression> = Box::new(model2);

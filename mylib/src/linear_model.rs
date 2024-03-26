@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 /* ********************************************************************************************************* */
 /*                                                                                                           */
 /*                                                              :::::::::: ::::::::   :::::::: :::::::::::   */
@@ -17,21 +18,60 @@ use std::ffi::CString;
 use serde::{Deserialize, Serialize};
 use std::fs;
 
+pub mod activation {
+    pub fn identity(value: f32, _x: f32) -> f32 {
+        value
+    }
+
+    pub fn step(sum: f32, step: f32) -> f32 {
+        if step > sum {1 as f32} else {0 as f32}
+    }
+
+    pub fn sigmoid(_value: f32, _x: f32) -> f32 {
+        0 as f32
+    }
+
+    pub fn tanh(value: f32, _x: f32) -> f32 {
+        if value > 0 as f32 {value} else {0.0}
+    }
+
+    pub fn relu(_value: f32, _x: f32) -> f32  {
+        0 as f32
+    }
+
+    pub fn leaky_relu(_value: f32, _x: f32) -> f32  {
+        0 as f32
+    }
+
+    pub fn softmax(_value: f32, _x: f32) -> f32  {
+        0 as f32
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct LinearRegression
 {
     pub weights: Vec<f32>,
+    pub activate: String,
 }
 
 #[no_mangle]
 pub extern "C" fn new() -> *mut LinearRegression {
     let model: LinearRegression = LinearRegression {
         weights: vec![],
+        activate: "identity".to_string()
     };
 
     let boxed_model: Box<LinearRegression> = Box::new(model);
     let leaked_boxed_model: *mut LinearRegression = Box::leak(boxed_model);
     leaked_boxed_model.into()
+}
+
+pub fn set_activation(model: *mut LinearRegression, activate: String) {
+    let model_ref: &mut LinearRegression = unsafe {
+        model.as_mut().unwrap()
+    };
+    model_ref.activate = activate
 }
 
 pub fn get_weights(model: *const LinearRegression) -> Vec<f32>
@@ -66,6 +106,15 @@ pub fn guess(model: *const LinearRegression, inputs: Vec<f32>) -> f32
 #[no_mangle]
 pub extern "C" fn predict(model: *const LinearRegression, inputs: *const f32, input_size: usize,) -> f32
 {
+    // let mut activation_map: HashMap<&str, fn(f32, f32) -> f32> = HashMap::new();
+    // activation_map.insert("identity", activation::identity);
+    // activation_map.insert("step", activation::step);
+    // activation_map.insert("sigmoid", activation::sigmoid);
+    // activation_map.insert("tanh", activation::tanh);
+    // activation_map.insert("relu", activation::relu);
+    // activation_map.insert("leaky_relu", activation::leaky_relu);
+    // activation_map.insert("softmax", activation::softmax);
+
     let inputs: &[f32] = unsafe {
         std::slice::from_raw_parts(inputs, input_size)
     };
@@ -78,7 +127,7 @@ pub extern "C" fn predict(model: *const LinearRegression, inputs: *const f32, in
         sum = sum + i * *p;
     }
     sum = sum + model.weights[0];
-    sum
+    0.0
 }
 
 #[no_mangle]
