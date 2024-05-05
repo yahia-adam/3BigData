@@ -12,3 +12,4 @@ path="examples/liner_model/celsius_to_fahrenheit.rs"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+rand = "0.9.0-alpha.1"
