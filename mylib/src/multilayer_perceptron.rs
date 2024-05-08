@@ -35,6 +35,7 @@ impl StructMLP {
      updating the values of the neurons in each layer according to the inputs, weights, and activation
      functions (tanh in our case) if necessary
      **/
+    // self.w[0] l'input entree dans le model
     pub fn forward_pass(&mut self, sample_inputs: &Vec<f32>, is_classification: bool){
         // installation of the entries
         // initialize the first layer of network inputs with values of the sample_inputs vector
