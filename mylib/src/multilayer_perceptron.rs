@@ -35,7 +35,7 @@ impl StructMLP {
      updating the values of the neurons in each layer according to the inputs, weights, and activation
      functions (tanh in our case) if necessary
      **/
-    pub extern "C" fn forward_pass(&mut self, sample_inputs: &Vec<f32>, is_classification: bool){
+    pub fn forward_pass(&mut self, sample_inputs: &Vec<f32>, is_classification: bool){
         // installation of the entries
         // initialize the first layer of network inputs with values of the sample_inputs vector
         // on commence avec 1 au cas ou le 0 est reserve pour le biais
@@ -75,7 +75,7 @@ impl StructMLP{
      it performs a forward pass to predict the outputs, calculates the errors/deltas and updates the weights
      using the derivative of the activation function and the learning rate. each iteration takes a sample.
      **/
-    pub extern "C" fn train_stochastic_gradient_backpropagation(&mut self, flattened_data_inputs: &Vec<f32>, flattened_expected_outputs: &Vec<f32>, is_classification: bool, alpha: f32, iterations_counts: i32){
+    pub fn train_stochastic_gradient_backpropagation(&mut self, flattened_data_inputs: &Vec<f32>, flattened_expected_outputs: &Vec<f32>, is_classification: bool, alpha: f32, iterations_counts: i32){
         let last = (self.d.len() - 1) as usize; // the last index of the layer of the network
         let input_dim = self.d[0] as usize; // the number of entries, the dimension of the entry layer
         let output_dim = self.d[last] as usize; // the number of exits, the dimension of the exit layer
