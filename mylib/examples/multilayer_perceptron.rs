@@ -10,8 +10,12 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
+use ::mylib::multilayer_perceptron;
+use mylib::multilayer_perceptron::{init_mlp, mlp_to_json, MultiLayerPerceptron};
 
 fn main()
 {
-    println!("example mutilayer perceptron");
+    let model: MultiLayerPerceptron = init_mlp(vec![3, 2, 1]);
+
+    println!("{}", mlp_to_json(model));
 }
