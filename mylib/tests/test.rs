@@ -27,7 +27,7 @@ mod tests {
     #[test]
     fn linear_model_set_weights() {
         let model: *mut LinearRegression = new();
-        let weights = vec![1.0, 2.0, 3.0];
+        let weights: Vec<f32> = vec![1.0, 2.0, 3.0];
         set_weights(model, weights);
         assert_eq!(get_weights(model), vec![1.0, 2.0, 3.0])
     }
@@ -93,4 +93,49 @@ mod tests {
         assert_eq!(guess(sp, vec![96.0]) as i32, 204)
     }
 
+
+// <------------------------------------------------------------------------------------------ // multiperceptron -------------------------------------------------------------------------------------->
+
+    // #[test]
+    // fn test_propagation() {
+    //     let npl: Vec<i32> = vec![2, 3, 1]; // Exemple de réseau avec 2 entrées, une couche cachée de 3 neurones, et 1 sortie
+    //     let mut mlp: mylib::multilayer_perceptron::MultiLayerPerceptron = init_mlp(npl);
+    //     let inputs: Vec<f64> = vec![0.5, -0.5]; // Données d'entrée simulées
+    //     mlp = propagate(mlp, inputs, true);
+
+    //     // Vérifier si les activations sont non nulles (ou toute autre assertion spécifique)
+    //     assert!(mlp.x[1].iter().all(|&x| x != 0.0));
+    // }
+    // #[test]
+    // fn test_backpropagation_and_weight_update() {
+    //     let npl: Vec<i32> = vec![2, 2, 1];
+    //     let mut mlp = init_mlp(npl);
+    //     let inputs: Vec<f64> = vec![0.5, -0.5];
+    //     let outputs: Vec<f64> = vec![1.0]; // Sortie attendue
+
+    //     mlp = propagate(mlp, inputs, false);
+    //     backpropagate(&mut mlp, &outputs, false);
+    //     update_weights(&mut mlp, 0.1);
+
+    //     // Vérifier que les poids ont été modifiés
+    //     assert_ne!(mlp.weights[1][0][1], 0.0); // Vérifier que le poids a changé
+    // }
+    // #[test]
+    // fn test_integration() {
+    //     let npl = vec![3, 4, 2]; // Configuration simple
+    //     let mut mlp = init_mlp(npl);
+    //     let all_inputs = vec![vec![0.1, 0.2, 0.3], vec![0.4, 0.5, 0.6]];
+    //     let all_outputs = vec![vec![1.0, 0.0], vec![0.0, 1.0]];
+    //     let alpha = 0.05;
+    
+    //     for _ in 0..100 { // Un petit nombre d'itérations pour le test
+    //         mlp_train(mlp.clone(), all_inputs.clone(), all_outputs.clone(), alpha, 100, true);
+    //     }
+    
+    //     // Vérifier que le modèle donne des prédictions raisonnables
+    //     let test_inputs = vec![0.1, 0.2, 0.3];
+    //     let prediction = predict(mlp, test_inputs, true);
+    //     assert!(prediction[0] > prediction[1]); // Vérifier une condition basée sur votre logique d'affaires
+    // }
+    
 }
