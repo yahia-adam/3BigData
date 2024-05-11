@@ -25,13 +25,13 @@ pub struct MultiLayerPerceptron {
 
 #[no_mangle]
 #[allow(dead_code)]
-extern "C" fn init_mlp(npl: *const usize, npl_size:usize) -> *mut MultiLayerPerceptron {
-    let npl: &[usize] = unsafe {
-        std::slice::from_raw_parts(npl, npl_size as usize)
+extern "C" fn init_mlp(npl: *mut usize, npl_size:usize) -> *mut MultiLayerPerceptron {
+    let npl:Vec<usize>  = unsafe {
+        Vec::from_raw_parts(npl, npl_size, npl_size)
     };
 
     let mut model: MultiLayerPerceptron = MultiLayerPerceptron {
-        dimension: npl.to_vec().clone(),
+        dimension: npl.clone(),
         weights: vec![vec![vec![]]; npl.len()],
         x: vec![vec![]; npl.len()],
         delta: vec![vec![]; npl.len()],
@@ -88,6 +88,15 @@ fn mlp_to_json(model: MultiLayerPerceptron) -> String {
     json_str
 }
 
+#[no_mangle]
+pub extern "C" fn free_mlp(
+    model: *mut MultiLayerPerceptron,
+) {
+    let model_ref: &mut MultiLayerPerceptron = unsafe {
+        model.as_mut().unwrap()
+    };
+}
+
 #[allow(dead_code)]
 fn mlp_train(
     model: *mut MultiLayerPerceptron,
@@ -115,8 +124,8 @@ fn mlp_train(
     
     for _ in 0..nb_iteration {
         let k: usize = rand::thread_rng().gen_range(0..inputs.len());
-        let sample_inputs: Vec<f32> = inputs[k].clone();
-        let sample_expected_outputs: Vec<f32> = outputs[k].clone();
+        let sample_inputs: Vec<f32> = inputs[k-1*input_size..k*input_size].to_vec();
+        let sample_expected_outputs: Vec<f32> = outputs[k-1*output_size..k*output_size].to_vec();
 
         propagate(model_ref, sample_inputs, is_classification);
 
