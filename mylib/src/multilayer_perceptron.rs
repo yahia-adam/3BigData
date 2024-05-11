@@ -10,10 +10,8 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-use std::ffi::{c_char, CString};
 use rand::Rng;
 use serde_json::{self, json};
-use crate::linear_model::{get_weights, LinearRegression};
 
 pub struct MultiLayerPerceptron {
     dimension: Vec<usize>,
@@ -25,8 +23,7 @@ pub struct MultiLayerPerceptron {
     delta: Vec<Vec<f32>>, // un vecteur de vecteurs, represents errors / corrections to the MLP
 }
 
-#[no_mangle]
-pub extern "C" fn init_mlp(npl: Vec<usize>) -> MultiLayerPerceptron {
+fn init_mlp(npl: Vec<usize>) -> MultiLayerPerceptron {
     let mut model: MultiLayerPerceptron = MultiLayerPerceptron {
         dimension: npl.clone(),
         weights: vec![vec![vec![]]; npl.len()],
@@ -34,11 +31,10 @@ pub extern "C" fn init_mlp(npl: Vec<usize>) -> MultiLayerPerceptron {
         delta: vec![vec![]; npl.len()],
     };
 
-
     for l in 1..model.dimension.len() {
-        let mut layer_weights = Vec::new();
+        let mut layer_weights: Vec<Vec<f32>> = Vec::new();
         for i in 0..model.dimension[l - 1] + 1 {
-            let mut neuron_weights = Vec::new();
+            let mut neuron_weights: Vec<f32> = Vec::new();
             // println!("{}", model.dimension[l] + 1);
             for j in 0..model.dimension[l] + 1 {
                 // println!("{l}  {i}");
@@ -54,25 +50,24 @@ pub extern "C" fn init_mlp(npl: Vec<usize>) -> MultiLayerPerceptron {
     }
 
     for l in 0..model.dimension.len() {
-        let mut layer_x = Vec::new();
-        let mut layer_delta = Vec::new();
+        let mut layer_x: Vec<f32> = Vec::new();
+        let mut layer_delta: Vec<f32> = Vec::new();
         for j in 0..model.dimension[l] + 1 {
             layer_delta.push(0.0);
             if j == 0 {
                 layer_x.push(1.0)
             } else {
-               layer_x.push(0.0)
+                layer_x.push(0.0)
             }
         }
-        model.x[l]=layer_x;
+        model.x[l] = layer_x;
         model.delta[l] = layer_delta;
     }
 
     model
 }
 
-#[no_mangle]
-pub extern "C" fn mlp_to_json(model: MultiLayerPerceptron) -> String {
+fn mlp_to_json(model: MultiLayerPerceptron) -> String {
     let json_obj: serde_json::Value = json!({
         "weights": model.weights,
         "dimension": model.dimension,
@@ -80,42 +75,87 @@ pub extern "C" fn mlp_to_json(model: MultiLayerPerceptron) -> String {
         "delta" : model.delta,
     });
 
-    let json_str: String = serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
+    let json_str: String =
+        serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
     json_str
 }
 
-// #[no_mangle]
-// pub extern "C" fn mlp_train(model: MultiLayerPerceptron,
-//                             all_sample_inputs: Vec<f32>,
-//                             sample_inputs_size: i32,
-//                             all_sample_outputs : Vec<f32>,
-//                             sample_outputs_size: i32,
-//                             alpha: f32,
-//                             nb_iteration: i32,
-//                             is_classification: bool){
-//
-//     for i in 0..nb_iteration{
-//         let k = rand::thread_rng().gen_range(0..all_sample_inputs.len() - 1) as usize;
-//         let sample_inputs = all_sample_inputs[k];
-//         let sample_expected_outputs = all_sample_outputs[k];
-//     }
-//
-// }
+fn mlp_train(
+    mut model: MultiLayerPerceptron,
+    all_sample_inputs: Vec<Vec<f32>>,
+    all_sample_outputs: Vec<Vec<f32>>,
+    alpha: f32, // learning rate
+    nb_iteration: i32,
+    is_classification: bool,
+) {
+    for _ in 0..nb_iteration {
+        let k: usize = rand::thread_rng().gen_range(0..all_sample_inputs.len());
+        let sample_inputs: Vec<f32> = all_sample_inputs[k].clone();
+        let sample_expected_outputs: Vec<f32> = all_sample_outputs[k].clone();
 
-pub fn propagate(mut model: MultiLayerPerceptron, sample_inputs: Vec<f32>, is_classification: bool) -> MultiLayerPerceptron {
-    for j in 0..sample_inputs.len(){
+        model = propagate(model, sample_inputs, is_classification);
+
+        backpropagate(&mut model, &sample_expected_outputs, is_classification);
+
+        update_weights(&mut model, alpha);
+    }
+}
+
+fn backpropagate(
+    model: &mut MultiLayerPerceptron,
+    sample_expected_outputs: &[f32],
+    is_classification: bool,
+) {
+    let last_layer_index: usize = model.dimension.len() - 1;
+
+    for j in 1..model.dimension[last_layer_index] + 1 {
+        let error: f32 = model.x[last_layer_index][j] - sample_expected_outputs[j - 1];
+        model.delta[last_layer_index][j] = if is_classification {
+            error * (1.0 - model.x[last_layer_index][j].powi(2)) // dérivée de tanh
+        } else {
+            error // Si c'est une régression, pas de fonction d'activation dans la couche de sortie
+        };
+    }
+
+    for l in (1..last_layer_index).rev() {
+        for i in 1..model.dimension[l] + 1 {
+            let mut error: f32 = 0.0;
+            for j in 1..model.dimension[l + 1] + 1 {
+                error += model.weights[l + 1][i][j] * model.delta[l + 1][j];
+            }
+            model.delta[l][i] = error * (1.0 - model.x[l][i].powi(2)); // tanh' = 1 - tanh^2
+        }
+    }
+}
+
+fn update_weights(model: &mut MultiLayerPerceptron, alpha: f32) {
+    for l in 1..model.dimension.len() {
+        for i in 0..model.dimension[l - 1] + 1 {
+            for j in 1..model.dimension[l] + 1 {
+                model.weights[l][i][j] -= alpha * model.x[l - 1][i] * model.delta[l][j];
+            }
+        }
+    }
+}
+
+pub fn propagate(
+    mut model: MultiLayerPerceptron,
+    sample_inputs: Vec<f32>,
+    is_classification: bool,
+) -> MultiLayerPerceptron {
+    for j in 0..sample_inputs.len() {
         model.x[0][j + 1] = sample_inputs[j];
     }
 
-    for l in 1..model.dimension.len(){
-        for j in 1..model.dimension[l]{
+    for l in 1..model.dimension.len() {
+        for j in 1..model.dimension[l] {
             let mut total: f32 = 0.0;
 
-            for i in 0..model.dimension[l -1] + 1{
+            for i in 0..model.dimension[l - 1] + 1 {
                 total += model.weights[l][i][j] * model.x[l - 1][i];
             }
 
-            if is_classification || l < model.dimension.len(){
+            if is_classification || l < model.dimension.len() {
                 total = total.tanh()
             }
 
@@ -126,7 +166,11 @@ pub fn propagate(mut model: MultiLayerPerceptron, sample_inputs: Vec<f32>, is_cl
     return model;
 }
 
-pub fn predict(model: MultiLayerPerceptron, sample_inputs: Vec<f32>, is_classification: bool) -> Vec<f32> {
-    let mlp_model:MultiLayerPerceptron = propagate(model, sample_inputs, is_classification);
+pub fn predict(
+    model: MultiLayerPerceptron,
+    sample_inputs: Vec<f32>,
+    is_classification: bool,
+) -> Vec<f32> {
+    let mlp_model: MultiLayerPerceptron = propagate(model, sample_inputs, is_classification);
     return mlp_model.x[mlp_model.dimension.len() - 1][1..mlp_model.x.len() - 1].to_vec();
 }
