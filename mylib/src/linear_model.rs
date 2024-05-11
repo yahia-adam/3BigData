@@ -140,7 +140,7 @@ pub extern "C" fn load_model(json_str_ptr: *const c_char) -> *mut LinearRegressi
     };
 
     // Box the model and return a raw pointer to it
-    let boxed_model = Box::new(model);
+    let boxed_model: Box<LinearRegression> = Box::new(model);
     Box::into_raw(boxed_model)
 }
 
