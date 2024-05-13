@@ -1,3 +1,4 @@
+
 /* ********************************************************************************************************* */
 /*                                                                                                           */
 /*                                                              :::::::::: ::::::::   :::::::: :::::::::::   */
@@ -9,13 +10,9 @@
 /*   Updated: 2024/03/22 14:20:22 by YA. Adam             ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
-
-use ::mylib::multilayer_perceptron;
-use mylib::multilayer_perceptron::{init_mlp, mlp_to_json, MultiLayerPerceptron};
+#[allow(unused_imports)]
+use mylib::{MultiLayerPerceptron, init_mlp, train_mlp, predict_mlp, free_mlp};
 
 fn main()
 {
-    let model: MultiLayerPerceptron = init_mlp(vec![3, 2, 1]);
-
-    println!("{}", mlp_to_json(model));
 }

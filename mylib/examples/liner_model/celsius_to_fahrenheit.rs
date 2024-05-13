@@ -49,9 +49,9 @@ fn main()
         }
 
         let fahrenheit_temperatures_row: usize = fahrenheit_temperatures.len();
-        let leaked_celsius_temperatures = Vec::leak(celsius_temperatures).as_ptr();
+        let leaked_celsius_temperatures: *const f32 = Vec::leak(celsius_temperatures).as_ptr();
 
-        let leaked_fahrenheit_temperatures = Vec::leak(fahrenheit_temperatures).as_ptr();
+        let leaked_fahrenheit_temperatures: *const f32 = Vec::leak(fahrenheit_temperatures).as_ptr();
 
         linear_model::fit(sp,
             leaked_celsius_temperatures,
