@@ -9,6 +9,7 @@
 /*   Updated: 2024/03/22 14:20:22 by YA. Adam             ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
+
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::ffi::c_char;
@@ -17,11 +18,11 @@ use rand::Rng;
 use serde_json::{self, json};
 use std::io::Write;
 pub struct MultiLayerPerceptron {
-    dimension: Vec<usize>,
-    weights: Vec<Vec<Vec<f32>>>,
+    d: Vec<usize>,
+    w: Vec<Vec<Vec<f32>>>,
     x: Vec<Vec<f32>>,
-    delta: Vec<Vec<f32>>,
-    l: usize
+    deltas: Vec<Vec<f32>>,
+    l: usize,
 }
 
 #[no_mangle]
@@ -32,33 +33,35 @@ pub extern "C" fn init_mlp(npl: *mut usize, npl_size:usize) -> *mut MultiLayerPe
     };
 
     let mut model: MultiLayerPerceptron = MultiLayerPerceptron {
-        dimension: npl.clone(),
-        weights: vec![vec![vec![]]; npl.len()],
+        d: npl.clone(),
+        w: vec![vec![vec![]]; npl.len()],
         x: vec![vec![]; npl.len()],
-        delta: vec![vec![]; npl.len()],
-        l: npl.len() - 1,
+        deltas: vec![vec![]; npl.len()],
+        l: npl.len() - 1
     };
 
-    for l in 1..model.dimension.len() {
+    for l in 0..model.d.len() {
         let mut layer_weights: Vec<Vec<f32>> = Vec::new();
-        for _ in 0..model.dimension[l - 1] + 1 {
-            let mut neuron_weights: Vec<f32> = Vec::new();
-            for j in 0..model.dimension[l] + 1 {
-                if j == 0 {
-                    neuron_weights.push(0.0);
-                } else {
-                    neuron_weights.push(rand::thread_rng().gen_range(-1.0..1.0))
+        if l != 0 {
+            for _ in 0..model.d[l - 1] + 1 {
+                let mut neuron_weights: Vec<f32> = Vec::new();
+                for j in 0..model.d[l] + 1 {
+                    if j == 0 {
+                        neuron_weights.push(0.0);
+                    } else {
+                        neuron_weights.push(rand::thread_rng().gen_range(-1.0..1.0))
+                    }
                 }
+                layer_weights.push(neuron_weights);
             }
-            layer_weights.push(neuron_weights);
         }
-        model.weights[l] = layer_weights;
+        model.w[l] = layer_weights;
     }
 
-    for l in 0..model.dimension.len() {
+    for l in 0..model.d.len() {
         let mut layer_x: Vec<f32> = Vec::new();
         let mut layer_delta: Vec<f32> = Vec::new();
-        for j in 0..model.dimension[l] + 1 {
+        for j in 0..model.d[l] + 1 {
             layer_delta.push(0.0);
             if j == 0 {
                 layer_x.push(1.0)
@@ -67,21 +70,11 @@ pub extern "C" fn init_mlp(npl: *mut usize, npl_size:usize) -> *mut MultiLayerPe
             }
         }
         model.x[l] = layer_x;
-        model.delta[l] = layer_delta;
+        model.deltas[l] = layer_delta;
     }
 
     let boxed_model: Box<MultiLayerPerceptron> = Box::new(model);
     Box::leak(boxed_model)
-}
-
-fn update_weights(model: &mut MultiLayerPerceptron, alpha: f32) {
-    for l in 1..model.dimension.len() {
-        for i in 0..model.dimension[l - 1] + 1 {
-            for j in 1..model.dimension[l] + 1 {
-                model.weights[l][i][j] -= alpha * model.x[l - 1][i] * model.delta[l][j];
-            }
-        }
-    }
 }
 
 fn propagate(
@@ -89,23 +82,18 @@ fn propagate(
     sample_inputs: Vec<f32>,
     is_classification: bool,
 ) {
-
     for j in 0..sample_inputs.len() {
         model.x[0][j + 1] = sample_inputs[j];
     }
-
-    for l in 1..model.dimension.len() {
-        for j in 1..model.dimension[l] {
+    for l in 1..model.l + 1 {
+        for j in 1..model.d[l] + 1 {
             let mut total: f32 = 0.0;
-
-            for i in 0..model.dimension[l - 1] + 1 {
-                total += model.weights[l][i][j] * model.x[l - 1][i];
+            for i in 0..model.d[l - 1] + 1 {
+                total += model.w[l][i][j] * model.x[l - 1][i];
             }
-
-            if is_classification || l < model.dimension.len() {
-                total = total.tanh()
+            if is_classification || l < model.d.len() - 1 {
+                total = total.tanh();
             }
-
             model.x[l][j] = total;
         }
     }
@@ -117,22 +105,33 @@ fn backpropagate(
     is_classification: bool,
 ) {
 
-    for j in 1..model.dimension[model.l] + 1 {
-        let error: f32 = model.x[model.l][j] - sample_expected_outputs[j - 1];
-        model.delta[model.l][j] = if is_classification {
-            error * (1.0 - model.x[model.l][j].powi(2))
-        } else {
-            error
-        };
+    let last_layer_index: usize = model.d.len() -1;
+
+    for j in 1..model.d[last_layer_index] + 1 {
+        model.deltas[last_layer_index][j] = model.x[last_layer_index][j] - &sample_expected_outputs[j - 1];
+        if is_classification {
+            model.deltas[last_layer_index][j] *= 1.0 - model.x[last_layer_index][j].powi(2)
+        }
     }
 
-    for l in (1..model.l).rev() {
-        for i in 1..model.dimension[l] + 1 {
-            let mut error: f32 = 0.0;
-            for j in 1..model.dimension[l + 1] + 1 {
-                error += model.weights[l + 1][i][j] * model.delta[l + 1][j];
+    for l in (2..last_layer_index).rev() {
+        for i in 1..model.d[l] + 1 {
+            let mut total: f32 = 0.0;
+            for j in 1..model.d[l] + 1 {
+                total += model.w[l][i][j] * model.x[l - 1][i]
             }
-            model.delta[l][i] = error * (1.0 - model.x[l][i].powi(2));
+            total *= 1.0 - model.x[l - 1][i].powi(2);
+            model.deltas[l - 1][i] = total;
+        }
+    }
+}
+
+fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
+    for l in 1..model.d.len() {
+        for i in 0..model.d[l - 1] + 1 {
+            for j in 1..model.d[l] + 1 {
+                model.w[l][i][j] -= alpha * model.x[l - 1][i] * model.deltas[l][j];
+            }
         }
     }
 }
@@ -145,7 +144,7 @@ pub extern "C" fn train_mlp(
     outputs: *mut f32,
     input_col: usize,
     output_col: usize,
-    row: usize,    
+    row: usize,
     alpha: f32,
     nb_iteration: i32,
     is_classification: bool,
@@ -169,7 +168,7 @@ pub extern "C" fn train_mlp(
         
         propagate(model_ref, sample_inputs, is_classification);
         backpropagate(model_ref, &sample_expected_outputs, is_classification);
-        update_weights(model_ref, alpha);
+        update_w(model_ref, alpha);
     }
 }
 
@@ -187,12 +186,17 @@ pub extern "C" fn predict_mlp(
     };
 
     let sample_inputs:Vec<f32> = unsafe {
-        Vec::from_raw_parts(sample_inputs, sample_inputs_size,sample_inputs_size)
+        Vec::from_raw_parts(sample_inputs, sample_inputs_size, sample_inputs_size)
     };
     
     propagate(model_ref, sample_inputs, is_classification);
-    let res: &mut [f32] = Vec::leak( model_ref.x[model_ref.dimension.len() - 1][1..model_ref.x.len() - 1].to_vec());
-    res.as_mut_ptr()
+    
+    let last_layer: usize = model_ref.d.len() - 1;
+    let predictions: &[f32] = &model_ref.x[last_layer][1..];
+    let cloned_predictions: Vec<f32> = predictions.to_vec();
+    let result: &mut [f32] = Vec::leak(cloned_predictions);
+
+    result.as_mut_ptr()
 }
 
 #[no_mangle]
@@ -203,11 +207,11 @@ pub extern "C" fn mlp_to_json(model: *mut MultiLayerPerceptron) ->  *mut c_char 
         model.as_mut().unwrap()
     };
     let json_obj: serde_json::Value = json!({
-        "weights": model_ref.weights,
-        "dimension": model_ref.dimension,
+        "w": model_ref.w,
+        "d": model_ref.d,
         "x": model_ref.x,
-        "delta" : model_ref.delta,
-        "l": model_ref.l,
+        "deltas" : model_ref.deltas,
+        "l": model_ref.l
     });
 
     let json_str: String = serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
@@ -242,7 +246,6 @@ pub extern "C" fn save_mlp_model(model: *mut MultiLayerPerceptron, filepath: *co
     };
 
     if let Ok(mut file) = File::create(path_str) {
-        // Write the weights string to the file
         if let Err(_) = write!(file, "{}", model_str) {
             println!("Unaible to save model error writing to file");
         }
