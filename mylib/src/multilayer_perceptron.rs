@@ -10,12 +10,13 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-use std::ffi::CStr;
-use std::ffi::CString;
-use std::ffi::c_char;
-use std::fs::File;
 use rand::Rng;
 use serde_json::{self, json};
+use std::ffi::c_char;
+use std::ffi::c_float;
+use std::ffi::CStr;
+use std::ffi::CString;
+use std::fs::File;
 use std::io::Write;
 pub struct MultiLayerPerceptron {
     d: Vec<usize>,
@@ -27,35 +28,36 @@ pub struct MultiLayerPerceptron {
 
 #[no_mangle]
 #[allow(dead_code)]
-pub extern "C" fn init_mlp(npl: *mut usize, npl_size:usize) -> *mut MultiLayerPerceptron {
-    let npl:Vec<usize>  = unsafe {
-        Vec::from_raw_parts(npl, npl_size, npl_size)
+pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32) -> *mut MultiLayerPerceptron {
+    let npl = unsafe {
+        std::slice::from_raw_parts(npl, npl_size as usize)
     };
 
     let mut model: MultiLayerPerceptron = MultiLayerPerceptron {
-        d: npl.clone(),
+        d: npl.into_iter().map(|x| *x as usize).collect(),
         w: vec![vec![vec![]]; npl.len()],
         x: vec![vec![]; npl.len()],
         deltas: vec![vec![]; npl.len()],
-        l: npl.len() - 1
+        l: npl.len() - 1,
     };
-
-    for l in 0..model.d.len() {
-        let mut layer_weights: Vec<Vec<f32>> = Vec::new();
-        if l != 0 {
-            for _ in 0..model.d[l - 1] + 1 {
-                let mut neuron_weights: Vec<f32> = Vec::new();
-                for j in 0..model.d[l] + 1 {
-                    if j == 0 {
-                        neuron_weights.push(0.0);
-                    } else {
-                        neuron_weights.push(rand::thread_rng().gen_range(-1.0..1.0))
-                    }
-                }
-                layer_weights.push(neuron_weights);
-            }
-        }
+    
+    for l in 0..model.l + 1 {
+        let layer_weights: Vec<Vec<f32>> = Vec::new();
         model.w[l] = layer_weights;
+        if l == 0 {
+            continue;
+        }
+        for _ in 0..model.d[l - 1] + 1 {
+            let mut neuron_weights: Vec<f32> = Vec::new();
+            for j in 0..model.d[l] + 1 {
+                if j == 0 {
+                    neuron_weights.push(0.0);
+                } else {
+                    neuron_weights.push(rand::thread_rng().gen_range(-1.0..1.0))
+                }
+            }
+            model.w[l].push(neuron_weights);
+        }
     }
 
     for l in 0..model.d.len() {
@@ -77,11 +79,7 @@ pub extern "C" fn init_mlp(npl: *mut usize, npl_size:usize) -> *mut MultiLayerPe
     Box::leak(boxed_model)
 }
 
-fn propagate(
-    model: &mut MultiLayerPerceptron,
-    sample_inputs: Vec<f32>,
-    is_classification: bool,
-) {
+fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>, is_classification: bool) {
     for j in 0..sample_inputs.len() {
         model.x[0][j + 1] = sample_inputs[j];
     }
@@ -104,11 +102,11 @@ fn backpropagate(
     sample_expected_outputs: &[f32],
     is_classification: bool,
 ) {
-
-    let last_layer_index: usize = model.d.len() -1;
+    let last_layer_index: usize = model.d.len() - 1;
 
     for j in 1..model.d[last_layer_index] + 1 {
-        model.deltas[last_layer_index][j] = model.x[last_layer_index][j] - &sample_expected_outputs[j - 1];
+        model.deltas[last_layer_index][j] =
+            model.x[last_layer_index][j] - &sample_expected_outputs[j - 1];
         if is_classification {
             model.deltas[last_layer_index][j] *= 1.0 - model.x[last_layer_index][j].powi(2)
         }
@@ -140,32 +138,32 @@ fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
 #[allow(dead_code)]
 pub extern "C" fn train_mlp(
     model: *mut MultiLayerPerceptron,
-    inputs: *mut f32,
-    outputs: *mut f32,
-    input_col: usize,
-    output_col: usize,
-    row: usize,
-    alpha: f32,
-    nb_iteration: i32,
+    inputs: *mut c_float,
+    outputs: *mut c_float,
+    input_col: u32,
+    output_col: u32,
+    row: u32,
+    alpha: c_float,
+    nb_iteration: u32,
     is_classification: bool,
 ) {
-    let model_ref: &mut MultiLayerPerceptron = unsafe {
-        model.as_mut().unwrap()
-    };
+    let input_col: usize = input_col as usize;
+    let output_col: usize = output_col as usize;
+    let row: usize = row as usize;
 
-    let inputs:Vec<f32>  = unsafe {
-        Vec::from_raw_parts(inputs, row * input_col, row * input_col)
-    };
-   
-    let outputs:Vec<f32>  = unsafe {
-        Vec::from_raw_parts(outputs, row * output_col, row * output_col)
-    };
-    
+    let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
+
+    let inputs: Vec<f32> = unsafe { Vec::from_raw_parts(inputs, row * input_col, row * input_col) };
+
+    let outputs: Vec<f32> =
+        unsafe { Vec::from_raw_parts(outputs, row * output_col, row * output_col) };
+
     for _ in 0..nb_iteration {
         let k: usize = rand::thread_rng().gen_range(0..row);
         let sample_inputs: Vec<f32> = inputs[k * input_col..(k + 1) * input_col].to_vec();
-        let sample_expected_outputs: Vec<f32> = outputs[k * output_col..(k + 1) * output_col].to_vec();
-        
+        let sample_expected_outputs: Vec<f32> =
+            outputs[k * output_col..(k + 1) * output_col].to_vec();
+
         propagate(model_ref, sample_inputs, is_classification);
         backpropagate(model_ref, &sample_expected_outputs, is_classification);
         update_w(model_ref, alpha);
@@ -180,17 +178,13 @@ pub extern "C" fn predict_mlp(
     sample_inputs_size: usize,
     is_classification: bool,
 ) -> *mut f32 {
+    let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
 
-    let model_ref: &mut MultiLayerPerceptron = unsafe {
-        model.as_mut().unwrap()
-    };
+    let sample_inputs: Vec<f32> =
+        unsafe { Vec::from_raw_parts(sample_inputs, sample_inputs_size, sample_inputs_size) };
 
-    let sample_inputs:Vec<f32> = unsafe {
-        Vec::from_raw_parts(sample_inputs, sample_inputs_size, sample_inputs_size)
-    };
-    
     propagate(model_ref, sample_inputs, is_classification);
-    
+
     let last_layer: usize = model_ref.d.len() - 1;
     let predictions: &[f32] = &model_ref.x[last_layer][1..];
     let cloned_predictions: Vec<f32> = predictions.to_vec();
@@ -201,11 +195,8 @@ pub extern "C" fn predict_mlp(
 
 #[no_mangle]
 #[allow(dead_code)]
-pub extern "C" fn mlp_to_json(model: *mut MultiLayerPerceptron) ->  *mut c_char {
-    
-    let model_ref: &mut MultiLayerPerceptron = unsafe {
-        model.as_mut().unwrap()
-    };
+pub extern "C" fn mlp_to_json(model: *mut MultiLayerPerceptron) -> *mut c_char {
+    let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
     let json_obj: serde_json::Value = json!({
         "w": model_ref.w,
         "d": model_ref.d,
@@ -214,23 +205,23 @@ pub extern "C" fn mlp_to_json(model: *mut MultiLayerPerceptron) ->  *mut c_char 
         "l": model_ref.l
     });
 
-    let json_str: String = serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
+    let json_str: String =
+        serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
     let c_str: CString = CString::new(json_str).expect("Failed to convert string to CString");
     let ptr: *mut c_char = c_str.into_raw();
     ptr
 }
 
 #[no_mangle]
-pub extern "C" fn free_mlp(
-    model: *mut MultiLayerPerceptron,
-) {
-    let _: &mut MultiLayerPerceptron = unsafe {
-        model.as_mut().unwrap()
-    };
+pub extern "C" fn free_mlp(model: *mut MultiLayerPerceptron) {
+    let _: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
 }
 
 #[no_mangle]
-pub extern "C" fn save_mlp_model(model: *mut MultiLayerPerceptron, filepath: *const std::ffi::c_char) {
+pub extern "C" fn save_mlp_model(
+    model: *mut MultiLayerPerceptron,
+    filepath: *const std::ffi::c_char,
+) {
     let path_cstr: &CStr = unsafe { CStr::from_ptr(filepath) };
     let path_str: &str = match path_cstr.to_str() {
         Ok(s) => s,
@@ -242,7 +233,9 @@ pub extern "C" fn save_mlp_model(model: *mut MultiLayerPerceptron, filepath: *co
 
     let model_str: &str = unsafe {
         let str_model_ptr: *mut c_char = mlp_to_json(model);
-        std::ffi::CStr::from_ptr(str_model_ptr).to_str().unwrap_or("")
+        std::ffi::CStr::from_ptr(str_model_ptr)
+            .to_str()
+            .unwrap_or("")
     };
 
     if let Ok(mut file) = File::create(path_str) {
