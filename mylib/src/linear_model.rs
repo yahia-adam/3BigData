@@ -12,6 +12,7 @@
 use std::ffi::{c_char, c_float, CStr};
 use std::fs::File;
 use std::io::Write;
+use rand::Rng;
 use serde_json::{self, json};
 use std::ffi::CString;
 use serde::{Deserialize, Serialize};
@@ -27,7 +28,7 @@ pub struct LinearModel
 #[no_mangle]
 pub extern "C" fn init_linear_model(input_count: u32) -> *mut LinearModel {
     let model: LinearModel = LinearModel {
-        weights: vec![0.0; (input_count + 1) as usize],
+        weights: vec![rand::thread_rng().gen_range(-1.0..1.0); (input_count + 1) as usize],
         weights_count: input_count as usize,
     };
 
@@ -37,7 +38,7 @@ pub extern "C" fn init_linear_model(input_count: u32) -> *mut LinearModel {
 }
 
 #[no_mangle]
-pub extern "C" fn train_linear_model(model: *mut LinearModel, features: *const c_float, labels: *const c_float, data_size: u32, learning_rate: f32, epochs: u32) {
+pub extern "C" fn train_linear_model(model: *mut LinearModel, features: *const c_float, labels: *const c_float, data_size: u32, learning_rate: f32, epochs: u32, is_classification: bool) {
     let data_size: usize = data_size as usize;
 
     let model_ref: &mut LinearModel = unsafe {
@@ -50,33 +51,38 @@ pub extern "C" fn train_linear_model(model: *mut LinearModel, features: *const c
         std::slice::from_raw_parts(labels, data_size as usize)
     };
 
-    let mut input: Vec<f32> = vec![0.0; model_ref.weights_count];
-
-    for _ in 0..epochs {
-        for i in 0..(data_size - 1) {
-            let desired_output = labels[i];
-            
-            let mut m = 0;
-            let start = i * model_ref.weights_count;
-
-            for r in start..(start + model_ref.weights_count) {
-                input[m] = features[r];
-                m += 1;
+    if is_classification {
+        let mut input: Vec<f32> = vec![0.0; model_ref.weights_count];
+        for _ in 0..epochs {
+            for i in 0..(data_size - 1) {
+                let desired_output = labels[i];
+                
+                let mut m = 0;
+                let start = i * model_ref.weights_count;
+    
+                for r in start..(start + model_ref.weights_count) {
+                    input[m] = features[r];
+                    m += 1;
+                }
+    
+                let predicted_output = guess(model_ref, input.clone(), is_classification);
+                let error = desired_output - predicted_output;
+                if error > 0.001 || error < -0.001 {
+                    for i in 1..(model_ref.weights_count + 1) {
+                        model_ref.weights[i] += learning_rate * error * input[i - 1];
+                    }
+                    model_ref.weights[0] += learning_rate * error;
+                }
             }
-
-            let predicted_output = guess(model_ref, input.clone());
-            let error = desired_output - predicted_output;
-            
-            for i in 1..(model_ref.weights_count + 1) {
-                model_ref.weights[i] += learning_rate * error * input[i - 1];
-            }
-            model_ref.weights[0] += learning_rate * error;
         }
+    } else {
+
     }
+    
 }
 
 #[no_mangle]
-pub extern "C" fn predict_linear_model(model: *mut LinearModel, inputs: *mut f32) -> c_float
+pub extern "C" fn predict_linear_model(model: *mut LinearModel, inputs: *mut f32, is_classification: bool) -> c_float
 {
     let model_ref: &mut LinearModel = unsafe {
         model.as_mut().unwrap()
@@ -84,16 +90,24 @@ pub extern "C" fn predict_linear_model(model: *mut LinearModel, inputs: *mut f32
     let inputs: Vec<f32> =
         unsafe { Vec::from_raw_parts(inputs, model_ref.weights_count, model_ref.weights_count) };
 
-    guess(model_ref , inputs)
+    guess(model_ref , inputs, is_classification)
 }
 
-pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32
+pub fn guess(model: &mut LinearModel, inputs: Vec<f32>, is_classification: bool) -> f32
 {
     let mut sum: f32 = 0.0;
     for i in 1..(model.weights_count + 1) {
         sum += inputs[i - 1] * model.weights[i]
     }
     sum += model.weights[0];
+
+    if is_classification {
+        if sum >= 0.0 {
+            sum = 1.0;
+        } else {
+            sum = -1.0;
+        }
+    }
     sum
 }
 

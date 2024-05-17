@@ -6,50 +6,34 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+# <----- lp -------->
+# classification
 [[example]]
-name="lm_c_f"
-path="examples/liner_model/celsius_to_fahrenheit.rs"
+name="ml_classification_cros"
+path="examples/ml/classification/cros.rs"
+[[example]]
+name="ml_classification_linear_simple"
+path="examples/ml/classification/linear_simple.rs"
+[[example]]
+name="ml_classification_linear_multiple"
+path="examples/ml/classification/linear_multiple.rs"
+[[example]]
+name="ml_classification_xor"
+path="examples/ml/classification/xor.rs"
 
+# resgression
 [[example]]
-name="lm_home_price"
-path="examples/liner_model/home_price.rs"
-
-# <----- mlp classification -------->
+name="ml_regression_cros"
+path="examples/ml/regression/cros.rs"
 [[example]]
-name="clf_cross"
-path="examples/multilayer_perceptron/classification/cross.rs"
+name="ml_regression_linear_simple"
+path="examples/ml/regression/linear_simple.rs"
 [[example]]
-name="clf_xor"
-path="examples/multilayer_perceptron/classification/xor.rs"
+name="ml_regression_linear_multiple"
+path="examples/ml/regression/linear_multiple.rs"
 [[example]]
-name="clf_linear_multiple"
-path="examples/multilayer_perceptron/classification/linear_multiple.rs"
-[[example]]
-name="clf_linear_simple"
-path="examples/multilayer_perceptron/classification/linear_simple.rs"
-[[example]]
-name="clf_multi_cross"
-path="examples/multilayer_perceptron/classification/multi_cross.rs"
-[[example]]
-name="clf_multi_linear_3classes"
-path="examples/multilayer_perceptron/classification/multi_linear_3classes.rs"
-
-# <----- mlp regression -------->
-[[example]]
-name="regr_linear_simple_3d"
-path="examples/multilayer_perceptron/regression/linear_simple_3d.rs"
-[[example]]
-name="regr_linear_simple"
-path="examples/multilayer_perceptron/regression/linear_simple.rs"
-[[example]]
-name="regr_linear_tricky_3d"
-path="examples/multilayer_perceptron/regression/linear_tricky_3d.rs"
-[[example]]
-name="regr_no_linear_simple_2d"
-path="examples/multilayer_perceptron/regression/no_linear_simple_2d.rs"
-[[example]]
-name="regr_no_linear_simple_3d"
-path="examples/multilayer_perceptron/regression/no_linear_simple_3d.rs"
+name="ml_regression_xor"
+path="examples/ml/regression/xor.rs"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
