@@ -134,32 +134,32 @@ fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
     }
 }
 
+    
 #[no_mangle]
 #[allow(dead_code)]
 pub extern "C" fn train_mlp(
     model: *mut MultiLayerPerceptron,
     inputs: *mut c_float,
     outputs: *mut c_float,
-    input_col: u32,
-    output_col: u32,
-    row: u32,
+    data_size: u32,
     alpha: c_float,
     nb_iteration: u32,
     is_classification: bool,
 ) {
-    let input_col: usize = input_col as usize;
-    let output_col: usize = output_col as usize;
-    let row: usize = row as usize;
-
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
+    
+    let input_col: usize = model_ref.d[0] as usize;
+    let output_col: usize = model_ref.d[model_ref.l] as usize;
+    let data_size: usize = data_size as usize;
 
-    let inputs: Vec<f32> = unsafe { Vec::from_raw_parts(inputs, row * input_col, row * input_col) };
+
+    let inputs: Vec<f32> = unsafe { Vec::from_raw_parts(inputs, data_size * input_col, data_size * input_col) };
 
     let outputs: Vec<f32> =
-        unsafe { Vec::from_raw_parts(outputs, row * output_col, row * output_col) };
+        unsafe { Vec::from_raw_parts(outputs, data_size * output_col, data_size * output_col) };
 
     for _ in 0..nb_iteration {
-        let k: usize = rand::thread_rng().gen_range(0..row);
+        let k: usize = rand::thread_rng().gen_range(0..data_size);
         let sample_inputs: Vec<f32> = inputs[k * input_col..(k + 1) * input_col].to_vec();
         let sample_expected_outputs: Vec<f32> =
             outputs[k * output_col..(k + 1) * output_col].to_vec();

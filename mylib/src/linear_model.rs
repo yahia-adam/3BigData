@@ -53,7 +53,7 @@ pub extern "C" fn train_linear_model(model: *mut LinearModel, features: *const c
     let mut input: Vec<f32> = vec![0.0; model_ref.weights_count];
 
     for _ in 0..epochs {
-        for i in 0..data_size {
+        for i in 0..(data_size - 1) {
             let desired_output = labels[i];
             
             let mut m = 0;
