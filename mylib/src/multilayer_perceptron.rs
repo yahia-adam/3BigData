@@ -24,11 +24,12 @@ pub struct MultiLayerPerceptron {
     x: Vec<Vec<f32>>,
     deltas: Vec<Vec<f32>>,
     l: usize,
+    is_classification: bool,
 }
 
 #[no_mangle]
 #[allow(dead_code)]
-pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32) -> *mut MultiLayerPerceptron {
+pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32, is_classification: bool) -> *mut MultiLayerPerceptron {
     let npl = unsafe {
         std::slice::from_raw_parts(npl, npl_size as usize)
     };
@@ -39,6 +40,7 @@ pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32) -> *mut MultiLayerPerce
         x: vec![vec![]; npl.len()],
         deltas: vec![vec![]; npl.len()],
         l: npl.len() - 1,
+        is_classification: is_classification as bool,
     };
     
     for l in 0..model.l + 1 {
@@ -79,7 +81,7 @@ pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32) -> *mut MultiLayerPerce
     Box::leak(boxed_model)
 }
 
-fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>, is_classification: bool) {
+fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>) {
     for j in 0..sample_inputs.len() {
         model.x[0][j + 1] = sample_inputs[j];
     }
@@ -89,7 +91,7 @@ fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>, is_class
             for i in 0..model.d[l - 1] + 1 {
                 total += model.w[l][i][j] * model.x[l - 1][i];
             }
-            if is_classification || l < model.d.len() - 1 {
+            if model.is_classification || l < model.d.len() - 1 {
                 total = total.tanh();
             }
             model.x[l][j] = total;
@@ -100,14 +102,13 @@ fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>, is_class
 fn backpropagate(
     model: &mut MultiLayerPerceptron,
     sample_expected_outputs: &[f32],
-    is_classification: bool,
 ) {
     let last_layer_index: usize = model.d.len() - 1;
 
     for j in 1..model.d[last_layer_index] + 1 {
         model.deltas[last_layer_index][j] =
             model.x[last_layer_index][j] - &sample_expected_outputs[j - 1];
-        if is_classification {
+        if model.is_classification {
             model.deltas[last_layer_index][j] *= 1.0 - model.x[last_layer_index][j].powi(2)
         }
     }
@@ -144,7 +145,6 @@ pub extern "C" fn train_mlp(
     data_size: u32,
     alpha: c_float,
     nb_iteration: u32,
-    is_classification: bool,
 ) {
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
     
@@ -164,8 +164,8 @@ pub extern "C" fn train_mlp(
         let sample_expected_outputs: Vec<f32> =
             outputs[k * output_col..(k + 1) * output_col].to_vec();
 
-        propagate(model_ref, sample_inputs, is_classification);
-        backpropagate(model_ref, &sample_expected_outputs, is_classification);
+        propagate(model_ref, sample_inputs);
+        backpropagate(model_ref, &sample_expected_outputs);
         update_w(model_ref, alpha);
     }
 }
@@ -176,14 +176,13 @@ pub extern "C" fn predict_mlp(
     model: *mut MultiLayerPerceptron,
     sample_inputs: *mut f32,
     sample_inputs_size: usize,
-    is_classification: bool,
 ) -> *mut f32 {
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
 
     let sample_inputs: Vec<f32> =
         unsafe { Vec::from_raw_parts(sample_inputs, sample_inputs_size, sample_inputs_size) };
 
-    propagate(model_ref, sample_inputs, is_classification);
+    propagate(model_ref, sample_inputs);
 
     let last_layer: usize = model_ref.d.len() - 1;
     let predictions: &[f32] = &model_ref.x[last_layer][1..];
