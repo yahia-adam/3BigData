@@ -26,6 +26,12 @@ Ce projet vise à développer un système de classification des déchets en util
 
 ## Lien importants
 
+#### github
+
+  ```sh 
+https://github.com/yahia-adam/3BigData
+  ```
+   
 #### Application
   ```sh 
 https://github.com/yahia-adam/3BigData
@@ -35,6 +41,20 @@ https://github.com/yahia-adam/3BigData
   ```sh
 https://github.com/yahia-adam/3BigData
   ```
+
+## Table des Matières
+
+- Introduction
+- Installation et Configuration
+- Application Web
+- Bibliothèque en Rust
+- Algorithmes et Modèles
+- Dataset
+- Étapes d'Avancement
+- Remarques et Observations
+- Exemples d'Utilisation
+- Annexes
+- Contributions
 
 ## Structure du Projet
 
@@ -49,6 +69,7 @@ Le projet est organisé de la manière suivante :
 - **README.md** : Le fichier README du projet.
 
 ## Maintainers
+
 
 <table>
   <tbody>
