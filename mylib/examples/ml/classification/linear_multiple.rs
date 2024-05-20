@@ -121,15 +121,15 @@ fn main() {
     let x_ptr: *const f32 = Vec::leak(x_flaten.clone()).as_ptr();
     let y_ptr: *const f32 = Vec::leak(y.clone()).as_ptr();
 
-    let linear_model: *mut LinearModel = init_linear_model(2);
-    train_linear_model(linear_model, x_ptr, y_ptr, data_size as u32, 0.0001, 1000_000, true);
+    let linear_model: *mut LinearModel = init_linear_model(2, true);
+    train_linear_model(linear_model, x_ptr, y_ptr, data_size as u32, 0.0001, 1000_000);
 
     println!("");
-    println!("MODEL LINEAR: Classfication Linear_multiple");
+    println!("Linear Multiple : Linear Model : OK");
     for i in 0..data_size {
         let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();
-        let output = predict_linear_model(linear_model, input_ptr, true);
-        println!("X:{:?}Y:{:?} ---> mon model: {:?}", x[i], y[i], output);
+        let output = predict_linear_model(linear_model, input_ptr);
+        println!("X:{:?}, Y:{:?} ---> mon model: {:?}", x[i], y[i], output);
     }
     println!("");
 }
