@@ -3,12 +3,44 @@ name = "mylib"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[[example]]
-name="celsius_to_fahrenheit"
-path="examples/liner_model/celsius_to_fahrenheit.rs"
+# [lib]
+# crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+rand = "0.8.4"
+nalgebra = "0.32.5"
+
+# <----- lp -------->
+# classification
+[[example]]
+name="ml_classification_cros"
+path="examples/ml/classification/cros.rs"
+[[example]]
+name="ml_classification_linear_simple"
+path="examples/ml/classification/linear_simple.rs"
+[[example]]
+name="ml_classification_linear_multiple"
+path="examples/ml/classification/linear_multiple.rs"
+[[example]]
+name="ml_classification_xor"
+path="examples/ml/classification/xor.rs"
+
+# resgression
+[[example]]
+name="ml_linear_simple_2D"
+path="examples/ml/regression/linear_simple_2D.rs"
+[[example]]
+name="ml_linear_simple_3D"
+path="examples/ml/regression/linear_simple_3D.rs"
+[[example]]
+name="ml_linear_tricky_3D"
+path="examples/ml/regression/linear_tricky_3D.rs"
+[[example]]
+name="ml_non_linear_simple_2D"
+path="examples/ml/regression/non_linear_simple_2D.rs"
+[[example]]
+name="ml_non_linear_simple_3D"
+path="examples/ml/regression/non_linear_simple_3D.rs"

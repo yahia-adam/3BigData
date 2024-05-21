@@ -9,93 +9,143 @@
 /*   Updated: 2024/03/22 19:38:54 by YA. Adam             ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
-use std::ffi::{c_char, CStr};
-use std::fs::File;
-use std::io::Write;
+use nalgebra::base::DMatrix;
+use rand::Rng;
+use serde::{Deserialize, Serialize};
 use serde_json::{self, json};
 use std::ffi::CString;
-use serde::{Deserialize, Serialize};
+use std::ffi::{c_char, c_float, CStr};
 use std::fs;
+use std::fs::File;
+use std::io::Write;
 
 #[derive(Serialize, Deserialize)]
-pub struct LinearRegression
-{
+pub struct LinearModel {
     pub weights: Vec<f32>,
+    pub weights_count: usize,
+    pub is_classification: bool,
 }
 
 #[no_mangle]
-pub extern "C" fn new() -> *mut LinearRegression {
-    let model: LinearRegression = LinearRegression {
-        weights: vec![],
+pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -> *mut LinearModel {
+    let model: LinearModel = LinearModel {
+        weights: vec![rand::thread_rng().gen_range(-1.0..1.0); (input_count + 1) as usize],
+        weights_count: input_count as usize,
+        is_classification: is_classification as bool,
     };
 
-    let boxed_model: Box<LinearRegression> = Box::new(model);
-    let leaked_boxed_model: *mut LinearRegression = Box::leak(boxed_model);
+    let boxed_model: Box<LinearModel> = Box::new(model);
+    let leaked_boxed_model: *mut LinearModel = Box::leak(boxed_model);
     leaked_boxed_model.into()
 }
 
-pub fn get_weights(model: *const LinearRegression) -> Vec<f32>
-{
-    let mode: &LinearRegression = unsafe{
-        model.as_ref().unwrap()
-    };
-    mode.weights.clone()
-}
+#[no_mangle]
+pub extern "C" fn train_linear_model(
+    model: *mut LinearModel,
+    features: *const c_float,
+    labels: *const c_float,
+    data_size: u32,
+    learning_rate: f32,
+    epochs: u32,
+) {
+    let data_size: usize = data_size as usize;
 
-pub fn set_weights(model: *mut LinearRegression, weights: Vec<f32>) {
-    let model_ref: &mut LinearRegression = unsafe {
-        model.as_mut().unwrap()
+    let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
+    let features: &[f32] = unsafe {
+        std::slice::from_raw_parts(features, (data_size * model_ref.weights_count) as usize)
     };
-    model_ref.weights = weights;
-}
+    let labels: &[f32] = unsafe { std::slice::from_raw_parts(labels, data_size as usize) };
 
-pub fn guess(model: *const LinearRegression, inputs: Vec<f32>) -> f32
-{
-    let model: &LinearRegression = unsafe{
-        model.as_ref().unwrap()
-    };
+    let mut features: Vec<f32> = features.to_vec().clone();
+    let labels: Vec<f32> = labels.to_vec().clone();
+    if model_ref.is_classification {
+        let mut input: Vec<f32> = vec![0.0; model_ref.weights_count];
+        for _ in 0..epochs {
+            for i in 0..(data_size - 1) {
+                let desired_output = labels[i];
 
-    let mut sum: f32 = 0.0;
-    for (p,i) in model.weights.iter().skip(1).zip(inputs) {
-        sum = sum + i * *p;
+                let mut m = 0;
+                let start = i * model_ref.weights_count;
+
+                for r in start..(start + model_ref.weights_count) {
+                    input[m] = features[r];
+                    m += 1;
+                }
+
+                let predicted_output = guess(model_ref, input.clone());
+                let error = desired_output - predicted_output;
+                if error > 0.001 || error < -0.001 {
+                    for i in 1..(model_ref.weights_count + 1) {
+                        model_ref.weights[i] += learning_rate * error * input[i - 1];
+                    }
+                    model_ref.weights[0] += learning_rate * error;
+                }
+            }
+        }
+    } else {
+        
+        let mut i = 0;
+        while i < data_size {
+            features.insert((i * model_ref.weights_count) + i, 1.0);
+            i += 1;
+        }
+        let x = DMatrix::from_row_slice(data_size, model_ref.weights_count + 1, features.as_slice());
+        let y =  DMatrix::from_row_slice(data_size, 1, labels.as_slice());
+        let x_transpose = x.transpose();
+        let xtx = x_transpose.clone() * x;
+        match xtx.try_inverse() {
+            Some(xtx_inv) => {
+                let xty = x_transpose * y;
+                let w = xtx_inv * xty;
+                model_ref.weights = w.as_slice().to_vec();
+            },
+            None => {
+                println!("La matrice X^T * X n'est pas inversible");
+            }
+        }
     }
-    sum = sum + model.weights[0];
+}
+
+#[no_mangle]
+pub extern "C" fn predict_linear_model(model: *mut LinearModel, inputs: *mut f32) -> c_float {
+    let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
+    let inputs: Vec<f32> =
+        unsafe { Vec::from_raw_parts(inputs, model_ref.weights_count, model_ref.weights_count) };
+
+    guess(model_ref, inputs)
+}
+
+pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
+    let mut sum: f32 = 0.0;
+    for i in 1..(model.weights_count + 1) {
+        sum += inputs[i - 1] * model.weights[i]
+    }
+    sum += model.weights[0];
+    if model.is_classification {
+        if sum >= 0.0 {
+            sum = 1.0;
+        } else {
+            sum = -1.0;
+        }
+    }
     sum
 }
 
 #[no_mangle]
-pub extern "C" fn predict(model: *const LinearRegression, inputs: *const f32, input_size: usize,) -> f32
-{
-    let inputs: &[f32] = unsafe {
-        std::slice::from_raw_parts(inputs, input_size)
-    };
-    let model: &LinearRegression = unsafe{
-        model.as_ref().unwrap()
-    };
-
-    let mut sum: f32 = 0.0;
-    for (p,i) in model.weights.iter().skip(1).zip(inputs) {
-        sum = sum + i * *p;
-    }
-    sum = sum + model.weights[0];
-    sum
-}
-
-#[no_mangle]
-pub extern "C" fn to_json(model: *const LinearRegression) -> *const c_char {
-    let model: &LinearRegression = unsafe { model.as_ref().unwrap() };
-    let weights: Vec<f32> = get_weights(model);
+pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {
+    let model: &LinearModel = unsafe { model.as_ref().unwrap() };
     let json_obj: serde_json::Value = json!({
-        "weights": weights
+        "weights": model.weights,
     });
-    let json_str: String = serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
+    let json_str: String =
+        serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
     let c_str: CString = CString::new(json_str).expect("Failed to convert string to CString");
     let ptr: *const c_char = c_str.into_raw();
     ptr
 }
 
 #[no_mangle]
-pub extern "C" fn save_model(model: *const LinearRegression, filepath: *const std::ffi::c_char) {
+pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const std::ffi::c_char) {
     let path_cstr: &CStr = unsafe { CStr::from_ptr(filepath) };
     let path_str: &str = match path_cstr.to_str() {
         Ok(s) => s,
@@ -105,7 +155,6 @@ pub extern "C" fn save_model(model: *const LinearRegression, filepath: *const st
         }
     };
 
-    // Call to_string to get the weights as a string
     let weights_str: &str = unsafe {
         let weights_ptr: *const c_char = to_json(model);
         std::ffi::CStr::from_ptr(weights_ptr).to_str().unwrap_or("")
@@ -122,9 +171,8 @@ pub extern "C" fn save_model(model: *const LinearRegression, filepath: *const st
     println!("Model saved successfuly on: {}", path_str);
 }
 
-
 #[no_mangle]
-pub extern "C" fn load_model(json_str_ptr: *const c_char) -> *mut LinearRegression {
+pub extern "C" fn load_linear_model(json_str_ptr: *const c_char) -> *mut LinearModel {
     let json_str_cstr = unsafe { CStr::from_ptr(json_str_ptr) };
     let json_str: &str = match json_str_cstr.to_str() {
         Ok(s) => s,
@@ -134,51 +182,17 @@ pub extern "C" fn load_model(json_str_ptr: *const c_char) -> *mut LinearRegressi
         }
     };
 
-    let model: LinearRegression = {
+    let model: LinearModel = {
         let data: String = fs::read_to_string(json_str).expect("LogRocket: error reading file");
         serde_json::from_str(&data).unwrap()
     };
 
     // Box the model and return a raw pointer to it
-    let boxed_model = Box::new(model);
+    let boxed_model: Box<LinearModel> = Box::new(model);
     Box::into_raw(boxed_model)
 }
 
-
 #[no_mangle]
-pub extern "C" fn fit(model: *mut LinearRegression, labels: *const f32, label_row: usize, label_col: usize, features: *const f32, feature_size: usize, learning_rate: f32, epochs: u32) {
-    let labels: &[f32] = unsafe {
-        std::slice::from_raw_parts(labels, (label_col * label_row) as usize)
-    };
-    let features: &[f32] = unsafe {
-        std::slice::from_raw_parts(features, feature_size as usize)
-    };
-    let model_ref: &mut LinearRegression = unsafe {
-        model.as_mut().unwrap()
-    };
-    set_weights(model, vec![0.0; label_row + 1]);
-    let mut epochs = epochs;
-    let mut time = 0;
-    let data_size = if label_row < feature_size {label_row} else {feature_size};
-    while epochs != 0 {
-        let mut count_label = 0;
-        for count_feature in 0..data_size {
-            let desired_output = features[count_feature];
-            let mut input: Vec<f32> = vec![];
-            for j in 0..label_col {
-                let elem = labels[count_label + j];
-                input.push(elem);
-            }
-            count_label  = count_label + label_col;
-            let predicted_output = guess(model, input.clone());
-            let mut weights: Vec<f32> = vec![0.0];
-            for j in 0..label_col {
-                weights.push(model_ref.weights[j+1] + learning_rate * (desired_output - predicted_output) * input[j]);
-            }
-            weights[0] = model_ref.weights[0] + learning_rate * (desired_output - predicted_output);
-            set_weights(model_ref, weights);
-            time = time + 1;
-        }
-        epochs = epochs - 1;
-    }
+pub extern "C" fn free_linear_model(model: *mut LinearModel) {
+    let _: &mut LinearModel = unsafe { model.as_mut().unwrap() };
 }
