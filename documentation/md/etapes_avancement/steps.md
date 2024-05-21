@@ -39,3 +39,32 @@ Les fichiers d'images suivent une nomenclature spécifique : `type_count.extensi
 ---
 
 En suivant ces étapes, nous avons constitué un dataset robuste et varié, prêt à être utilisé pour entraîner et tester notre modèle de classification des déchets.
+
+# Étape 2 du projet
+
+### Modèle Linéaire
+
+Nous avons appliqué un modèle linéaire aux cas de tests ainsi qu'à une partie du dataset en cours de constitution. Cela nous a permis d'établir une baseline pour évaluer les performances de base du modèle.
+
+### Transformation Non Linéaire
+
+Pour les cas où le modèle linéaire a échoué (cas 'KO'), nous avons exploré des transformations non linéaires afin d'améliorer les résultats de classification. Ces transformations ont aidé à capturer des relations plus complexes dans les données.
+
+### PMC (Perceptron Multi-Couche)
+
+Nous avons également appliqué des Perceptrons Multi-Couche (PMC) aux cas de tests ainsi qu'à une portion du dataset en cours de constitution. Les PMC ont montré une amélioration significative par rapport au modèle linéaire grâce à leur capacité à modéliser des relations non linéaires.
+
+# Livrables
+
+- **Projet de test opérationnel et sources** : Le code source du projet, y compris les modèles de classification et les scripts de prétraitement des données, est disponible dans le repository Git.
+- **Rapport commentant les résultats observés** : Un rapport détaillé expliquant les résultats obtenus avec les différents modèles, les transformations non linéaires appliquées et les performances comparatives.
+
+# Début d'implémentation de l'application (tuyauterie)
+
+Nous avons commencé à implémenter l'application web en utilisant Laravel. Les principales fonctionnalités incluent :
+
+- Upload d'image de déchet.
+- Classification automatique du déchet.
+- Affichage du résultat de la classification.
+
+![Hiérarchie du Dataset](img.png)
