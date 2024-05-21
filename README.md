@@ -1,5 +1,5 @@
 # 3BigData | Documentation
-> Bienvenue dans la documentation de notre projet de classification des déchets.     
+> Bienvenue dans la documentation de notre projet de classification des déchets.
 
 ## Introduction
 
@@ -7,14 +7,11 @@
 
 Ce projet vise à développer un système de classification des déchets en utilisant des modèles de Machine Learning. L'objectif principal est de créer une application web qui permet de classer les déchets dans les catégories suivantes :
 
-- **poubelle décheterie**: électroniques, dangereux.
+- **poubelle décheterie**: électroniques (ram, processor, motherboard).
 
-- **poubelle jaune**: plastiques ,papiers ,metal.
+- **poubelle jaune**: cartons, plastiques, papiers, metal.
 
 - **poubelle à verre**: verre.
-
-- **non recyclable**: autres.
-
 
 ### Objectifs du Projet
 
@@ -26,6 +23,12 @@ Ce projet vise à développer un système de classification des déchets en util
 
 ## Lien importants
 
+#### github
+
+  ```sh 
+https://github.com/yahia-adam/3BigData
+  ```
+
 #### Application
   ```sh 
 https://github.com/yahia-adam/3BigData
@@ -35,6 +38,18 @@ https://github.com/yahia-adam/3BigData
   ```sh
 https://github.com/yahia-adam/3BigData
   ```
+
+## Table des Matières
+
+- Introduction
+- Installation et Configuration
+- Application Web
+- Bibliothèque en Rust
+- Algorithmes et Modèles
+- Dataset
+- Remarques et Observations
+- Exemples d'Utilisation
+- Contributions
 
 ## Structure du Projet
 
@@ -49,6 +64,7 @@ Le projet est organisé de la manière suivante :
 - **README.md** : Le fichier README du projet.
 
 ## Maintainers
+
 
 <table>
   <tbody>

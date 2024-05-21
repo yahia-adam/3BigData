@@ -50,7 +50,7 @@ firefox doc/documentation.html`
 
 - Créez un fichier Markdown dans le dossier `md/[category]`.
 .
-- Il y a 11 dossiers `[category]`:
+- Il y a 10 dossiers `[category]`:
     - Introduction
     - Installation et Configuration
     - Application Web
@@ -60,7 +60,6 @@ firefox doc/documentation.html`
     - Étapes d'Avancement
     - Remarques et Observations
     - Exemples d'Utilisation
-    - Annexes
     - Contributions
 
 - Éditez votre texte avec la syntaxe `markdown` [Plus d'infos](https://guides.github.com/features/mastering-markdown/).
@@ -75,62 +74,3 @@ firefox doc/documentation.html`
 - Les fichiers **HTML** sont générés/mis à jour dans le dossier `doc`. Copiez le contenu de ce dossier vers le site web/documentation.
 - L'index est appelé `documentation.md` dans le répertoire `md`.
 
-
-votre_projet/
-├── md/
-│   ├── introduction/
-│   │   ├── overview.md
-│   │   ├── objectives.md
-│   │   └── summary.md
-│   ├── installation_et_configuration/
-│   │   ├── prerequisites.md
-│   │   ├── cloning_repo.md
-│   │   ├── installing_dependencies.md
-│   │   └── running_application.md
-│   ├── application_web/
-│   │   ├── overview.md
-│   │   ├── setup.md
-│   │   ├── features.md
-│   │   └── deployment.md
-│   ├── bibliotheque_rust/
-│   │   ├── overview.md
-│   │   ├── linear_model.md
-│   │   ├── pmc.md
-│   │   ├── rbf.md
-│   │   └── svm.md
-│   ├── algorithmes_modeles/
-│   │   ├── overview.md
-│   │   ├── linear_models.md
-│   │   ├── neural_networks.md
-│   │   └── advanced_models.md
-│   ├── dataset/
-│   │   ├── overview.md
-│   │   ├── data_collection.md
-│   │   ├── data_preprocessing.md
-│   │   └── data_usage.md
-│   ├── etapes_avancement/
-│   │   ├── step1.md
-│   │   ├── step2.md
-│   │   ├── step3.md
-│   │   └── step4.md
-│   ├── remarques_observations/
-│   │   ├── overview.md
-│   │   ├── analysis.md
-│   │   ├── issues.md
-│   │   └── future_work.md
-│   ├── exemples_utilisation/
-│   │   ├── overview.md
-│   │   ├── python_examples.md
-│   │   ├── cpp_examples.md
-│   │   └── nodejs_examples.md
-│   ├── annexes/
-│   │   ├── references.md
-│   │   ├── glossary.md
-│   │   ├── faq.md
-│   │   └── additional_resources.md
-│   └── contributions/
-│       ├── guide.md
-│       ├── contributors.md
-│       └── code_of_conduct.md
-├── mix.exs
-└── README.md

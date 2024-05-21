@@ -7,14 +7,11 @@
 
 Ce projet vise à développer un système de classification des déchets en utilisant des modèles de Machine Learning. L'objectif principal est de créer une application web qui permet de classer les déchets dans les catégories suivantes :
 
-- **poubelle décheterie**: électroniques, dangereux.
+- **poubelle décheterie**: électroniques (ram, processor, motherboard).
 
-- **poubelle jaune**: plastiques ,papiers ,metal.
+- **poubelle jaune**: cartons, plastiques, papiers, metal.
 
 - **poubelle à verre**: verre.
-
-- **non recyclable**: autres.
-
 
 ### Objectifs du Projet
 
@@ -50,10 +47,8 @@ https://github.com/yahia-adam/3BigData
 - Bibliothèque en Rust
 - Algorithmes et Modèles
 - Dataset
-- Étapes d'Avancement
 - Remarques et Observations
 - Exemples d'Utilisation
-- Annexes
 - Contributions
 
 ## Structure du Projet
