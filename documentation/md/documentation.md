@@ -41,15 +41,12 @@ https://github.com/yahia-adam/3BigData
 
 ## Table des Matières
 
-- Introduction
-- Installation et Configuration
+- Introduction, Installation et Configuration
 - Application Web
-- Bibliothèque en Rust
-- Algorithmes et Modèles
+- Bibliothèque en Rust (Algorithmes et Modèles)
 - Dataset
 - Remarques et Observations
-- Exemples d'Utilisation
-- Contributions
+
 
 ## Structure du Projet
 

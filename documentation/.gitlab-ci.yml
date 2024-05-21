@@ -7,5 +7,5 @@ mix:
 deploy:
   stage: deploy
   script:
-    - mv Documentation public
+    - mv documentation public
   environment: production
