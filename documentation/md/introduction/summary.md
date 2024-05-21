@@ -10,16 +10,16 @@ La gestion efficace des déchets est cruciale pour les villes modernes. Une mauv
 
 ## Objectifs Principaux
 
-### 1. Développement d'une Bibliothèque en Rust
+### 1. Développement d'une lib en Rust
 
 - **Implémentation de Modèles de Machine Learning :** Incluant des modèles linéaires, Perceptron Multi Couches (PMC), Réseaux à Base Radiale (RBF) et Support Vector Machine (SVM).
-- **Interopérabilité :** Fournir des interfaces pour utiliser la bibliothèque avec différents langages (Python, C++, Node.js, etc.).
+- **Interopérabilité :** Fournir des interfaces pour utiliser la lib avec différents langages (Python, C++, Node.js, etc.).
 
 ### 2. Création d'une Application Web Interactive
 
 - **Développement avec Laravel :** Utiliser le framework Laravel pour construire une application web robuste.
 - **Interface Utilisateur Intuitive :** Permettre aux utilisateurs de classer les déchets facilement.
-- **Intégration avec la Bibliothèque en Rust :** Assurer une intégration transparente pour le traitement des données.
+- **Intégration avec la lib en Rust :** Assurer une intégration transparente pour le traitement des données.
 
 ### 3. Analyse et Commentaire des Résultats
 
@@ -44,8 +44,8 @@ Le projet est organisé de la manière suivante :
 - **application/** : Code de l'application web Laravel.
 - **datasets/** : Jeux de données pour l'entraînement des modèles.
 - **docs/** : Documentation du projet.
-- **interoperability/** : Exemples d'utilisation de la bibliothèque en Rust avec différents langages.
-- **mylib/** : Code de la bibliothèque en Rust.
+- **interoperability/** : Exemples d'utilisation de la lib en Rust avec différents langages.
+- **mylib/** : Code de la lib en Rust.
 - **saved_models/** : Modèles de Machine Learning sauvegardés.
 - **README.md** : Fichier README du projet.
 
@@ -53,7 +53,7 @@ Le projet est organisé de la manière suivante :
 
 ### Langages de Programmation
 
-- **Rust** : Pour la bibliothèque de Machine Learning.
+- **Rust** : Pour la lib de Machine Learning.
 - **Elixir** : Pour la documentation et la gestion des dépendances.
 - **PHP** : Pour l'application web avec Laravel.
 - **JavaScript** : Pour les fonctionnalités interactives de l'application web.
@@ -66,15 +66,15 @@ Le projet est organisé de la manière suivante :
 
 ## Fonctionnalités Clés
 
-### Bibliothèque en Rust
+### lib en Rust
 
 - Implémentation de divers modèles de Machine Learning.
-- Interfaces pour l'utilisation de la bibliothèque avec différents langages.
+- Interfaces pour l'utilisation de la lib avec différents langages.
 
 ### Application Web
 
 - Interface utilisateur intuitive pour la classification des déchets.
-- Intégration avec la bibliothèque en Rust.
+- Intégration avec la lib en Rust.
 - Gestion des utilisateurs, des établissements et des événements.
 
 ### Documentation
@@ -87,7 +87,7 @@ Le projet est organisé de la manière suivante :
 
 - **Amélioration des Modèles :** Expérimenter avec d'autres algorithmes pour améliorer la précision.
 - **Nouveaux Types de Déchets :** Ajouter la classification d'autres types de déchets.
-- **Optimisation de la Performance :** Améliorer la performance de l'application web et de la bibliothèque en Rust.
+- **Optimisation de la Performance :** Améliorer la performance de l'application web et de la lib en Rust.
 - **Internationalisation :** Traduire l'application web et la documentation dans plusieurs langues.
 
 ## Conclusion
