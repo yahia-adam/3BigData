@@ -13,9 +13,6 @@ Ce projet vise à développer un système de classification des déchets en util
 
 - **poubelle à verre**: verre.
 
-- **non recyclable**: autres.
-
-
 ### Objectifs du Projet
 
 - Implémenter divers modèles et algorithmes de Machine Learning.
@@ -69,7 +66,6 @@ Le projet est organisé de la manière suivante :
 - **README.md** : Le fichier README du projet.
 
 ## Maintainers
-
 
 <table>
   <tbody>
