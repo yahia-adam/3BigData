@@ -109,10 +109,8 @@ pub extern "C" fn train_linear_model(
 #[no_mangle]
 pub extern "C" fn predict_linear_model(model: *mut LinearModel, inputs: *mut f32) -> c_float {
     let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
-    let inputs: Vec<f32> =
-        unsafe { Vec::from_raw_parts(inputs, model_ref.weights_count, model_ref.weights_count) };
-
-    guess(model_ref, inputs)
+    let inputs: &[f32] = unsafe { std::slice::from_raw_parts(inputs, model_ref.weights_count) };
+    guess(model_ref, inputs.to_vec())
 }
 
 pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
