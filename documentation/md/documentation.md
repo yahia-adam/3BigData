@@ -62,7 +62,6 @@ Le projet est organisé de la manière suivante :
 
 ## Maintainers
 
-
 <table>
   <tbody>
     <tr>
