@@ -3,12 +3,13 @@
 /*                                                              :::::::::: ::::::::   :::::::: :::::::::::   */
 /*   multilayer_perceptron.rs                                  :+:       :+:    :+: :+:    :+:    :+:        */
 /*                                                            +:+       +:+        +:+           +:+         */
-/*   By: YA. Adam <adam.y.abdc@gmail.com>                    +#++:++#  +#++:++#++ :#:           +#+          */
+/*   By: YAHIA ABDCHAFAA Adam, SALHAB Charbel, ELOY Theo     +#++:++#  +#++:++#++ :#:           +#+          */
 /*                                                          +#+              +#+ +#+   +#+#    +#+           */
-/*   Created: 2024/03/26 16:22:16 by YA. Adam              #+#       #+#    #+# #+#    #+#    #+#            */
-/*   Updated: 2024/03/26 16:22:16 by YA. Adam             ########## ########   ######## ###########         */
+/*   Created: 2024/03/22 19:38:54                          #+#       #+#    #+# #+#    #+#    #+#            */
+/*   3IABD1 2023-2024                                     ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
+
 
 use rand::Rng;
 use serde_json::{self, json};
@@ -18,6 +19,8 @@ use std::ffi::CStr;
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
+
+
 pub struct MultiLayerPerceptron {
     d: Vec<usize>,
     w: Vec<Vec<Vec<f32>>>,
@@ -26,6 +29,7 @@ pub struct MultiLayerPerceptron {
     l: usize,
     is_classification: bool,
 }
+
 
 #[no_mangle]
 #[allow(dead_code)]
@@ -81,6 +85,7 @@ pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32, is_classification: bool
     Box::leak(boxed_model)
 }
 
+
 fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>) {
     for j in 0..sample_inputs.len() {
         model.x[0][j + 1] = sample_inputs[j];
@@ -98,6 +103,7 @@ fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>) {
         }
     }
 }
+
 
 fn backpropagate(
     model: &mut MultiLayerPerceptron,
@@ -125,6 +131,7 @@ fn backpropagate(
     }
 }
 
+
 fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
     for l in 1..model.d.len() {
         for i in 0..model.d[l - 1] + 1 {
@@ -135,7 +142,7 @@ fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
     }
 }
 
-    
+
 #[no_mangle]
 #[allow(dead_code)]
 pub extern "C" fn train_mlp(
@@ -170,6 +177,7 @@ pub extern "C" fn train_mlp(
     }
 }
 
+
 #[no_mangle]
 #[allow(dead_code)]
 pub extern "C" fn predict_mlp(
@@ -192,6 +200,7 @@ pub extern "C" fn predict_mlp(
     result.as_mut_ptr()
 }
 
+
 #[no_mangle]
 #[allow(dead_code)]
 pub extern "C" fn mlp_to_json(model: *mut MultiLayerPerceptron) -> *mut c_char {
@@ -210,6 +219,7 @@ pub extern "C" fn mlp_to_json(model: *mut MultiLayerPerceptron) -> *mut c_char {
     let ptr: *mut c_char = c_str.into_raw();
     ptr
 }
+
 
 #[no_mangle]
 pub extern "C" fn free_mlp(model: *mut MultiLayerPerceptron) {

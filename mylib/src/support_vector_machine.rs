@@ -1,7 +1,11 @@
-/*
- *  Author : Charbel SALHAB, Theo ELOY, Adam Yahia Abchafaa
- *  Projet Annuel : Classification de type de déchets (plastique, papier, verre, métal,
- *  déchet organique,déchet électrique, déchet dangereux (pile, produit chimique), autres).
- *  3IABD1
- *  2023-2024
-*/
+/* ********************************************************************************************************* */
+/*                                                                                                           */
+/*                                                              :::::::::: ::::::::   :::::::: :::::::::::   */
+/*   support_vector_machine.rs                                 :+:       :+:    :+: :+:    :+:    :+:        */
+/*                                                            +:+       +:+        +:+           +:+         */
+/*   By: YAHIA ABDCHAFAA Adam, SALHAB Charbel, ELOY Theo     +#++:++#  +#++:++#++ :#:           +#+          */
+/*                                                          +#+              +#+ +#+   +#+#    +#+           */
+/*   Created: 2024/03/22 19:38:54                          #+#       #+#    #+# #+#    #+#    #+#            */
+/*   3IABD1 2023-2024                                     ########## ########   ######## ###########         */
+/*                                                                                                           */
+/* ********************************************************************************************************* */
