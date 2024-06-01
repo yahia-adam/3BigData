@@ -235,7 +235,7 @@ pub extern "C" fn save_mlp_model(
     let path_str: &str = match path_cstr.to_str() {
         Ok(s) => s,
         Err(_e) => {
-            println!("Unaible to save model error converting filepath to str");
+            println!("Unable to save model error converting filepath to str");
             return;
         }
     };
@@ -249,10 +249,10 @@ pub extern "C" fn save_mlp_model(
 
     if let Ok(mut file) = File::create(path_str) {
         if let Err(_) = write!(file, "{}", model_str) {
-            println!("Unaible to save model error writing to file");
+            println!("Unable to save model error writing to file");
         }
     } else {
-        println!("Unaible to save model error creating file");
+        println!("Unable to save model error creating file");
     }
-    println!("Model saved successfuly on: {}", path_str);
+    println!("Model saved successfully on: {}", path_str);
 }
