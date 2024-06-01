@@ -11,6 +11,7 @@
 /* ********************************************************************************************************* */
 
 
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -52,5 +53,20 @@ pub fn euclid(x : &[f32], y : &[f32]) -> f32{
         res += (y[i] - x[i]).powi(2);
     }
     res.sqrt()
+}
+
+pub fn get_rand_centers(data : &[f32], cluster_num : i32, sample_count : i32, inputs_size : i32)-> Vec<Vec<f32>>{
+    let mut centers = Vec::with_capacity(cluster_num as usize);
+    let mut copy_data_size = sample_count;
+    let mut copy_data = data.to_vec();
+
+    for _ in 0..cluster_num{
+        let initial_center = rand::thread_rng().gen_range(0..copy_data_size);
+        let data_initial_center = &copy_data[(initial_center * inputs_size) as usize..((initial_center + 1) * inputs_size) as usize];
+        centers.push(data_initial_center.to_vec());
+        copy_data_size -= 1;
+        copy_data.remove(initial_center as usize);
+    }
+    centers
 }
 
