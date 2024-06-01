@@ -15,7 +15,6 @@ pub mod linear_model;
 pub mod multilayer_perceptron;
 pub mod radical_basis_function_network;
 pub mod support_vector_machine;
-pub mod utils;
 
 #[allow(unused_imports)]
 pub use multilayer_perceptron::{MultiLayerPerceptron , init_mlp, train_mlp, predict_mlp, free_mlp, save_mlp_model};
