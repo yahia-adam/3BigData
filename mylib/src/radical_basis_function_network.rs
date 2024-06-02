@@ -203,7 +203,7 @@ pub extern "C" fn train_rbf_rosenblatt(model : *mut RadicalBasisFunctionNetwork,
         for j in 0..cluster_num as usize{
             let cluster_pointsj = &cluster_points[(j * inputs_size as usize)..((j + 1) * inputs_size as usize)];
             for n in 0..inputs_size as usize{
-                model.centers[j][n] = cluster_points[n];
+                model.centers[j][n] = cluster_pointsj[n];
             }
         }
     }
