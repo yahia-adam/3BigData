@@ -13,6 +13,7 @@
 
 use std::slice::from_raw_parts;
 use rand::Rng;
+use rand::seq::index::sample;
 use serde::{Deserialize, Serialize};
 use serde_json::Value::Array;
 
@@ -158,6 +159,14 @@ pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork,
     }
 }
 
+fn predict_rbf_regression_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
+    let mut res = 0f32;
+    for i in 0..model.weights.len(){
+        res += model.weights[i] * (-model.gamma * euclid(inputs, model.centers[i].as_slice()).powi(2)).exp();
+    }
+    res
+}
+
 #[no_mangle]
 pub extern "C" fn predict_rbf_regression(model : *mut RadicalBasisFunctionNetwork, inputs : *mut f32) -> f32{
     let model = unsafe {
@@ -172,11 +181,27 @@ pub extern "C" fn predict_rbf_regression(model : *mut RadicalBasisFunctionNetwor
 
 }
 
-fn predict_rbf_regression_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
-    let mut res = 0f32;
-    for i in 0..model.weights.len(){
-        res += model.weights[i] * (-model.gamma * euclid(inputs, model.centers[i].as_slice()).powi(2)).exp();
+#[no_mangle]
+pub extern "C" fn train_rbf_rosenblatt(model : *mut RadicalBasisFunctionNetwork, sample_inputs_flat : *mut f32, expected_outputs : *mut f32, iterations_count : i32, alpha : f32, inputs_size : i32, sample_count : i32){
+    let model = unsafe {
+        model.as_mut().unwrap()
+    };
+    let cluster_num = model.weights.len() as i32;
+    let sample_inputs_flat = unsafe {
+      from_raw_parts(sample_inputs_flat, (inputs_size * sample_count) as usize)
+    };
+    let expected_outputs = unsafe {
+      from_raw_parts(expected_outputs, sample_count as usize)
+    };
+    let cluster_points = lloyd(sample_inputs_flat, cluster_num, 10, sample_count, inputs_size);
+
+    for _ in 0..sample_count as usize{
+        for j in 0..cluster_num as usize{
+            let cluster_pointsj = &cluster_points[(j * inputs_size as usize)..((j + 1) * inputs_size as usize)];
+            for n in 0..inputs_size as usize{
+                model.centers[j][n] = cluster_points[n];
+            }
+        }
     }
-    res
 }
 
