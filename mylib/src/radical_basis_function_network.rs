@@ -11,6 +11,7 @@
 /* ********************************************************************************************************* */
 
 
+use nalgebra::point;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -70,3 +71,14 @@ pub fn get_rand_centers(data : &[f32], cluster_num : i32, sample_count : i32, in
     centers
 }
 
+pub fn mean(cluster : &[&[f32]], inputs_size : i32)-> Vec<f32>{
+    let mut average = Vec::with_capacity(inputs_size as usize);
+    for dimension in 0..inputs_size as usize{
+        average.push(0f32);
+        for points in 0..cluster.len(){
+            average[dimension] += cluster[points][dimension];
+        }
+        average[dimension] += cluster.len() as f32;
+    }
+    average
+}
