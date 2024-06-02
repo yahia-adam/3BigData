@@ -168,6 +168,15 @@ pub extern "C" fn predict_rbf_regression(model : *mut RadicalBasisFunctionNetwor
       from_raw_parts(inputs, model.centers[0].len())
     };
 
-    predict_rbf_regression(model, inputs)
+    predict_rbf_regression_slice(model, inputs)
 
 }
+
+fn predict_rbf_regression_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
+    let mut res = 0f32;
+    for i in 0..model.weights.len(){
+        res += model.weights[i] * (-model.gamma * euclid(inputs, model.centers[i].as_slice()).powi(2)).exp();
+    }
+    res
+}
+
