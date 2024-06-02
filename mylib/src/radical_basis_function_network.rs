@@ -13,7 +13,6 @@
 
 use std::slice::from_raw_parts;
 use rand::Rng;
-use rand::seq::index::sample;
 use serde::{Deserialize, Serialize};
 use serde_json::Value::Array;
 
@@ -80,7 +79,7 @@ pub fn mean(cluster : &[&[f32]], inputs_size : i32)-> Vec<f32>{
         for points in 0..cluster.len(){
             average[dimension] += cluster[points][dimension];
         }
-        average[dimension] += cluster.len() as f32;
+        average[dimension] /= cluster.len() as f32;
     }
     average
 }
