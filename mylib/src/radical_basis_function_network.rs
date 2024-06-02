@@ -95,7 +95,7 @@ pub fn lloyd(data : &[f32], cluster_num : i32, iterations : i32, sample_count : 
     let mut sites = get_rand_centers(data, cluster_num, sample_count, inputs_size).to_vec();
     for _ in 0..iterations as usize{
         for point in 0..sample_count as usize{
-            let data_point = &data[(point * inputs_size as usize)..((point + 1)) * inputs_size as usize];
+            let data_point = &data[(point * inputs_size as usize)..((point + 1) * inputs_size as usize)];
             let mut closest_site_number = 0usize;
             let mut closest_site_distance = euclid(sites[closest_site_number].as_slice(), data_point);
             for site_number in 1..sites.len(){
