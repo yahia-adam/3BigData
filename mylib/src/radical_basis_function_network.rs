@@ -11,8 +11,10 @@
 /* ********************************************************************************************************* */
 
 
+use std::slice::from_raw_parts;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use serde_json::Value::Array;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadicalBasisFunctionNetwork {
@@ -118,3 +120,41 @@ pub fn lloyd(data : &[f32], cluster_num : i32, iterations : i32, sample_count : 
     }
     sites_flat
 }
+
+#[no_mangle]
+pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork, sample_inputs_flat : *mut f32, expected_outputs : *mut f32, inputs_size : i32, sample_count : i32){
+    let model = unsafe{
+        model.as_mut().unwrap()
+    };
+    let cluster_num = model.weights.len() as i32;
+    let sample_inputs_flat = unsafe{
+        from_raw_parts(sample_inputs_flat, (inputs_size * sample_count) as usize)
+    };
+    let expected_outputs = unsafe {
+      from_raw_parts(expected_outputs, sample_count as usize)
+    };
+    let cluster_points = lloyd(sample_inputs_flat, cluster_num, 10, sample_count, inputs_size);
+
+    let mut phi = Array::default((sample_count as usize, cluster_num as usize));
+
+    for i in 0..sample_count as usize{
+        let xi = &sample_inputs_flat[(i * inputs_size as usize)..((i + 1) * inputs_size as usize)];
+        for j in 0..cluster_num as usize{
+            let cluster_pointsj = &cluster_points[(j * inputs_size as usize)..((j + 1 ) * inputs_size as usize)];
+            phi[(i, j)] = (-model.gamma * euclid(xi, cluster_pointsj).powi(2)).exp();
+            for n in 0..inputs_size as usize{
+                model.centers[j][n] = cluster_pointsj[n];
+            }
+        }
+    }
+
+    let y = Array::from(expected_outputs.to_vec());
+    let phitphi = phi.t().dot(&phi);
+    let phitphi_inv = phitphi.inv().unwrap();
+    let w = (phitphi_inv.dot(&phi.t())).dot(&y);
+
+    for i in 0..cluster_num as usize{
+        model.weights[i] = w[i];
+    }
+}
+
