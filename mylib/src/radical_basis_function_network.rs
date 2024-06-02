@@ -11,7 +11,6 @@
 /* ********************************************************************************************************* */
 
 
-use nalgebra::point;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
@@ -81,4 +80,41 @@ pub fn mean(cluster : &[&[f32]], inputs_size : i32)-> Vec<f32>{
         average[dimension] += cluster.len() as f32;
     }
     average
+}
+
+pub fn lloyd(data : &[f32], cluster_num : i32, iterations : i32, sample_count : i32, inputs_size : i32)-> Vec<f32>{
+    if(cluster_num == sample_count){
+        return data.to_vec();
+    }
+    let mut clusters = Vec::with_capacity(cluster_num as usize);
+    for _ in 0..cluster_num{
+        clusters.push(Vec::new());
+    }
+    let mut sites = get_rand_centers(data, cluster_num, sample_count, inputs_size).to_vec();
+    for _ in 0..iterations as usize{
+        for point in 0..sample_count as usize{
+            let data_point = &data[(point * inputs_size as usize)..((point + 1)) * inputs_size as usize];
+            let mut closest_site_number = 0usize;
+            let mut closest_site_distance = euclid(sites[closest_site_number].as_slice(), data_point);
+            for site_number in 1..sites.len(){
+                let site_distance = euclid(sites[site_number].as_slice(), data_point);
+                if site_distance < closest_site_distance {
+                    closest_site_number = site_number;
+                    closest_site_distance = site_distance;
+                }
+            }
+            clusters[closest_site_number].push(data_point);
+        }
+        for m in 0..cluster_num as usize{
+            sites[m] = mean(clusters[m].as_slice(), inputs_size);
+            clusters[m].clear();
+        }
+    }
+    let mut sites_flat = Vec::with_capacity((cluster_num * inputs_size) as usize);
+    for i in 0..cluster_num as usize{
+        for j in 0..inputs_size as usize{
+            sites_flat.push(sites[i][j]);
+        }
+    }
+    sites_flat
 }
