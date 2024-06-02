@@ -221,4 +221,8 @@ pub extern "C" fn train_rbf_rosenblatt(model : *mut RadicalBasisFunctionNetwork,
     }
 }
 
-
+#[no_mangle]
+pub extern "C" fn predict_rbf_classification(model : *mut RadicalBasisFunctionNetwork, inputs : *mut f32)-> f32{
+    let pred = predict_rbf_regression(model, inputs);
+    return if pred >= 0.0 { 1.0 } else { -1.0 };
+}
