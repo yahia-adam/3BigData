@@ -162,9 +162,14 @@ pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork,
 fn predict_rbf_regression_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
     let mut res = 0f32;
     for i in 0..model.weights.len(){
-        res += model.weights[i] * (-model.gamma * euclid(inputs, model.centers[i].as_slice()).powi(2)).exp();
+        res += model.weights[i] * (-model.gamma * euclid(inputs, model.centers[i].as_slice()) * euclid(inputs, model.centers[i].as_slice())).exp();
     }
     res
+}
+
+fn predict_rbf_classification_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
+    let pred = predict_rbf_regression_slice(model, inputs);
+    return if pred >= 0.0 { 1.0 } else { -1.0 };
 }
 
 #[no_mangle]
@@ -203,5 +208,17 @@ pub extern "C" fn train_rbf_rosenblatt(model : *mut RadicalBasisFunctionNetwork,
             }
         }
     }
+
+    for _ in 0..iterations_count as usize{
+        let k = rand::thread_rng().gen_range(0..sample_count) as usize;
+        let x = &sample_inputs_flat[(k * inputs_size as usize)..((k + 1) * inputs_size as usize)];
+        let yk = expected_outputs[k * 1];
+        let gk = predict_rbf_classification_slice(model, x);
+
+        for i in 0..cluster_num as usize{
+            model.weights[i] += alpha * (yk - gk) * (-model.gamma * euclid(x, model.centers[i].as_slice()) * euclid(x, model.centers[i].as_slice())).exp();
+        }
+    }
 }
+
 
