@@ -158,3 +158,16 @@ pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork,
     }
 }
 
+#[no_mangle]
+pub extern "C" fn predict_rbf_regression(model : *mut RadicalBasisFunctionNetwork, inputs : *mut f32) -> f32{
+    let model = unsafe {
+      model.as_mut().unwrap()
+    };
+
+    let inputs = unsafe{
+      from_raw_parts(inputs, model.centers[0].len())
+    };
+
+    predict_rbf_regression(model, inputs)
+
+}
