@@ -14,7 +14,9 @@
 use std::slice::from_raw_parts;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use serde_json::Value::Array;
+use ndarray::prelude::*;
+use ndarray_rand::{rand};
+use ndarray_linalg::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadicalBasisFunctionNetwork {
@@ -85,7 +87,7 @@ pub fn mean(cluster : &[&[f32]], inputs_size : i32)-> Vec<f32>{
 }
 
 pub fn lloyd(data : &[f32], cluster_num : i32, iterations : i32, sample_count : i32, inputs_size : i32)-> Vec<f32>{
-    if(cluster_num == sample_count){
+    if cluster_num == sample_count {
         return data.to_vec();
     }
     let mut clusters = Vec::with_capacity(cluster_num as usize);
