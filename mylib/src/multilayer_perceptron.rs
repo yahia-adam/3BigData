@@ -39,7 +39,7 @@ pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32, is_classification: bool
         w: vec![vec![vec![]]; npl.len()],
         x: vec![vec![]; npl.len()],
         deltas: vec![vec![]; npl.len()],
-        l: npl.len() - 1,
+        l:  npl_size as usize - 1,
         is_classification: is_classification as bool,
     };
     
@@ -152,7 +152,6 @@ pub extern "C" fn train_mlp(
     let output_col: usize = model_ref.d[model_ref.l] as usize;
     let data_size: usize = data_size as usize;
 
-
     let inputs: Vec<f32> = unsafe { Vec::from_raw_parts(inputs, data_size * input_col, data_size * input_col) };
 
     let outputs: Vec<f32> =
@@ -175,12 +174,11 @@ pub extern "C" fn train_mlp(
 pub extern "C" fn predict_mlp(
     model: *mut MultiLayerPerceptron,
     sample_inputs: *mut f32,
-    sample_inputs_size: usize,
 ) -> *mut f32 {
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
 
     let sample_inputs: Vec<f32> =
-        unsafe { Vec::from_raw_parts(sample_inputs, sample_inputs_size, sample_inputs_size) };
+        unsafe { Vec::from_raw_parts(sample_inputs, model_ref.d[0], model_ref.d[0]) };
 
     propagate(model_ref, sample_inputs);
 
@@ -201,7 +199,8 @@ pub extern "C" fn mlp_to_json(model: *mut MultiLayerPerceptron) -> *mut c_char {
         "d": model_ref.d,
         "x": model_ref.x,
         "deltas" : model_ref.deltas,
-        "l": model_ref.l
+        "l": model_ref.l,
+        "is_classification": model_ref.is_classification,
     });
 
     let json_str: String =
