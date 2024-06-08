@@ -2,6 +2,11 @@
 
 Dans cette section on retrouve un ensemble de test des differents model pour s'assurer leur bon implementation.
 
+**Voici un notebook recapitulant l'ensemble des tests** 
+
+```bash
+https://colab.research.google.com/drive/1XcfUqVpkAF9gyt21X4eXXpV_iTcGH33T
+```
 **voici la list des tests disponible:**
 
 - ml_classification_linear_simple
@@ -94,7 +99,7 @@ X:[0.0, 1.0], Y:1.0 ---> mon model: 1.0
 X:[0.0, 0.0], Y:-1.0 ---> mon model: -1.0
 X:[1.0, 1.0], Y:-1.0 ---> mon model: 1.0
 ```
-Come pour le test précedant un model lineaire est incapable de resoudre ce problém comlex.
+Come pour le test précedant un model lineaire est incapable de resoudre ce problém complex.
 
 ## Régression
 

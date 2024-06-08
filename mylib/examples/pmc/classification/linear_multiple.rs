@@ -1,8 +1,6 @@
 #[allow(unused_imports)]
-use mylib::{
-    init_linear_model, load_linear_model, predict_linear_model, save_linear_model,
-    train_linear_model, LinearModel,
-};
+use mylib::{MultiLayerPerceptron , init_mlp, train_mlp, predict_mlp, free_mlp, save_mlp_model};
+
 
 fn main() {
     let x: Vec<Vec<f32>> = vec![
@@ -117,19 +115,28 @@ fn main() {
         -1.0, -1.0,
     ];
     let data_size = y.len();
+
     let x_flaten: Vec<f32> = x.clone().into_iter().flatten().collect::<Vec<f32>>();
-    let x_ptr: *const f32 = Vec::leak(x_flaten.clone()).as_ptr();
-    let y_ptr: *const f32 = Vec::leak(y.clone()).as_ptr();
+    let x_ptr: *mut f32 = Vec::leak(x_flaten.clone()).as_mut_ptr();
+    let y_ptr: *mut f32 = Vec::leak(y.clone()).as_mut_ptr();
+    
+    let mut npl = vec![2,1];
 
-    let linear_model: *mut LinearModel = init_linear_model(2, true);
-    train_linear_model(linear_model, x_ptr, y_ptr, data_size as u32, 0.0001, 1000_000);
-
+    let mlp: *mut MultiLayerPerceptron = init_mlp(npl.as_mut_ptr(), 2, true);
+    train_mlp(mlp, x_ptr, y_ptr, data_size as u32, 0.001, 1000000);
+    
     println!("");
-    println!("Linear Multiple : Linear Model : OK");
+    println!("Linear multiple : pmc : OK");
+    println!("");
     for i in 0..data_size {
         let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();
-        let output = predict_linear_model(linear_model, input_ptr);
-        println!("X:{:?}, Y:{:?} ---> mon model: {:?}", x[i], y[i], output);
+        let output = predict_mlp(mlp, input_ptr);
+        
+        let res: Vec<f32> =
+        unsafe { Vec::from_raw_parts(output, 1, 1) };
+
+        println!("X:{:?}, Y:{:?} ---> mon model: {:?}", x[i], y[i], res);
     }
     println!("");
+    
 }

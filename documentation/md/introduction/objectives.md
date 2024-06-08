@@ -2,13 +2,13 @@
 
 ## Introduction
 
-Ce projet de classification des déchets vise à répondre à plusieurs défis environnementaux et opérationnels en utilisant des technologies avancées de Machine Learning et de développement web. Les objectifs du projet sont conçus pour maximiser l'efficacité, la précision et l'utilité du système proposé.
+Ce projet de classification des déchets vise à répondre à plusieurs défis environnementaux et opérationnels en utilisant des technologies avancées de Machine Learning. Les objectifs du projet sont conçus pour maximiser l'efficacité, la précision et l'utilité du système proposé.
 
 ## Objectifs Principaux
 
 ### 1. Développer une Bibliothèque en Rust pour le Machine Learning
 
-La bibliothèque en Rust sera le cœur du projet, fournissant des algorithmes de Machine Learning robustes et performants pour la classification des déchets.
+La Lib en Rust sera le cœur du projet, fournissant des algorithmes de Machine Learning robustes et performants pour la classification des déchets.
 
 - **Implémentation de Modèles de Machine Learning :**
   - **Modèle Linéaire :** Simple et efficace pour les classifications de base.
@@ -17,7 +17,7 @@ La bibliothèque en Rust sera le cœur du projet, fournissant des algorithmes de
   - **Support Vector Machine (SVM) :** Pour des classifications à haute dimensionnalité.
 
 - **Interopérabilité :**
-  - Fournir des interfaces pour utiliser la bibliothèque en Rust avec différents langages de programmation tels que Python, C++, et Node.js.
+  - Fournir des interfaces pour utiliser la lib en Rust avec différents langages de programmation.
 
 ### 2. Créer une Application Web Interactive
 
@@ -29,15 +29,15 @@ L'application web servira de plateforme utilisateur, permettant une interaction 
 - **Interface Utilisateur :**
   - Conception d'une interface intuitive pour permettre aux utilisateurs de classer les déchets de manière efficace.
 
-- **Intégration avec la Bibliothèque en Rust :**
-  - Assurer une intégration transparente entre l'application web et la bibliothèque de Machine Learning en Rust pour le traitement des données.
+- **Intégration avec la lib en Rust :**
+  - Assurer une intégration transparente entre l'application web et la lib de Machine Learning en Rust pour le traitement des données.
 
 ### 3. Analyser et Commenter les Résultats
 
 Une partie essentielle du projet consiste à évaluer les performances des modèles de Machine Learning et à fournir des analyses détaillées.
 
 - **Évaluation des Modèles :**
-  - Mesurer la précision, le rappel, et d'autres métriques de performance pour chaque modèle.
+  - Mesurer la précision et d'autres métriques de performance pour chaque modèle.
   
 - **Analyse Comparative :**
   - Comparer les résultats obtenus par différents algorithmes pour déterminer le plus efficace.
@@ -47,13 +47,11 @@ Une partie essentielle du projet consiste à évaluer les performances des modè
 
 ### 4. Faciliter l'Interopérabilité
 
-Pour maximiser l'utilisation de la bibliothèque en Rust, il est crucial de garantir qu'elle peut être facilement intégrée et utilisée dans divers environnements de développement.
+Pour maximiser l'utilisation de la lib en Rust, il est crucial de garantir qu'elle peut être facilement intégrée et utilisée dans divers environnements de développement.
 
 - **Bindings pour Divers Langages :**
-  - Créer des bindings et des interfaces pour permettre l'utilisation de la bibliothèque avec Python, C++, Node.js, etc.
+  - Créer des bindings et des interfaces pour permettre l'utilisation de la bibliothèque avec Python.
 
-- **Documentation Complète :**
-  - Fournir une documentation exhaustive sur l'utilisation de la bibliothèque avec des exemples pratiques dans différents langages.
 
 ### 5. Optimiser la Performance et l'Efficacité
 
@@ -63,7 +61,7 @@ Un objectif clé est d'assurer que le système de classification des déchets fo
   - Améliorer les algorithmes pour réduire le temps de traitement et augmenter l'efficacité.
   
 - **Gestion des Ressources :**
-  - S'assurer que l'application web et la bibliothèque en Rust utilisent les ressources de manière optimale pour éviter les goulots d'étranglement et les inefficacités.
+  - S'assurer que l'application web et la lib en Rust utilisent les ressources de manière optimale pour éviter les goulots d'étranglement et les inefficacités.
 
 ### 6. Promouvoir l'Adoption et l'Utilisation
 
