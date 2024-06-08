@@ -1,0 +1,11 @@
+image: elixir:latest
+
+mix:
+  script:
+    - mix doc
+
+deploy:
+  stage: deploy
+  script:
+    - mv documentation public
+  environment: production

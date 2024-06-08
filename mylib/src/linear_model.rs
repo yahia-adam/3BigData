@@ -3,12 +3,14 @@
 /*                                                              :::::::::: ::::::::   :::::::: :::::::::::   */
 /*   linear_model.rs                                           :+:       :+:    :+: :+:    :+:    :+:        */
 /*                                                            +:+       +:+        +:+           +:+         */
-/*   By: YA. Adam <adam.y.abdc@gmail.com>                    +#++:++#  +#++:++#++ :#:           +#+          */
+/*   By: YAHIA ABDCHAFAA Adam, SALHAB Charbel, ELOY Theo     +#++:++#  +#++:++#++ :#:           +#+          */
 /*                                                          +#+              +#+ +#+   +#+#    +#+           */
-/*   Created: 2024/03/22 19:38:54 by YA. Adam              #+#       #+#    #+# #+#    #+#    #+#            */
-/*   Updated: 2024/03/22 19:38:54 by YA. Adam             ########## ########   ######## ###########         */
+/*   Created: 2024/03/22 19:38:54                          #+#       #+#    #+# #+#    #+#    #+#            */
+/*   3IABD1 2023-2024                                     ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
+
+
 use nalgebra::base::DMatrix;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -19,12 +21,14 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 
+
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
     pub weights: Vec<f32>,
     pub weights_count: usize,
     pub is_classification: bool,
 }
+
 
 #[no_mangle]
 pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -> *mut LinearModel {
@@ -38,6 +42,7 @@ pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -
     let leaked_boxed_model: *mut LinearModel = Box::leak(boxed_model);
     leaked_boxed_model.into()
 }
+
 
 #[no_mangle]
 pub extern "C" fn train_linear_model(
@@ -106,14 +111,14 @@ pub extern "C" fn train_linear_model(
     }
 }
 
+
 #[no_mangle]
 pub extern "C" fn predict_linear_model(model: *mut LinearModel, inputs: *mut f32) -> c_float {
     let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
-    let inputs: Vec<f32> =
-        unsafe { Vec::from_raw_parts(inputs, model_ref.weights_count, model_ref.weights_count) };
-
-    guess(model_ref, inputs)
+    let inputs: &[f32] = unsafe { std::slice::from_raw_parts(inputs, model_ref.weights_count) };
+    guess(model_ref, inputs.to_vec())
 }
+
 
 pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
     let mut sum: f32 = 0.0;
@@ -131,6 +136,7 @@ pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
     sum
 }
 
+
 #[no_mangle]
 pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {
     let model: &LinearModel = unsafe { model.as_ref().unwrap() };
@@ -144,13 +150,14 @@ pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {
     ptr
 }
 
+
 #[no_mangle]
 pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const std::ffi::c_char) {
     let path_cstr: &CStr = unsafe { CStr::from_ptr(filepath) };
     let path_str: &str = match path_cstr.to_str() {
         Ok(s) => s,
         Err(_e) => {
-            println!("Unaible to save model error converting filepath to str");
+            println!("Unable to save model error converting filepath to str");
             return;
         }
     };
@@ -163,13 +170,14 @@ pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const 
     if let Ok(mut file) = File::create(path_str) {
         // Write the weights string to the file
         if let Err(_) = write!(file, "{}", weights_str) {
-            println!("Unaible to save model error writing to file");
+            println!("Unable to save model error writing to file");
         }
     } else {
-        println!("Unaible to save model error creating file");
+        println!("Unable to save model error creating file");
     }
-    println!("Model saved successfuly on: {}", path_str);
+    println!("Model saved successfully on: {}", path_str);
 }
+
 
 #[no_mangle]
 pub extern "C" fn load_linear_model(json_str_ptr: *const c_char) -> *mut LinearModel {
@@ -191,6 +199,7 @@ pub extern "C" fn load_linear_model(json_str_ptr: *const c_char) -> *mut LinearM
     let boxed_model: Box<LinearModel> = Box::new(model);
     Box::into_raw(boxed_model)
 }
+
 
 #[no_mangle]
 pub extern "C" fn free_linear_model(model: *mut LinearModel) {

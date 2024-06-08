@@ -2,7 +2,7 @@
 
 This project is for :
 
-> 3BigData | Documentation
+>3BigData | Documentation
 
 **Ce projet génère des fichiers HTML statiques dans le dossier `doc` à partir des fichiers Markdown dans le répertoire `md`.**.
 
@@ -50,7 +50,7 @@ firefox doc/documentation.html`
 
 - Créez un fichier Markdown dans le dossier `md/[category]`.
 .
-- Il y a 11 dossiers `[category]`:
+- Il y a 10 dossiers `[category]`:
     - Introduction
     - Installation et Configuration
     - Application Web
@@ -60,7 +60,6 @@ firefox doc/documentation.html`
     - Étapes d'Avancement
     - Remarques et Observations
     - Exemples d'Utilisation
-    - Annexes
     - Contributions
 
 - Éditez votre texte avec la syntaxe `markdown` [Plus d'infos](https://guides.github.com/features/mastering-markdown/).
@@ -74,3 +73,4 @@ firefox doc/documentation.html`
 - Enregistrez et exécutez `mix docs`
 - Les fichiers **HTML** sont générés/mis à jour dans le dossier `doc`. Copiez le contenu de ce dossier vers le site web/documentation.
 - L'index est appelé `documentation.md` dans le répertoire `md`.
+
