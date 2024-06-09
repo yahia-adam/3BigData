@@ -11,12 +11,17 @@
 /* ********************************************************************************************************* */
 
 
+use std::ffi::{c_char, CStr, CString};
+use std::fs::File;
+use std::io::BufReader;
 use std::slice::from_raw_parts;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use ndarray::prelude::*;
 use ndarray_rand::{rand};
 use ndarray_linalg::*;
+use serde_json::json;
+use crate::MultiLayerPerceptron;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadicalBasisFunctionNetwork {
@@ -227,3 +232,19 @@ pub extern "C" fn predict_rbf_classification(model : *mut RadicalBasisFunctionNe
     let pred = predict_rbf_regression(model, inputs);
     return if pred >= 0.0 { 1.0 } else { -1.0 };
 }
+
+#[no_mangle]
+pub extern "C" fn rbf_to_json(path : *const c_char)-> *mut RadicalBasisFunctionNetwork{
+    let path = unsafe{
+        CStr::from_ptr(path).to_str().unwrap()
+    };
+    let file = File::open(path).unwrap();
+    let reader = BufReader::new(file);
+    let model = serde_json::from_reader(reader).unwrap();
+
+    let boxed_model = Box::new(model);
+    let pointer = Box::leak(boxed_model);
+    pointer
+}
+
+
