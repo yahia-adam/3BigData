@@ -247,4 +247,11 @@ pub extern "C" fn rbf_to_json(path : *const c_char)-> *mut RadicalBasisFunctionN
     pointer
 }
 
+#[no_mangle]
+pub extern "C" fn free_rbf(model : *mut RadicalBasisFunctionNetwork){
+    unsafe{
+        let _ = Box::from_raw(model);
+    }
+}
+
 
