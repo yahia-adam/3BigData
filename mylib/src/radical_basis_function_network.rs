@@ -254,4 +254,17 @@ pub extern "C" fn free_rbf(model : *mut RadicalBasisFunctionNetwork){
     }
 }
 
+#[no_mangle]
+pub extern "C" fn save_rbf_model(model : *mut RadicalBasisFunctionNetwork, path : *const c_char){
+    let model = unsafe{
+        model.as_mut().unwrap()
+    };
 
+    let path = unsafe{
+        CStr::from_ptr(path).to_str().unwrap()
+    };
+
+    let serialized = serde_json::to_string(&model).unwrap();
+    let mut output = File::create(path).unwrap();
+    write!(output, "{}", &serialized).unwrap();
+}
