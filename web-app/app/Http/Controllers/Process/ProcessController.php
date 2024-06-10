@@ -31,19 +31,22 @@ class ProcessController extends Controller
 
         $publicPath = 'images/' . $filename;
 
+        $matrix = unpack('C*', $imageData);
+        // dd($matrix);
+
         try {
-            $imagick = new \Imagick($path);
-            $matrix = [];
-            $pixelIterator = $imagick->getPixelIterator();
-            foreach ($pixelIterator as $pixels) {
-                $row = [];
-                foreach ($pixels as $pixel) {
-                    $color = $pixel->getColor();
-                    $row[] = $color;
-                }
-                $matrix[] = $row;
-                $pixelIterator->syncIterator();
-            }
+//            $imagick = new \Imagick($path);
+//            $matrix = [];
+//            $pixelIterator = $imagick->getPixelIterator();
+//            foreach ($pixelIterator as $pixels) {
+//                $row = [];
+//                foreach ($pixels as $pixel) {
+//                    $color = $pixel->getColor();
+//                    $row[] = $color;
+//                }
+//                $matrix[] = $row;
+//                $pixelIterator->syncIterator();
+//            }
 
             // dd($matrix);
 
