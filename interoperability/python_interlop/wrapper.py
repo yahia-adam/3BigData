@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy
 import numpy as np
 import ctypes as ctypes
+from mpl_toolkits.mplot3d import Axes3D
 
 lib_path = "../../mylib/target/release/mylib.dll"
 my_lib = ctypes.cdll.LoadLibrary(lib_path)
@@ -25,6 +26,7 @@ my_lib.predict_linear_model.restype = ctypes.c_float
 # pub extern "C" fn free_linear_model(model: *mut LinearModel)
 my_lib.free_linear_model.argtypes = [ctypes.c_void_p]
 my_lib.free_linear_model.restype = None
+
 
 ## -------------------------- init mlp --------------------------
 # pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32) -> *mut MultiLayerPerceptron
@@ -182,7 +184,7 @@ class MyModel:
         y = []
         if self.__type == "ml":
             if self.__dims == 1:
-                x = [0.0, 1.0, 2.0, 3.0]
+                x = [0.0, 3.0]
                 for v in x:
                     point = np.array([v], dtype=ctypes.c_float)
                     points_pointer = np.ctypeslib.as_ctypes(point)
@@ -190,6 +192,21 @@ class MyModel:
 
                 plt.scatter(self.train_data[0], self.train_data[1])
                 plt.plot(x, y)
+
+                plt.show()
+            elif self.__dims == 2:
+                x = [[0.0, 0.0], [3.0, 3.0]]
+                for v in x:
+
+                    points_pointer = np.ctypeslib.as_ctypes(np.array(v, dtype=ctypes.c_float))
+                    y.append(my_lib.predict_linear_model(self.model, points_pointer))
+
+                ax = plt.figure().add_subplot(111, projection='3d')
+
+                ax.scatter(self.train_data[0], self.train_data[1], self.train_data[2])
+                ax.plot_surface(x[0], x[1], y)
+
+                plt.show()
 
     def __del__(self):
         if self.__type != "ml":
