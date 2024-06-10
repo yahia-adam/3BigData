@@ -10,18 +10,20 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-
-use std::ffi::{c_char, CStr, CString};
-use std::fs::File;
 use std::io::BufReader;
-use std::slice::from_raw_parts;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use ndarray::prelude::*;
 use ndarray_rand::{rand};
 use ndarray_linalg::*;
-use serde_json::json;
-use crate::MultiLayerPerceptron;
+use rand::Rng;
+use serde_json::{self, json};
+use std::ffi::c_char;
+use std::ffi::c_float;
+use std::ffi::CStr;
+use std::ffi::CString;
+use std::fs::File;
+use std::io::Write;
+use std::slice::from_raw_parts;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadicalBasisFunctionNetwork {
