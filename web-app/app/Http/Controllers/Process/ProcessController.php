@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Process;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Imagick;
 use Intervention\Image\ImageManager as Image;
 use Symfony\Component\VarDumper\Caster\FFICaster;
 
@@ -30,25 +31,21 @@ class ProcessController extends Controller
         $image->save($path);
 
         $publicPath = 'images/' . $filename;
+        $image = new Imagick($path);
 
-        $matrix = unpack('C*', $imageData);
+        $width = 48;
+        $height = 48;
+        // $matrix = unpack('C*', $imageData);
         // dd($matrix);
 
-        try {
-//            $imagick = new \Imagick($path);
-//            $matrix = [];
-//            $pixelIterator = $imagick->getPixelIterator();
-//            foreach ($pixelIterator as $pixels) {
-//                $row = [];
-//                foreach ($pixels as $pixel) {
-//                    $color = $pixel->getColor();
-//                    $row[] = $color;
-//                }
-//                $matrix[] = $row;
-//                $pixelIterator->syncIterator();
-//            }
+        $pixels = $image->exportImagePixels(0, 0, $width, $height, "RGB", Imagick::PIXEL_CHAR);
 
-            // dd($matrix);
+        // dd($pixels);
+
+        $image->clear();
+        $image->destroy();
+
+        try {
 
             $action = $request->input('selectedAction');
             switch ($action) {
