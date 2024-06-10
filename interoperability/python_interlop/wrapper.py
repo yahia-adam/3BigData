@@ -8,7 +8,7 @@ my_lib = ctypes.cdll.LoadLibrary(lib_path)
 
 # --------------------------init_linear_model--------------------------
 # pub extern "C" fn init_linear_model(input_count: u32) -> *mut LinearModel;
-my_lib.init_linear_model.argtypes = [ctypes.c_uint32]
+my_lib.init_linear_model.argtypes = [ctypes.c_uint32, ctypes.c_bool]
 my_lib.init_linear_model.restype = ctypes.c_void_p
 
 # pub extern "C" fn train_linear_model( model: *mut LinearModel, features: *const c_float,
@@ -48,29 +48,37 @@ my_lib.free_mlp.restype = None
 
 
 class MyModel:
-    def __init__(self, model_type, size, classes=2, is_classification=True):
-        self.classes = classes
+    def __init__(self, model_type, size, is_classification=False, is_3_classes=False):
         self.train_data = []
         self.__type = model_type
-        self.dims = size
-        self.is_classification = is_classification
-
-        if self.is_classification:
-            if model_type == "ml":
-                self.models = []
-                for i in range(classes):
-                    self.models.append(my_lib.init_linear_model(size))
-            elif model_type == "mlp":
-                size_ptr = np.ctypeslib.as_ctypes(
-                    np.array(size, dtype=ctypes.c_uint32)
-                )
-                self.model = my_lib.init_mlp(size_ptr)
-
-            if classes != 2:
-                self.classes += 1
+        self.__dims = size
+        self.__is_classification = is_classification
+        if is_classification:
+            self.__is_3_classes = is_3_classes
         else:
-            if model_type == "ml":
-                self.model = my_lib.init_linear_model(size)
+            self.__is_3_classes = False
+
+        if not is_3_classes:
+            if self.__type == "ml":
+                self.model = my_lib.init_linear_model(self.__dims, is_classification)
+        else:
+            if self.__type == "ml":
+                self.model = []
+                for i in range(3):
+                    self.model.append(my_lib.init_linear_model(self.__dims, is_classification))
+
+        # if model_type == "ml":
+        #     self.models = []
+        #     for i in range(classes):
+        #         self.models.append(my_lib.init_linear_model(size))
+        # elif model_type == "mlp":
+        #     size_ptr = np.ctypeslib.as_ctypes(
+        #         np.array(size, dtype=ctypes.c_uint32)
+        #     )
+        #     self.model = my_lib.init_mlp(size_ptr)
+        #
+        # if classes != 2:
+        #     self.__classes += 1
 
     def train(self, x: numpy.array, y: numpy.array, learning_rate: float, epochs: int):
         if len(x) != len(y):
@@ -78,33 +86,24 @@ class MyModel:
         if self.__type not in ["ml"]:
             raise ValueError("incorrect model type")
 
-        if self.is_classification:
-            if self.classes == 2:
-                y = np.array([[1, 0] if value == 1 else [0, 1] for value in y])
-            y[:][y == 0] = -1
         data_size = len(y)
 
         self.train_data = list(map(list, zip(*x)))
         self.train_data.append(y)
 
-        y = y.transpose()
-
         x_flat = x.flatten().astype(ctypes.c_float)
         x_flat_ptr = x_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
-        if self.is_classification:
-            for i in range(self.classes - 1):
+        if not self.__is_3_classes:
+            y_flat_ptr = y.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+            if self.__type == "ml":
+                my_lib.train_linear_model(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
+        else:
+            for i in range(3):
                 y_flat_ptr = y[i].flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
                 if self.__type == "ml":
-                    my_lib.train_linear_model(self.models[i], x_flat_ptr, y_flat_ptr, self.dims, learning_rate, epochs)
-
-        else:
-            y_flat_ptr = y.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-            print(x_flat_ptr)
-            print(y_flat_ptr)
-            if self.__type == "ml":
-                my_lib.train_linear_model(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
+                    my_lib.train_linear_model(self.model[i], x_flat_ptr, y_flat_ptr, self.__dims, learning_rate, epochs)
 
     def print_classif(self, size_x, size_y, step, start_x=0, start_y=0):
         background_points = []
@@ -117,20 +116,35 @@ class MyModel:
                 background_points.append([pos_x, pos_y])
                 points_pointer = np.ctypeslib.as_ctypes(np.array([pos_x, pos_y], dtype=ctypes.c_float))
 
-                prediction = 0
-                if self.__type == "ml":
+                if not self.__is_3_classes:
+                    if self.__type == "ml":
+                        prediction = my_lib.predict_linear_model(self.model, points_pointer)
+                    else:
+                        prediction = 0
+
+                    if prediction == 1:
+                        background_colors.append("lightblue")
+                    else:
+                        background_colors.append("pink")
+                else:
                     prediction = []
-                    for i in range(self.classes - 1):
-                        prediction.append(my_lib.predict_linear_model(self.models[i], points_pointer))
-
-                    prediction = np.array(prediction)
-
+                    if self.__type == "ml":
+                        for i in range(3):
+                            prediction.append(my_lib.predict_linear_model(self.model[i], points_pointer))
                     if prediction[0] == 1:
                         background_colors.append("lightblue")
-                    elif self.classes == 2 or prediction[1] == 1:
+                    elif prediction[1] == 1:
                         background_colors.append("pink")
                     else:
                         background_colors.append("lightgreen")
+
+                # if self.__type == "ml":
+                #     prediction = []
+                #     for i in range(self.__classes - 1):
+                #         prediction.append(my_lib.predict_linear_model(self.models[i], points_pointer))
+                #
+                #     prediction = np.array(prediction)
+                #
 
                 pos_y += step
             pos_x += step
@@ -138,26 +152,32 @@ class MyModel:
         plt.scatter(background_points[:, 0], background_points[:, 1], c=background_colors)
 
         train_colors = []
-        for result in self.train_data[2]:
-            result = np.array(result)
-            if np.all(result == result[0]):
-                train_colors.append("white")
-            elif np.argmax(result) == 0:
-                train_colors.append("blue")
-            elif np.argmax(result) == 1:
-                train_colors.append("red")
-            else:
-                train_colors.append("green")
+        if not self.__is_3_classes:
+            for result in self.train_data[2]:
+                if result == 1:
+                    train_colors.append("blue")
+                else:
+                    train_colors.append("red")
+        else:
+            for result in self.train_data[2]:
+                result = np.array(result)
+                if np.all(result == result[0]):
+                    train_colors.append("white")
+                elif np.argmax(result) == 0:
+                    train_colors.append("blue")
+                elif np.argmax(result) == 1:
+                    train_colors.append("red")
+                else:
+                    train_colors.append("green")
 
         plt.scatter(self.train_data[0], self.train_data[1], c=train_colors)
-
         plt.show()
 
     def print_regression(self, start=0, size=1):
         x = []
         y = []
         if self.__type == "ml":
-            if self.dims == 1:
+            if self.__dims == 1:
                 x = [0.0, 1.0, 2.0, 3.0]
                 for v in x:
                     point = np.array([v], dtype=ctypes.c_float)
