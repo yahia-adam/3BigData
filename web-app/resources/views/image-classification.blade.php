@@ -205,7 +205,7 @@
                                         <button type="button" class="btn btn-custom" id="linearModelRegression">Linear Model Regression</button>
                                         <button type="button" class="btn btn-custom" id="mlpRegression">MLP Regression</button>
                                         <button type="button" class="btn btn-custom" id="rbfRegression">RBF Regression</button>
-                                        <button type="button" class="btn btn-custom" id="kernelMethod">Kernel Method</button>
+{{--                                        <button type="button" class="btn btn-custom" id="kernelMethod">Kernel Method</button>--}}
                                     </div>
                                 </div>
 
@@ -217,7 +217,7 @@
                             <div id="upload-message" class="text-center mt-4"></div>
 
                             <div class="result mt-4">
-                                <p class="text-black h6"><b><u>Result : </u></b><span id="result-text"></span></p>
+                                <p class="text-black h6"><b><u>Result :</u></b><span id="result-text"> {{ session('result') }}</span></p>
                             </div>
 
                             <div class="image-section">

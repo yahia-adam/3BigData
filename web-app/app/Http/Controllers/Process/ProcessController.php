@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Process;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Imagick;
 use Intervention\Image\ImageManager as Image;
+use Symfony\Component\VarDumper\Caster\FFICaster;
 
 class ProcessController extends Controller
 {
@@ -25,31 +27,30 @@ class ProcessController extends Controller
         $imageData = base64_encode(file_get_contents($imageFile));
         $path = storage_path('app/public/images/' . $filename);
         $image = Image::imagick()->read($imageData);
-        $image->resize(100, 100);
+        $image->resize(48, 48);
         $image->save($path);
 
         $publicPath = 'images/' . $filename;
+        $image = new Imagick($path);
+
+        $width = 48;
+        $height = 48;
+        // $matrix = unpack('C*', $imageData);
+        // dd($matrix);
+
+        $pixels = $image->exportImagePixels(0, 0, $width, $height, "RGB", Imagick::PIXEL_CHAR);
+
+        // dd($pixels);
+
+        $image->clear();
+        $image->destroy();
 
         try {
-            $imagick = new \Imagick($path);
-            $matrix = [];
-            $pixelIterator = $imagick->getPixelIterator();
-            foreach ($pixelIterator as $pixels) {
-                $row = [];
-                foreach ($pixels as $pixel) {
-                    $color = $pixel->getColor();
-                    $row[] = $color;
-                }
-                $matrix[] = $row;
-                $pixelIterator->syncIterator();
-            }
-
-            // dd($matrix);
 
             $action = $request->input('selectedAction');
             switch ($action) {
                 case 'linearModelClassification':
-                    // ici on appelle la fonction qui prend en parametre l'image et renvoie le type de poubelle pour afficher le resultat enfin
+                    $result = 'charbel';
                     break;
                 case 'mlpClassification':
                     // ici on appelle la fonction qui prend en parametre l'image et renvoie le type de poubelle pour afficher le resultat enfin
@@ -80,7 +81,7 @@ class ProcessController extends Controller
             return redirect()->route('upload.form')->withErrors(['message' => 'Error while transforming the image to matrix']);
         }
 
-        return redirect()->route('upload.form')->with('image', $publicPath);
+        return redirect()->route('upload.form')->with(['image' => $publicPath, 'result' => $result]);
     }
 
 }
