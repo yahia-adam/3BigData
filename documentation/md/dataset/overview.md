@@ -26,7 +26,7 @@ Les fichiers d'images suivent une nomenclature spécifique : `type_count.extensi
 
 ### Résolution des Images
 
-Toutes les images du dataset ont une résolution de 64 x 64 pixels.
+Toutes les images du dataset ont une résolution de 48 x 48 pixels.
 
 ### Répartition des Données
 
