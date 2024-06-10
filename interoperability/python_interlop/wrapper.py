@@ -48,24 +48,29 @@ my_lib.free_mlp.restype = None
 
 
 class MyModel:
-    def __init__(self, model_type, size, classes=2):
+    def __init__(self, model_type, size, classes=2, is_classification=True):
         self.classes = classes
-        self.train_data = ()
+        self.train_data = []
         self.__type = model_type
+        self.dims = size
+        self.is_classification = is_classification
 
-        if model_type == "ml":
-            self.models = []
-            for i in range(classes):
-                self.models.append(my_lib.init_linear_model(size))
+        if self.is_classification:
+            if model_type == "ml":
+                self.models = []
+                for i in range(classes):
+                    self.models.append(my_lib.init_linear_model(size))
+            elif model_type == "mlp":
+                size_ptr = np.ctypeslib.as_ctypes(
+                    np.array(size, dtype=ctypes.c_uint32)
+                )
+                self.model = my_lib.init_mlp(size_ptr)
 
-        elif model_type == "mlp":
-            size_ptr = np.ctypeslib.as_ctypes(
-                np.array(size, dtype=ctypes.c_uint32)
-            )
-            self.model = my_lib.init_mlp(size_ptr)
-
-        if classes != 2:
-            self.classes += 1
+            if classes != 2:
+                self.classes += 1
+        else:
+            if model_type == "ml":
+                self.model = my_lib.init_linear_model(size)
 
     def train(self, x: numpy.array, y: numpy.array, learning_rate: float, epochs: int):
         if len(x) != len(y):
@@ -73,22 +78,33 @@ class MyModel:
         if self.__type not in ["ml"]:
             raise ValueError("incorrect model type")
 
-        if self.classes == 2:
-            y = np.array([[1, 0] if value == 1 else [0, 1] for value in y])
-        y[:][y == 0] = -1
+        if self.is_classification:
+            if self.classes == 2:
+                y = np.array([[1, 0] if value == 1 else [0, 1] for value in y])
+            y[:][y == 0] = -1
         data_size = len(y)
 
-        self.train_data = ([i[0] for i in x], [i[1] for i in x], y)
+        self.train_data = list(map(list, zip(*x)))
+        self.train_data.append(y)
+
         y = y.transpose()
 
-        for i in range(self.classes - 1):
-            x_flat = x.flatten().astype(ctypes.c_float)
-            y_flat = y[i].flatten().astype(ctypes.c_float)
-            x_flat_ptr = x_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-            y_flat_ptr = y_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+        x_flat = x.flatten().astype(ctypes.c_float)
+        x_flat_ptr = x_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
+        if self.is_classification:
+            for i in range(self.classes - 1):
+                y_flat_ptr = y[i].flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+
+                if self.__type == "ml":
+                    my_lib.train_linear_model(self.models[i], x_flat_ptr, y_flat_ptr, self.dims, learning_rate, epochs)
+
+        else:
+            y_flat_ptr = y.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+            print(x_flat_ptr)
+            print(y_flat_ptr)
             if self.__type == "ml":
-                my_lib.train_linear_model(self.models[i], x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
+                my_lib.train_linear_model(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
 
     def print_classif(self, size_x, size_y, step, start_x=0, start_y=0):
         background_points = []
@@ -136,6 +152,20 @@ class MyModel:
         plt.scatter(self.train_data[0], self.train_data[1], c=train_colors)
 
         plt.show()
+
+    def print_regression(self, start=0, size=1):
+        x = []
+        y = []
+        if self.__type == "ml":
+            if self.dims == 1:
+                x = [0.0, 1.0, 2.0, 3.0]
+                for v in x:
+                    point = np.array([v], dtype=ctypes.c_float)
+                    points_pointer = np.ctypeslib.as_ctypes(point)
+                    y.append(my_lib.predict_linear_model(self.model, points_pointer))
+
+                plt.scatter(self.train_data[0], self.train_data[1])
+                plt.plot(x, y)
 
     def __del__(self):
         if self.__type != "ml":
