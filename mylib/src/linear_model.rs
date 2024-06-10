@@ -138,7 +138,7 @@ pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
 
 
 #[no_mangle]
-pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {
+pub extern "C" fn linear_model_to_json(model: *const LinearModel) -> *const c_char {
     let model: &LinearModel = unsafe { model.as_ref().unwrap() };
     let json_obj: serde_json::Value = json!({
         "weights": model.weights,
@@ -162,7 +162,7 @@ pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const 
         }
     };
     let weights_str: &str = unsafe {
-        let weights_ptr: *const c_char = to_json(model);
+        let weights_ptr: *const c_char = linear_model_to_json(model);
         std::ffi::CStr::from_ptr(weights_ptr).to_str().unwrap_or("")
     };
 

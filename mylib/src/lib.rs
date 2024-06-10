@@ -23,3 +23,6 @@ pub use linear_model::{LinearModel, init_linear_model, train_linear_model, predi
 
 #[allow(unused_imports)]
 pub use radical_basis_function_network::{RadicalBasisFunctionNetwork, init_rbf, train_rbf_regression, train_rbf_rosenblatt, predict_rbf_regression, predict_rbf_classification};
+
+#[allow(unused_imports)]
+pub use support_vector_machine::{SupportVectorClassifier, init_svc, train_svc, predict_svc,free_svc, save_svc, load_svc};

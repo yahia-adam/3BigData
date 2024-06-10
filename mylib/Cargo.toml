@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -80,3 +79,8 @@ path="examples/pmc/regression/non_linear_simple_2D.rs"
 [[example]]
 name="mlp_resgression_non_linear_simple_3D"
 path="examples/pmc/regression/non_linear_simple_3D.rs"
+
+# <-------------------------------------------------- svc ----------------------------------------------------->
+[[example]]
+name="svc_linear_simple"
+path="examples/svc/linear_simple.rs"
