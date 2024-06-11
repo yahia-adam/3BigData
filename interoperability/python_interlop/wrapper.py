@@ -30,18 +30,18 @@ my_lib.free_linear_model.restype = None
 
 ## -------------------------- init mlp --------------------------
 # pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32) -> *mut MultiLayerPerceptron
-my_lib.init_mlp.argtypes = [ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint32]
+my_lib.init_mlp.argtypes = [ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint32, ctypes.c_bool]
 my_lib.init_mlp.restype = ctypes.c_void_p
 
 # pub extern "C" fn train_mlp(  model: *mut MultiLayerPerceptron, inputs: *mut c_float, outputs: *mut c_float, row: u32,
-#                               alpha: c_float, nb_iteration: u32, is_classification: bool)
+#                               alpha: c_float, nb_iteration: u32)
 my_lib.train_mlp.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float),
-                             ctypes.c_uint32, ctypes.c_float, ctypes.c_uint32, ctypes.c_bool]
+                             ctypes.c_uint32, ctypes.c_float, ctypes.c_uint32]
 my_lib.train_mlp.restype = None
 
 # pub extern "C" fn predict_mlp(model: *mut MultiLayerPerceptron,sample_inputs: *mut f32,
 #                               sample_inputs_size: usize,is_classification: bool,) -> *mut f32
-my_lib.predict_mlp.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_uint32, ctypes.c_bool]
+my_lib.predict_mlp.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float)]
 my_lib.predict_mlp.restype = ctypes.POINTER(ctypes.c_float)
 
 # pub extern "C" fn free_mlp(model: *mut MultiLayerPerceptron)
@@ -63,11 +63,18 @@ class MyModel:
         if not is_3_classes:
             if self.__type == "ml":
                 self.model = my_lib.init_linear_model(self.__dims, is_classification)
+            elif self.__type == "mlp":
+                raw_size = np.ctypeslib.as_ctypes(np.array(size, dtype=ctypes.c_uint32))
+                self.model = my_lib.init_mlp(raw_size, len(size), is_classification)
         else:
+            self.model = []
             if self.__type == "ml":
-                self.model = []
                 for i in range(3):
                     self.model.append(my_lib.init_linear_model(self.__dims, is_classification))
+            elif self.__type == "mlp":
+                raw_size = np.ctypeslib.as_ctypes(np.array(size, dtype=ctypes.c_uint32))
+                for i in range(3):
+                    self.model.append(my_lib.init_mlp(raw_size, len(size), is_classification))
 
         # if model_type == "ml":
         #     self.models = []
@@ -85,8 +92,6 @@ class MyModel:
     def train(self, x: numpy.array, y: numpy.array, learning_rate: float, epochs: int):
         if len(x) != len(y):
             raise ValueError("x and y must have same length")
-        if self.__type not in ["ml"]:
-            raise ValueError("incorrect model type")
 
         data_size = len(y)
 
@@ -103,6 +108,8 @@ class MyModel:
             y_flat_ptr = y.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             if self.__type == "ml":
                 my_lib.train_linear_model(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
+            elif self.__type == "mlp":
+                my_lib.train_mlp(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
         else:
             y = np.transpose(y)
 
@@ -110,6 +117,7 @@ class MyModel:
                 y_flat_ptr = y[i].flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
                 if self.__type == "ml":
                     my_lib.train_linear_model(self.model[i], x_flat_ptr, y_flat_ptr, self.__dims, learning_rate, epochs)
+
 
     def print_classif(self, size_x, size_y, step, start_x=0, start_y=0):
         background_points = []
@@ -125,6 +133,8 @@ class MyModel:
                 if not self.__is_3_classes:
                     if self.__type == "ml":
                         prediction = my_lib.predict_linear_model(self.model, points_pointer)
+                    elif self.__type == "mlp":
+                        prediction = my_lib.predict_mlp(self.model, points_pointer)[0]
                     else:
                         prediction = 0
 
@@ -137,6 +147,9 @@ class MyModel:
                     if self.__type == "ml":
                         for i in range(3):
                             prediction.append(my_lib.predict_linear_model(self.model[i], points_pointer))
+                    elif self.__type == "mlp":
+                        for i in range(3):
+                            prediction.append(my_lib.predicy_mlp(self.model[i], points_pointer))
                     if prediction[0] == [1.0, -1.0, -1.0]:
                         background_colors.append("lightblue")
                     elif prediction[1] == [-1.0, 1.0, -1.0]:
