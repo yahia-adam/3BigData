@@ -14,12 +14,12 @@ use App\Services\MultilayerPerceptronService;
 class ProcessController extends Controller
 {
 
-    protected $multilayerPerceptronService;
-    public function __construct(MultilayerPerceptronService $multilayerPerceptronService)
-    {
-        $this->multilayerPerceptronService = $multilayerPerceptronService;
-        $this->multilayerPerceptronService->trainNewModel();
-    }
+    // protected $multilayerPerceptronService;
+    // public function __construct(MultilayerPerceptronService $multilayerPerceptronService)
+    // {
+    //     $this->multilayerPerceptronService = $multilayerPerceptronService;
+    //     $this->multilayerPerceptronService->trainNewModel();
+    // }
 
     /**
      * @throws \ImagickPixelIteratorException
@@ -45,7 +45,7 @@ class ProcessController extends Controller
         $image->destroy();
 
 
-        dd($this->multilayerPerceptronService->predict($publicPath));
+        // dd($this->multilayerPerceptronService->predict($publicPath));
         try {
 
             $action = $request->input('selectedAction');
