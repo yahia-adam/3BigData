@@ -7,9 +7,20 @@ use Illuminate\Http\Request;
 use Imagick;
 use Intervention\Image\ImageManager as Image;
 use Symfony\Component\VarDumper\Caster\FFICaster;
+use App\Services\DatasetService;
+use App\Services\MultilayerPerceptronService;
+
 
 class ProcessController extends Controller
 {
+
+    protected $multilayerPerceptronService;
+    public function __construct(MultilayerPerceptronService $multilayerPerceptronService)
+    {
+        $this->multilayerPerceptronService = $multilayerPerceptronService;
+        $this->multilayerPerceptronService->trainNewModel();
+    }
+
     /**
      * @throws \ImagickPixelIteratorException
      * @throws \ImagickException
@@ -29,22 +40,12 @@ class ProcessController extends Controller
         $image = Image::imagick()->read($imageData);
         $image->resize(48, 48);
         $image->save($path);
-
         $publicPath = 'images/' . $filename;
-        $image = new Imagick($path);
-
-        $width = 48;
-        $height = 48;
-        // $matrix = unpack('C*', $imageData);
-        // dd($matrix);
-
-        $pixels = $image->exportImagePixels(0, 0, $width, $height, "RGB", Imagick::PIXEL_CHAR);
-
-        // dd($pixels);
-
         $image->clear();
         $image->destroy();
 
+
+        dd($this->multilayerPerceptronService->predict($publicPath));
         try {
 
             $action = $request->input('selectedAction');
@@ -53,7 +54,6 @@ class ProcessController extends Controller
                     $result = 'charbel';
                     break;
                 case 'mlpClassification':
-                    // ici on appelle la fonction qui prend en parametre l'image et renvoie le type de poubelle pour afficher le resultat enfin
                     break;
                 case 'rbfClassification':
                     // ici on appelle la fonction qui prend en parametre l'image et renvoie le type de poubelle pour afficher le resultat enfin

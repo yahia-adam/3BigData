@@ -15,13 +15,15 @@ class DatasetService
     public $X_test;
     public $Y_test;
     public $x_size;
+    public $y_size;
     public $data_size;
     public $image_width;
     public $image_height;
 
     public function __construct()
     {
-        $this->dataset_path = env('DATASET_PATH', "../dataset");
+        $this->dataset_path = env('DATASET_PATH', "../datasets");
+        $this->init_dataset();
     }
 
     public function getDataset($type, $category)
@@ -49,42 +51,30 @@ class DatasetService
         $this->data_size = count($paper_train) + count($plastic_train) + count($glass_train);
         $this->image_height = 48;
         $this->image_width = 48;
-        $this->x_size = $this->image_height * $this->image_width * 3;
-
-        $paper_train = $paper_train->map(function ($file) {
-            return [$file, [1, -1, -1]];
-        })->toArray();
-        $plastic_train = $plastic_train->map(function ($file) {
-            return [$file, [-1, 1, -1]];
-        })->toArray();
-
-        $glass_train = $glass_train->map(function ($file) {
-            return [$file, [-1, -1, 1]];
-        })->toArray();
-
-        $x_datas = $paper_train;
-        foreach ($plastic_train as $data) {
-            $x_datas[] = $data;
-        }
-        shuffle($x_datas);
-
-        // Define the array types using FFI::arrayType
+        $this->x_size = $this->image_height * $this->image_width * 3; // 3 for RGB
+        $this->y_size = 3; // Assuming 3 classes
+    
         $X_train_type = FFI::arrayType(FFI::type("float"), [$this->data_size * $this->x_size]);
-        $Y_train_type = FFI::arrayType(FFI::type("float"), [$this->data_size]);
-
-        // Create the actual FFI arrays
+        $Y_train_type = FFI::arrayType(FFI::type("float"), [$this->data_size * $this->y_size]);
+    
         $this->X_train = FFI::new($X_train_type);
         $this->Y_train = FFI::new($Y_train_type);
-
-        // Populate the arrays
+    
         $xIndex = 0;
         $yIndex = 0;
-        foreach ($x_datas as $data) {
-            $imageData = $this->getImageData($data[0], $this->image_width, $this->image_height);
-            foreach ($imageData as $d) {
-                $this->X_train[$xIndex++] = $d;
+        $classes = ['paper' => [1, 0, 0], 'plastic' => [0, 1, 0], 'glass' => [0, 0, 1]];
+    
+        foreach (['paper_train' => $paper_train, 'plastic_train' => $plastic_train, 'glass_train' => $glass_train] as $label => $data_set) {
+            foreach ($data_set as $data) {
+                $imageData = $this->getImageData($data, $this->image_width, $this->image_height);
+                foreach ($imageData as $d) {
+                    $this->X_train[$xIndex++] = $d / 255.0; // Normalization to 0-1 range
+                }
+                foreach ($classes[str_replace('_train', '', $label)] as $value) {
+                    $this->Y_train[$yIndex++] = $value;
+                }
             }
-            $this->Y_train[$yIndex++] = $data[1];
         }
     }
+    
 }
