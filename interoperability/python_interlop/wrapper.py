@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy
 import numpy as np
 import ctypes as ctypes
-from mpl_toolkits.mplot3d import Axes3D
 
 lib_path = "../../mylib/target/release/mylib.dll"
 my_lib = ctypes.cdll.LoadLibrary(lib_path)
@@ -27,8 +26,7 @@ my_lib.predict_linear_model.restype = ctypes.c_float
 my_lib.free_linear_model.argtypes = [ctypes.c_void_p]
 my_lib.free_linear_model.restype = None
 
-
-## -------------------------- init mlp --------------------------
+# -------------------------- init mlp --------------------------
 # pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32) -> *mut MultiLayerPerceptron
 my_lib.init_mlp.argtypes = [ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint32, ctypes.c_bool]
 my_lib.init_mlp.restype = ctypes.c_void_p
@@ -48,9 +46,33 @@ my_lib.predict_mlp.restype = ctypes.POINTER(ctypes.c_float)
 my_lib.free_mlp.argtypes = [ctypes.c_void_p]
 my_lib.free_mlp.restype = None
 
+# ---------------------------- init RBF --------------------------
+# pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *mut RadicalBasisFunctionNetwork
+my_lib.init_rbf.argtypes = [ctypes.c_int32, ctypes.c_int32, ctypes.c_float]
+my_lib.init_rbf.restype = ctypes.c_void_p
+
+# pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork, sample_inputs_flat : *mut f32,
+#                                           expected_outputs : *mut f32, inputs_size : i32, sample_count : i32)
+my_lib.train_rbf_regression.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float),
+                                        ctypes.c_int32, ctypes.c_int32]
+my_lib.train_rbf_regression.restype = None
+
+# pub extern "C" fn predict_rbf_regression(model : *mut RadicalBasisFunctionNetwork, inputs : *mut f32) -> f32
+my_lib.predict_rbf_regression.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float)]
+my_lib.predict_rbf_regression.restype = ctypes.c_float
+
+# pub extern "C" fn train_rbf_rosenblatt(model : *mut RadicalBasisFunctionNetwork, sample_inputs_flat : *mut f32,
+#           expected_outputs : *mut f32, iterations_count : i32, alpha : f32, inputs_size : i32, sample_count : i32)
+my_lib.train_rbf_rosenblatt.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float),
+                                        ctypes.c_int32, ctypes.c_float, ctypes.c_int32, ctypes.c_int32]
+my_lib.train_rbf_rosenblatt.restype = None
+
+# pub extern "C" fn predict_rbf_classification(model : *mut RadicalBasisFunctionNetwork, inputs : *mut f32)-> f32
+my_lib.predict_rbf_classification.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float)]
+my_lib.predict_rbf_classification.restype = ctypes.c_float
 
 class MyModel:
-    def __init__(self, model_type, size, is_classification=False, is_3_classes=False):
+    def __init__(self, model_type, size, is_classification=False, is_3_classes=False, cluster_size=0, gamma=0, ):
         self.train_data = []
         self.__type = model_type
         self.__dims = size
@@ -66,6 +88,10 @@ class MyModel:
             elif self.__type == "mlp":
                 raw_size = np.ctypeslib.as_ctypes(np.array(size, dtype=ctypes.c_uint32))
                 self.model = my_lib.init_mlp(raw_size, len(size), is_classification)
+            elif self.__type == "rbf":
+                self.cluster_size = cluster_size
+                self.gamma = gamma
+                self.model = my_lib.init_rbf(size, cluster_size, gamma)
         else:
             self.model = []
             if self.__type == "ml":
@@ -110,14 +136,15 @@ class MyModel:
                 my_lib.train_linear_model(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
             elif self.__type == "mlp":
                 my_lib.train_mlp(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
+            elif self.__type == "rbf":
+                if self.__is_classification:
+                    my_lib.train_rbf_rosenblatt(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
         else:
             y = np.transpose(y)
-
             for i in range(3):
                 y_flat_ptr = y[i].flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
                 if self.__type == "ml":
                     my_lib.train_linear_model(self.model[i], x_flat_ptr, y_flat_ptr, self.__dims, learning_rate, epochs)
-
 
     def print_classif(self, size_x, size_y, step, start_x=0, start_y=0):
         background_points = []
@@ -140,8 +167,10 @@ class MyModel:
 
                     if prediction == 1:
                         background_colors.append("lightblue")
-                    else:
+                    elif prediction == -1:
                         background_colors.append("pink")
+                    else:
+                        print("Problème de prédiction :", prediction)
                 else:
                     prediction = []
                     if self.__type == "ml":
@@ -149,7 +178,7 @@ class MyModel:
                             prediction.append(my_lib.predict_linear_model(self.model[i], points_pointer))
                     elif self.__type == "mlp":
                         for i in range(3):
-                            prediction.append(my_lib.predicy_mlp(self.model[i], points_pointer))
+                            prediction.append(my_lib.predict_mlp(self.model[i], points_pointer))
                     if prediction[0] == [1.0, -1.0, -1.0]:
                         background_colors.append("lightblue")
                     elif prediction[1] == [-1.0, 1.0, -1.0]:
@@ -167,10 +196,14 @@ class MyModel:
                 #     prediction = np.array(prediction)
                 #
 
-                pos_y += step
-            pos_x += step
+                pos_y = round(pos_y + step, 4)  # round to avoid floating point drift
+            pos_x = round(pos_x + step, 4)
 
         background_points = np.array(background_points)
+
+        fig, ax = plt.subplots()
+
+        fig.patch.set_bounds(-5, -5, 10, 10)
         plt.scatter(background_points[:, 0], background_points[:, 1], c=background_colors)
 
         train_colors = []
@@ -192,35 +225,41 @@ class MyModel:
         plt.scatter(self.train_data[0], self.train_data[1], c=train_colors)
         plt.show()
 
-    def print_regression(self, start=0, size=1):
-        x = []
+    def print_regression(self, start=0, size=3.2):
+        x = [i * 0.1 for i in range(32)]
         y = []
-        if self.__type == "ml":
-            if self.__dims == 1:
-                x = [0.0, 3.0]
+
+        if self.__dims == 1 or (self.__type == "mlp" and self.__dims[0] == 1):
+            if self.__type == "ml":
                 for v in x:
                     point = np.array([v], dtype=ctypes.c_float)
                     points_pointer = np.ctypeslib.as_ctypes(point)
                     y.append(my_lib.predict_linear_model(self.model, points_pointer))
-
-                plt.scatter(self.train_data[0], self.train_data[1])
-                plt.plot(x, y)
-
-                plt.show()
-            elif self.__dims == 2:
-                x = [[0.0, 0.0], [3.0, 3.0]]
+            elif self.__type == "mlp":
                 for v in x:
+                    point = np.array([v], dtype=ctypes.c_float)
+                    points_pointer = np.ctypeslib.as_ctypes(point)
+                    y.append(my_lib.predict_mlp(self.model, points_pointer)[0])
 
-                    points_pointer = np.ctypeslib.as_ctypes(np.array(v, dtype=ctypes.c_float))
-                    y.append(my_lib.predict_linear_model(self.model, points_pointer))
+            plt.scatter(self.train_data[0], self.train_data[1])
+            plt.plot(x, y)
 
-                ax = plt.figure().add_subplot(111, projection='3d')
+            plt.show()
+        elif self.__dims == 2:
+            x = [[0.0, 0.0], [3.0, 3.0]]
+            for v in x:
+                points_pointer = np.ctypeslib.as_ctypes(np.array(v, dtype=ctypes.c_float))
+                y.append(my_lib.predict_linear_model(self.model, points_pointer))
 
-                ax.scatter(self.train_data[0], self.train_data[1], self.train_data[2])
-                ax.plot_surface(x[0], x[1], y)
+            ax = plt.figure().add_subplot(111, projection='3d')
 
-                plt.show()
+            ax.scatter(self.train_data[0], self.train_data[1], self.train_data[2])
+            ax.plot_surface(x[0], x[1], y)
 
-    def __del__(self):
-        if self.__type != "ml":
+            plt.show()
+
+    def delete(self):
+        if self.__type == "ml":
             my_lib.free_linear_model(self.model)
+        elif self.__type == "mlp":
+            my_lib.free_mlp(self.model)
