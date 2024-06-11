@@ -7,7 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/mylib/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/mylib/target" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="2024_3A_IABD_1_ML" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
