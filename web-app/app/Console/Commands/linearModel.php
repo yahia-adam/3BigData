@@ -50,8 +50,8 @@ class linearModel extends Command
         ", $libpath);
 
         try {
-            $model = $ffi->init_linear_model($this->datasetService->x_size, true);
-            $ffi->train_linear_model($model, $this->datasetService->X_train, $this->datasetService->Y_train, $this->datasetService->data_size, 0.001, 10);
+            // $model = $ffi->init_linear_model($this->datasetService->x_size, true);
+            // $ffi->train_linear_model($model, $this->datasetService->X_train, $this->datasetService->Y_train, $this->datasetService->data_size, 0.001, 10);
             
             // $testInput = FFI::new("float[2]", false, true);
             // foreach ($testInputs as $input) {

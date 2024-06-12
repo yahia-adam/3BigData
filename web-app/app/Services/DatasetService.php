@@ -59,6 +59,7 @@ class DatasetService
     
         $this->X_train = FFI::new($X_train_type);
         $this->Y_train = FFI::new($Y_train_type);
+        
     
         $xIndex = 0;
         $yIndex = 0;
@@ -66,6 +67,7 @@ class DatasetService
     
         foreach (['paper_train' => $paper_train, 'plastic_train' => $plastic_train, 'glass_train' => $glass_train] as $label => $data_set) {
             foreach ($data_set as $data) {
+                var_dump($data);
                 $imageData = $this->getImageData($data, $this->image_width, $this->image_height);
                 foreach ($imageData as $d) {
                     $this->X_train[$xIndex++] = $d / 255.0; // Normalization to 0-1 range
@@ -75,6 +77,5 @@ class DatasetService
                 }
             }
         }
-    }
-    
+    }    
 }

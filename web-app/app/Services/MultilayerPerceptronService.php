@@ -8,7 +8,6 @@ use FFI;
 
 class MultilayerPerceptronService
 {
-
     protected $mylib;
     protected $model;
     protected $datasetService;
@@ -38,6 +37,17 @@ class MultilayerPerceptronService
         }
         $this->model = $this->mylib->init_mlp(FFI::addr($npl_ptr[0]), count($npl), true);
         $this->mylib->train_mlp($this->model, FFI::cast('float*', $this->datasetService->X_train), FFI::cast('float*', $this->datasetService->Y_train), $this->datasetService->data_size, $alpha, $iterations);
+       
+        $ffi = FFI::cdef("
+            void *memcpy(void *dest, const void *src, size_t n);
+        ", "libc.so.6");
+    
+        $file_path = "/home/adam/esgi/pa/3BigData/web-app/storage/app/models/pmc/";
+        $file = $ffi->new("char[" . (strlen($file_path) + 1) . "]", false);
+        $ffi->memcpy($file, $file_path, strlen($file_path) + 1);
+        dd(FFI::string($file));
+
+        $this->mylib->save_mlp_model($this->model, $file);
     }
 
     public function predict($image_path)
