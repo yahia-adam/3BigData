@@ -194,14 +194,14 @@ pub extern "C" fn predict_mlp(
     let predictions: &[f32] = &model_ref.x[last_layer][1..];
 
     let mut cloned_predictions: Vec<f32> = predictions.to_vec();
-    if model_ref.is_classification{
-        if cloned_predictions[0] >= 0.0{
-            cloned_predictions[0] = 1.0;
-        }
-        else {
-            cloned_predictions[0] = -1.0;
-        }
-    }
+    // if model_ref.is_classification{
+    //     if cloned_predictions[0] >= 0.0{
+    //         cloned_predictions[0] = 1.0;
+    //     }
+    //     else {
+    //         cloned_predictions[0] = -1.0;
+    //     }
+    // }
     let result: &mut [f32] = Vec::leak(cloned_predictions);
 
     result.as_mut_ptr()

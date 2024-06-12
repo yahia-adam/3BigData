@@ -96,7 +96,7 @@ class MyModel:
             self.model = []
             if self.__type == "ml":
                 for i in range(3):
-                    self.model.append(my_lib.init_linear_model(self.__dims, is_classification))
+                    self.model.append(my_lib.init_linear_model(self.__dims, False))
             elif self.__type == "mlp":
                 raw_size = np.ctypeslib.as_ctypes(np.array(size, dtype=ctypes.c_uint32))
                 for i in range(3):
@@ -162,6 +162,10 @@ class MyModel:
                         prediction = my_lib.predict_linear_model(self.model, points_pointer)
                     elif self.__type == "mlp":
                         prediction = my_lib.predict_mlp(self.model, points_pointer)[0]
+                        if prediction > 0:
+                            prediction = 1
+                        else:
+                            prediction = -1
                     else:
                         prediction = 0
 
@@ -179,11 +183,13 @@ class MyModel:
                     elif self.__type == "mlp":
                         for i in range(3):
                             prediction.append(my_lib.predict_mlp(self.model[i], points_pointer))
-                    if prediction[0] == [1.0, -1.0, -1.0]:
+
+                    result = np.argmax(prediction)
+                    if result == 0:
                         background_colors.append("lightblue")
-                    elif prediction[1] == [-1.0, 1.0, -1.0]:
+                    elif result == 1:
                         background_colors.append("pink")
-                    elif prediction[2] == [-1.0, -1.0, 1.0]:
+                    elif result == 2:
                         background_colors.append("lightgreen")
                     else:
                         background_colors.append("white")
@@ -224,6 +230,7 @@ class MyModel:
 
         plt.scatter(self.train_data[0], self.train_data[1], c=train_colors)
         plt.show()
+        plt.clf()
 
     def print_regression(self, start=0, size=3.2):
         x = [i * 0.1 for i in range(32)]
