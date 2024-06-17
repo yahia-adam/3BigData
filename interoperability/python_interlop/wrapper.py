@@ -71,6 +71,10 @@ my_lib.train_rbf_rosenblatt.restype = None
 my_lib.predict_rbf_classification.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float)]
 my_lib.predict_rbf_classification.restype = ctypes.c_float
 
+# pub extern "C" fn free_rbf(model : *mut RadicalBasisFunctionNetwork)
+my_lib.free_rbf.argtypes = [ctypes.c_void_p]
+my_lib.free_rbf.restype = None
+
 class MyModel:
     def __init__(self, model_type, size, is_classification=False, is_3_classes=False, cluster_size=0, gamma=0, ):
         self.train_data = []
@@ -120,6 +124,7 @@ class MyModel:
             raise ValueError("x and y must have same length")
 
         data_size = len(y)
+        sample_count = len(x)
 
         if self.__is_3_classes:
             y[y == 0] = -1
@@ -138,7 +143,10 @@ class MyModel:
                 my_lib.train_mlp(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
             elif self.__type == "rbf":
                 if self.__is_classification:
-                    my_lib.train_rbf_rosenblatt(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
+                    my_lib.train_rbf_rosenblatt(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate,
+                                                epochs, sample_count)
+                # else:
+                #     my_lib.train_rbf_regression(self.model, x_flat_ptr, y_flat_ptr, inputs_size, sample_count)
         else:
             y = np.transpose(y)
             for i in range(3):
@@ -166,6 +174,8 @@ class MyModel:
                             prediction = 1
                         else:
                             prediction = -1
+                    elif self.__type == "rbf":
+                        prediction = my_lib.predict_rbf_classification(self.model, points_pointer)
                     else:
                         prediction = 0
 
@@ -247,6 +257,11 @@ class MyModel:
                     point = np.array([v], dtype=ctypes.c_float)
                     points_pointer = np.ctypeslib.as_ctypes(point)
                     y.append(my_lib.predict_mlp(self.model, points_pointer)[0])
+            elif self.__type == "rbf":
+                for v in x:
+                    point = np.array([v], dtype=ctypes.c_float)
+                    points_pointer = np.ctypeslib.as_ctypes(point)
+                    y.append(my_lib.predict_rbf_regression(self.model, points_pointer))
 
             plt.scatter(self.train_data[0], self.train_data[1])
             plt.plot(x, y)
@@ -270,3 +285,5 @@ class MyModel:
             my_lib.free_linear_model(self.model)
         elif self.__type == "mlp":
             my_lib.free_mlp(self.model)
+        elif self.__type == "rbf":
+            my_lib.free_rbf(self.model)

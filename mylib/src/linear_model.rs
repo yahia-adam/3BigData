@@ -43,7 +43,6 @@ pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -
     leaked_boxed_model.into()
 }
 
-
 #[no_mangle]
 pub extern "C" fn train_linear_model(
     model: *mut LinearModel,
