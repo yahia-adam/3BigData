@@ -20,7 +20,7 @@ fn main() {
     let x_ptr: *mut f32 = Vec::leak(x_flaten.clone()).as_mut_ptr();
     let y_ptr: *mut f32 = Vec::leak(y.clone()).as_mut_ptr();
     
-    let mut npl = vec![2,2,1];
+    let mut npl: Vec<u32> = vec![2,3,1];
 
     let mlp: *mut MultiLayerPerceptron = init_mlp(npl.as_mut_ptr(), 3, true);
     train_mlp(mlp, x_ptr, y_ptr, data_size as u32, 0.001, 1_000_000);
