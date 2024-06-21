@@ -202,5 +202,7 @@ pub extern "C" fn load_linear_model(json_str_ptr: *const c_char) -> *mut LinearM
 
 #[no_mangle]
 pub extern "C" fn free_linear_model(model: *mut LinearModel) {
-    let _: &mut LinearModel = unsafe { model.as_mut().unwrap() };
+    unsafe {
+        let _model= Box::from_raw(model);
+    }
 }
