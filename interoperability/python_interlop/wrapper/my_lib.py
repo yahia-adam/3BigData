@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.dtypes import StrDType
 import ctypes
 from interoperability.python_interlop.wrapper.import_lib import init_lib
 
@@ -114,40 +113,6 @@ class MyModel:
             self.print_classification(start_x=start_x, start_y=start_y, step=step, end_x=end_x, end_y=end_y)
         else:
             self.print_regression(start=start_x, end=end_x)
-
-    # def get_prediction(self, x: np.ndarray):
-    #     """
-    #     Get the predicted value for a given point
-    #     :param x: coordinates of the point to predict
-    #     :return: the value predicted by the model
-    #     """
-    #     points_pointer = np.ctypeslib.as_ctypes(np.array(x, dtype=ctypes.c_float))
-    #
-    #     try:
-    #         if not self.__is_3_classes:
-    #             if self.__type == "ml":
-    #                 prediction = my_lib.predict_linear_model(self.model, points_pointer)
-    #             elif self.__type == "mlp":
-    #                 prediction = my_lib.predict_mlp(self.model, points_pointer)[0]
-    #                 if prediction > 0:
-    #                     prediction = 1
-    #                 else:
-    #                     prediction = -1
-    #             elif self.__type == "rbf":
-    #                 prediction = my_lib.predict_rbf_classification(self.model, points_pointer)
-    #             else:
-    #                 prediction = 0
-    #         else:
-    #             prediction = []
-    #             if self.__type == "ml":
-    #                 for i in range(3):
-    #                     prediction.append(my_lib.predict_linear_model(self.model[i], points_pointer))
-    #             elif self.__type == "mlp":
-    #                 for i in range(3):
-    #                     prediction.append(my_lib.predict_mlp(self.model[i], points_pointer))
-    #         return prediction
-    #     except Exception as e:
-    #         print(f"Prediction failed due to {e}")
 
     def print_classification(self, end_x, end_y, step, start_x=0, start_y=0):
         background_points = np.mgrid[start_x:end_x:step, start_y:end_y:step].reshape(2, -1).T
