@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.dtypes import StrDType
 import ctypes
 from interoperability.python_interlop.wrapper.import_lib import init_lib
 
@@ -32,12 +33,14 @@ class MyModel:
 
         print("Initializing the model...")
 
-        if not is_3_classes:
-            self.model = self.init_model()
+        if not self.__is_3_classes or self.__type != "ml":
+            self.model = self._init_model()
         else:
-            self.model = [self.init_model() for _ in range(3)]
+            self.__is_classification = False
+            self.model = [self._init_model() for _ in range(3)]
+            self.__is_classification = True
 
-    def init_model(self):
+    def _init_model(self):
         """
         Initializes a model using the rust lib
         :return: the address of the model
@@ -75,7 +78,7 @@ class MyModel:
         x_flat = x.flatten().astype(ctypes.c_float)
         x_flat_ptr = x_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
-        if not self.__is_3_classes:
+        if not self.__is_3_classes or self.__type != "ml":
             y_flat_ptr = y.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             self._train_model(x_flat_ptr, y_flat_ptr, data_size, sample_count, learning_rate, epochs)
         else:
@@ -83,7 +86,7 @@ class MyModel:
             for i in range(3):
                 y_flat_ptr = y[i].flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
                 if self.__type == "ml":
-                    my_lib.train_linear_model(self.model[i], x_flat_ptr, y_flat_ptr, self.__dims, learning_rate, epochs)
+                    self._train_model(x_flat_ptr, y_flat_ptr, data_size, sample_count, learning_rate, epochs, i)
 
     def _train_model(self, x_flat_ptr: np.ndarray, y_flat_ptr: np.ndarray, data_size: int, sample_count: int,
                      learning_rate: float, epochs: int, index=None):
@@ -112,43 +115,44 @@ class MyModel:
         else:
             self.print_regression(start=start_x, end=end_x)
 
-    def get_prediction(self, x: np.ndarray):
-        """
-        Get the predicted value for a given point
-        :param x: coordinates of the point to predict
-        :return: the value predicted by the model
-        """
-        points_pointer = np.ctypeslib.as_ctypes(np.array(x, dtype=ctypes.c_float))
-
-        try:
-            if not self.__is_3_classes:
-                if self.__type == "ml":
-                    prediction = my_lib.predict_linear_model(self.model, points_pointer)
-                elif self.__type == "mlp":
-                    prediction = my_lib.predict_mlp(self.model, points_pointer)[0]
-                    if prediction > 0:
-                        prediction = 1
-                    else:
-                        prediction = -1
-                elif self.__type == "rbf":
-                    prediction = my_lib.predict_rbf_classification(self.model, points_pointer)
-                else:
-                    prediction = 0
-            else:
-                prediction = []
-                if self.__type == "ml":
-                    for i in range(3):
-                        prediction.append(my_lib.predict_linear_model(self.model[i], points_pointer))
-                elif self.__type == "mlp":
-                    for i in range(3):
-                        prediction.append(my_lib.predict_mlp(self.model[i], points_pointer))
-            return prediction
-        except Exception as e:
-            print(f"Prediction failed due to {e}")
+    # def get_prediction(self, x: np.ndarray):
+    #     """
+    #     Get the predicted value for a given point
+    #     :param x: coordinates of the point to predict
+    #     :return: the value predicted by the model
+    #     """
+    #     points_pointer = np.ctypeslib.as_ctypes(np.array(x, dtype=ctypes.c_float))
+    #
+    #     try:
+    #         if not self.__is_3_classes:
+    #             if self.__type == "ml":
+    #                 prediction = my_lib.predict_linear_model(self.model, points_pointer)
+    #             elif self.__type == "mlp":
+    #                 prediction = my_lib.predict_mlp(self.model, points_pointer)[0]
+    #                 if prediction > 0:
+    #                     prediction = 1
+    #                 else:
+    #                     prediction = -1
+    #             elif self.__type == "rbf":
+    #                 prediction = my_lib.predict_rbf_classification(self.model, points_pointer)
+    #             else:
+    #                 prediction = 0
+    #         else:
+    #             prediction = []
+    #             if self.__type == "ml":
+    #                 for i in range(3):
+    #                     prediction.append(my_lib.predict_linear_model(self.model[i], points_pointer))
+    #             elif self.__type == "mlp":
+    #                 for i in range(3):
+    #                     prediction.append(my_lib.predict_mlp(self.model[i], points_pointer))
+    #         return prediction
+    #     except Exception as e:
+    #         print(f"Prediction failed due to {e}")
 
     def print_classification(self, end_x, end_y, step, start_x=0, start_y=0):
         background_points = np.mgrid[start_x:end_x:step, start_y:end_y:step].reshape(2, -1).T
-        background_colors = np.apply_along_axis(self._get_prediction_color, 1, background_points)
+        background_colors = np.array(list(map(self._get_prediction_color, background_points)))
+        # np.apply_along_axis(self._get_prediction_color, 1, background_points)
 
         fig, ax = plt.subplots()
         fig.patch.set_bounds(-5, -5, 10, 10)
@@ -182,7 +186,7 @@ class MyModel:
                 if point[0] == 1:
                     train_colors.append("blue")
                 elif point[1] == 1:
-                    train_colors.append("pink")
+                    train_colors.append("red")
                 else:
                     train_colors.append("green")
 
@@ -191,7 +195,10 @@ class MyModel:
     def _predict_value(self, point: np.ndarray):
         point_pointer = np.ctypeslib.as_ctypes(np.array(point, dtype=ctypes.c_float))
         if self.__type == "ml":
-            return my_lib.predict_linear_model(self.model, point_pointer)
+            if not self.__is_3_classes:
+                return my_lib.predict_linear_model(self.model, point_pointer)
+            else:
+                return [my_lib.predict_linear_model(self.model[i], point_pointer) for i in range(3)]
         elif self.__type == "mlp":
             return my_lib.predict_mlp(self.model, point_pointer)[0]
         elif self.__type == "rbf":
@@ -208,11 +215,32 @@ class MyModel:
         plt.plot(x, y)
         plt.show()
 
+    def print_regression_3d(self, start: float = 0, end: float = 3.2):
+        X = np.array(self.train_data)
+        x_surf, y_surf = np.meshgrid(np.linspace(X[0].min(), X[0].max(), 100),
+                                     np.linspace(X[1].min(), X[1].max(), 100))
+
+        result = (np.array([self._predict_value(np.array([x, y]))
+                            for x, y in zip(x_surf.ravel(), y_surf.ravel())]).reshape(x_surf.shape))
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(X[0], X[1], X[2], c="blue")
+        ax.plot_surface(x_surf, y_surf, result, color="grey", alpha=0.5)
+        ax.set_xlabel('X1')
+        ax.set_ylabel('X2')
+        ax.set_zlabel('Y')
+        plt.show()
+
     def free_model(self):
         if hasattr(self, "model") and self.model is not None:
             print("Deleting last model...")
             if self.__type == "ml":
-                my_lib.free_linear_model(self.model)
+                if not self.__is_3_classes:
+                    my_lib.free_linear_model(self.model)
+                else:
+                    for i in range(3):
+                        my_lib.free_linear_model(self.model[i])
             elif self.__type == "mlp":
                 my_lib.free_mlp(self.model)
             elif self.__type == "rbf":
@@ -227,5 +255,3 @@ class MyModel:
 
     def __del__(self):
         self.free_model()
-
-
