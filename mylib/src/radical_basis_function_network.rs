@@ -66,7 +66,7 @@ pub fn euclid(x : &[f32], y : &[f32]) -> f32{
     for i in 0..(x.len()){
         res += powf(y[i] - x[i], 2f32);
     }
-    sqrtf(res);
+    sqrtf(res)
 }
 
 pub fn get_rand_centers(data : &[f32], cluster_num : i32, sample_count : i32, inputs_size : i32)-> Vec<Vec<f32>>{
@@ -153,7 +153,7 @@ pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork,
         let xi = &sample_inputs_flat[(i * inputs_size as usize)..((i + 1) * inputs_size as usize)];
         for j in 0..cluster_num as usize{
             let cluster_pointsj = &cluster_points[(j * inputs_size as usize)..((j + 1 ) * inputs_size as usize)];
-            phi[(i, j)] = (-model.gamma * euclid(xi, cluster_pointsj).powi(2)).exp();
+            phi[(i, j)] = expf(-model.gamma * euclid(xi, cluster_pointsj) * euclid(xi, cluster_pointsj));
             for n in 0..inputs_size as usize{
                 model.centers[j][n] = cluster_pointsj[n];
             }
