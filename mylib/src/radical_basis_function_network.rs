@@ -10,18 +10,23 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-use std::io::BufReader;
 use serde::{Deserialize, Serialize};
 use ndarray::prelude::*;
-use ndarray_rand::rand;
 use ndarray_linalg::*;
-use rand::Rng;
 use serde_json::{self};
-use std::ffi::c_char;
 use std::ffi::CStr;
+use ndarray::prelude::*;
+use ndarray_rand::{rand};
+use ndarray_rand::rand::Rng;
+use std::slice::{from_raw_parts, from_raw_parts_mut};
+use ndarray_linalg::*;
+use std::iter::FromIterator;
+use osqp::{CscMatrix, Problem, Settings};
+use libm::*;
+use itertools::Itertools;
 use std::fs::File;
-use std::io::Write;
-use std::slice::from_raw_parts;
+use std::io::{Write, BufReader};
+use std::os::raw::c_char;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadicalBasisFunctionNetwork {
