@@ -227,7 +227,7 @@ pub extern "C" fn train_rbf_rosenblatt(model : *mut RadicalBasisFunctionNetwork,
         let gk = predict_rbf_classification_slice(model, x);
 
         for i in 0..cluster_num as usize{
-            model.weights[i] += alpha * (yk - gk) * (-model.gamma * euclid(x, model.centers[i].as_slice()) * euclid(x, model.centers[i].as_slice())).exp();
+            model.weights[i] += alpha * (yk - gk) * expf(-model.gamma * euclid(x, model.centers[i].as_slice()) * euclid(x, model.centers[i].as_slice()));
         }
     }
 }
