@@ -64,9 +64,9 @@ pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *
 pub fn euclid(x : &[f32], y : &[f32]) -> f32{
     let mut res = 0f32;
     for i in 0..(x.len()){
-        res += (y[i] - x[i]).powi(2);
+        res += powf(y[i] - x[i], 2f32);
     }
-    res.sqrt()
+    sqrtf(res);
 }
 
 pub fn get_rand_centers(data : &[f32], cluster_num : i32, sample_count : i32, inputs_size : i32)-> Vec<Vec<f32>>{
