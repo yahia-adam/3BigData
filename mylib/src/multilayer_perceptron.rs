@@ -100,7 +100,6 @@ fn backpropagate(
    
 }
 
-
 fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
     
 }
