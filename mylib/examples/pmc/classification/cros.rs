@@ -2,7 +2,6 @@
 use mylib::{MultiLayerPerceptron , init_mlp, train_mlp, predict_mlp, free_mlp, save_mlp_model};
 
 fn main() {
-
     let x: Vec<Vec<f64>> = vec![
     vec![ 7.61127192e-01,  1.39354856e-01],
     vec![-9.46896124e-01,  8.80355590e-01],
@@ -542,7 +541,7 @@ fn main() {
     println!("");
     for i in 0..data_size / 100 {
         let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();
-        let output = predict_mlp(mlp, input_ptr);
+        let output: *mut f32 = predict_mlp(mlp, input_ptr);
         
         let res: Vec<f32> =
         unsafe { Vec::from_raw_parts(output, 1, 1) };

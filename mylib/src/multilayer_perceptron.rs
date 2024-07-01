@@ -10,7 +10,6 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-
 use rand::Rng;
 use serde_json::{self, json};
 use std::ffi::c_char;
@@ -19,7 +18,6 @@ use std::ffi::CStr;
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
-use std::result;
 use std::vec;
 
 pub struct MultiLayerPerceptron {
@@ -28,6 +26,7 @@ pub struct MultiLayerPerceptron {
     pub weights: Vec<Vec<Vec<f32>>>,
     pub layer_nbr: usize,
     pub activation: Vec<Vec<f32>>,
+    pub gradients:  Vec<Vec<Vec<f32>>>,
 }
 
 #[no_mangle]
@@ -45,7 +44,8 @@ pub extern "C" fn init_mlp(neurons_per_layer: *mut u32, npl_size: u32, is_classi
         is_classification,
         weights: vec![],
         layer_nbr: (npl_size - 1) as usize,
-        activation: vec![]
+        activation: vec![],
+        gradients: vec![],
     };
 
     for l in 1..model.layer_nbr + 1 {
@@ -54,12 +54,13 @@ pub extern "C" fn init_mlp(neurons_per_layer: *mut u32, npl_size: u32, is_classi
             let mut neural: Vec<f32> = vec![];
             neural.push(1 as f32);
             for _ in 0..model.neurons_per_layer[l - 1] {
-                neural.push(rand::thread_rng().gen_range(-1.0..1.0))
+                neural.push(rand::thread_rng().gen_range(-1.0..1.0));
             }
-            layer.push(neural)
+            layer.push(neural);
         }
         model.weights.push(layer);
     }
+    model.gradients = model.weights.clone();
 
     model.activation.push(vec![]);
     for l in 1..model.layer_nbr + 1 {
@@ -70,8 +71,16 @@ pub extern "C" fn init_mlp(neurons_per_layer: *mut u32, npl_size: u32, is_classi
         model.activation.push(layer);
     }
 
-
     // println!("{:?}", model.activation);
+    // println!("{:?}", model.gradients);
+    println!("{:?}", model.weights);
+    // for l in 1..model.layer_nbr + 1 {
+    //     for n in 0..(model.neurons_per_layer[l]) {
+    //         for w in 0..model.neurons_per_layer[l - 1] {
+    //             model.weights[l-1][n][w] -= 0.01 * model.gradients[l-1][n][w];
+    //         }
+    //     }
+    // }
     // println!("{:?}", model.weights);
     // propagate(&mut model, vec![1.0,2.0]);
     // println!("{:?}", model.activation);
@@ -87,21 +96,37 @@ fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>) {
     for (l, layers) in model.weights.iter().enumerate() {
         for (n, neurals) in layers.iter().enumerate() {
             let weighted_sum: Vec<f32> = neurals.iter().zip(model.activation[l].iter()).map(|(&x, &y)| x * y).collect();
-            model.activation[l+1][n] = weighted_sum.iter().sum();
+            model.activation[l+1][n] = weighted_sum.iter().sum::<f32>().tanh();
         }
     }
 }
-
 
 fn backpropagate(
     model: &mut MultiLayerPerceptron,
     sample_expected_outputs: &[f32],
 ) {
-   
+    for l in (1..model.layer_nbr + 1).rev() {
+        for n in 0..(model.neurons_per_layer[l]) {
+            for w in 0..model.neurons_per_layer[l - 1] {
+                
+            }
+        }
+    }
+    
+    // let error = model.activation[model.layer_nbr][0] - sample_expected_outputs[0];
+    // let tanh_prime = 1 as f32 - model.activation[model.layer_nbr][0].powf(2 as f32);
+
+    // model.gradients[model.layer_nbr] = error * tanh_prime;
 }
 
 fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
-    
+    for l in 1..model.layer_nbr + 1 {
+        for n in 0..(model.neurons_per_layer[l]) {
+            for w in 0..model.neurons_per_layer[l - 1] {
+                model.weights[l-1][n][w] -= alpha * model.gradients[l-1][n][w];
+            }
+        }
+    }
 }
 
 
@@ -122,7 +147,6 @@ pub extern "C" fn train_mlp(
     let data_size: usize = data_size as usize;
 
     let inputs: Vec<f32> = unsafe { Vec::from_raw_parts(inputs, data_size * input_col, data_size * input_col) };
-
     let outputs: Vec<f32> =
         unsafe { Vec::from_raw_parts(outputs, data_size * output_col, data_size * output_col) };
 
