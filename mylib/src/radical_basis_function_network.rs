@@ -173,7 +173,7 @@ pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork,
 fn predict_rbf_regression_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
     let mut res = 0f32;
     for i in 0..model.weights.len(){
-        res += model.weights[i] * (-model.gamma * euclid(inputs, model.centers[i].as_slice()) * euclid(inputs, model.centers[i].as_slice())).exp();
+        res += model.weights[i] * expf(-model.gamma * euclid(inputs, model.centers[i].as_slice()) * euclid(inputs, model.centers[i].as_slice()));
     }
     res
 }
