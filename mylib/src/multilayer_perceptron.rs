@@ -20,7 +20,6 @@ use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
 
-
 pub struct MultiLayerPerceptron {
     d: Vec<usize>,
     w: Vec<Vec<Vec<f32>>>,
@@ -185,23 +184,14 @@ pub extern "C" fn predict_mlp(
 ) -> *mut f32 {
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
 
-    let sample_inputs: &[f32] =
-        unsafe { std::slice::from_raw_parts(sample_inputs, model_ref.d[0]) };
+    let sample_inputs: Vec<f32> =
+        unsafe { Vec::from_raw_parts(sample_inputs, model_ref.d[0], model_ref.d[0]) };
 
-    propagate(model_ref, sample_inputs.to_vec());
+    propagate(model_ref, sample_inputs);
 
     let last_layer: usize = model_ref.d.len() - 1;
     let predictions: &[f32] = &model_ref.x[last_layer][1..];
-
-    let mut cloned_predictions: Vec<f32> = predictions.to_vec();
-    // if model_ref.is_classification{
-    //     if cloned_predictions[0] >= 0.0{
-    //         cloned_predictions[0] = 1.0;
-    //     }
-    //     else {
-    //         cloned_predictions[0] = -1.0;
-    //     }
-    // }
+    let cloned_predictions: Vec<f32> = predictions.to_vec();
     let result: &mut [f32] = Vec::leak(cloned_predictions);
 
     result.as_mut_ptr()
