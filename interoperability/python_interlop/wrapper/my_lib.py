@@ -7,11 +7,11 @@ my_lib = init_lib()
 
 
 class MyModel:
-    def __init__(self, model_type: str, size: (int, list), is_classification: bool = False, is_3_classes: bool = False,
+    def __init__(self, model_type: str, size: (int, tuple), is_classification: bool = False, is_3_classes: bool = False,
                  cluster_size: int = 0, gamma: float = 0, ):
         if model_type not in ["ml", "mlp", "rbf"]:
             raise ValueError(f"Invalid model type: {model_type}")
-        if not isinstance(size, (int, list)):
+        if not isinstance(size, (int, tuple)):
             raise ValueError("Size must be an integer or a list of integers")
         if cluster_size < 0:
             raise ValueError("Cluster size must be non-negative")
@@ -35,6 +35,8 @@ class MyModel:
         if not self.__is_3_classes or self.__type != "ml":
             self.model = self._init_model()
         else:
+            # Initialise les modèles linéaires en tant que regression pour pouvoir
+            # comparer les résultat de chaque One vs Rest
             self.__is_classification = False
             self.model = [self._init_model() for _ in range(3)]
             self.__is_classification = True
@@ -137,7 +139,7 @@ class MyModel:
     def _get_prediction_color(self, point: np.ndarray):
         prediction = self._predict_value(point)
         if not self.__is_3_classes:
-            return "lightblue" if prediction == 1 else "pink"
+            return "lightblue" if prediction > 0 else "pink"
         else:
             result = np.argmax(prediction)
             return ["lightblue", "pink", "lightgreen"][result] if result in [0, 1, 2] else "white"
