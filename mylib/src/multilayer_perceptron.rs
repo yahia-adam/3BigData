@@ -10,6 +10,7 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
+
 use rand::Rng;
 use serde_json::{self, json};
 use std::ffi::c_char;
@@ -18,112 +19,123 @@ use std::ffi::CStr;
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
-use std::vec;
 
 pub struct MultiLayerPerceptron {
-    pub neurons_per_layer:Vec<usize>,
-    pub is_classification: bool,
-    pub weights: Vec<Vec<Vec<f32>>>,
-    pub layer_nbr: usize,
-    pub activation: Vec<Vec<f32>>,
-    pub gradients:  Vec<Vec<Vec<f32>>>,
+    d: Vec<usize>,
+    w: Vec<Vec<Vec<f32>>>,
+    x: Vec<Vec<f32>>,
+    deltas: Vec<Vec<f32>>,
+    l: usize,
+    is_classification: bool,
 }
+
 
 #[no_mangle]
 #[allow(dead_code)]
-pub extern "C" fn init_mlp(neurons_per_layer: *mut u32, npl_size: u32, is_classification: bool) -> *mut MultiLayerPerceptron {
-    let neurons_per_layer: Vec<usize> = unsafe {
-        Vec::from_raw_parts(neurons_per_layer, npl_size as usize, npl_size as usize)
-            .into_iter()
-            .map(|x| x as usize)
-            .collect()
+pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32, is_classification: bool) -> *mut MultiLayerPerceptron {
+    let npl = unsafe {
+        std::slice::from_raw_parts(npl, npl_size as usize)
     };
 
     let mut model: MultiLayerPerceptron = MultiLayerPerceptron {
-        neurons_per_layer,
-        is_classification,
-        weights: vec![],
-        layer_nbr: (npl_size - 1) as usize,
-        activation: vec![],
-        gradients: vec![],
+        d: npl.into_iter().map(|x| *x as usize).collect(),
+        w: vec![vec![vec![]]; npl.len()],
+        x: vec![vec![]; npl.len()],
+        deltas: vec![vec![]; npl.len()],
+        l:  npl_size as usize - 1,
+        is_classification: is_classification as bool,
     };
-
-    for l in 1..model.layer_nbr + 1 {
-        let mut layer: Vec<Vec<f32>> = vec![];
-        for _ in 0..(model.neurons_per_layer[l]) {
-            let mut neural: Vec<f32> = vec![];
-            neural.push(1 as f32);
-            for _ in 0..model.neurons_per_layer[l - 1] {
-                neural.push(rand::thread_rng().gen_range(-1.0..1.0));
+    
+    for l in 0..model.l + 1 {
+        let layer_weights: Vec<Vec<f32>> = Vec::new();
+        model.w[l] = layer_weights;
+        if l == 0 {
+            continue;
+        }
+        for _ in 0..model.d[l - 1] + 1 {
+            let mut neuron_weights: Vec<f32> = Vec::new();
+            for j in 0..model.d[l] + 1 {
+                if j == 0 {
+                    neuron_weights.push(0.0);
+                } else {
+                    neuron_weights.push(rand::thread_rng().gen_range(-1.0..1.0))
+                }
             }
-            layer.push(neural);
+            model.w[l].push(neuron_weights);
         }
-        model.weights.push(layer);
-    }
-    model.gradients = model.weights.clone();
-
-    model.activation.push(vec![]);
-    for l in 1..model.layer_nbr + 1 {
-        let mut layer :Vec<f32> = vec![];
-        for _ in 0..(model.neurons_per_layer[l]) {
-            layer.push(0 as f32);
-        }
-        model.activation.push(layer);
     }
 
-    // println!("{:?}", model.activation);
-    // println!("{:?}", model.gradients);
-    println!("{:?}", model.weights);
-    // for l in 1..model.layer_nbr + 1 {
-    //     for n in 0..(model.neurons_per_layer[l]) {
-    //         for w in 0..model.neurons_per_layer[l - 1] {
-    //             model.weights[l-1][n][w] -= 0.01 * model.gradients[l-1][n][w];
-    //         }
-    //     }
-    // }
-    // println!("{:?}", model.weights);
-    // propagate(&mut model, vec![1.0,2.0]);
-    // println!("{:?}", model.activation);
-    let boxedmodel: Box<MultiLayerPerceptron> = Box::new(model);
-    Box::leak(boxedmodel)
+    for l in 0..model.d.len() {
+        let mut layer_x: Vec<f32> = Vec::new();
+        let mut layer_delta: Vec<f32> = Vec::new();
+        for j in 0..model.d[l] + 1 {
+            layer_delta.push(0.0);
+            if j == 0 {
+                layer_x.push(1.0)
+            } else {
+                layer_x.push(0.0)
+            }
+        }
+        model.x[l] = layer_x;
+        model.deltas[l] = layer_delta;
+    }
+
+    let boxed_model: Box<MultiLayerPerceptron> = Box::new(model);
+    Box::leak(boxed_model)
 }
+
 
 fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>) {
-
-    model.activation[0] = sample_inputs.clone();
-    model.activation[0].insert(0, 1 as f32);
-
-    for (l, layers) in model.weights.iter().enumerate() {
-        for (n, neurals) in layers.iter().enumerate() {
-            let weighted_sum: Vec<f32> = neurals.iter().zip(model.activation[l].iter()).map(|(&x, &y)| x * y).collect();
-            model.activation[l+1][n] = weighted_sum.iter().sum::<f32>().tanh();
+    for j in 0..sample_inputs.len() {
+        model.x[0][j + 1] = sample_inputs[j];
+    }
+    for l in 1..model.l + 1 {
+        for j in 1..model.d[l] + 1 {
+            let mut total: f32 = 0.0;
+            for i in 0..model.d[l - 1] + 1 {
+                total += model.w[l][i][j] * model.x[l - 1][i];
+            }
+            if model.is_classification || l < model.d.len() - 1 {
+                total = total.tanh();
+            }
+            model.x[l][j] = total;
         }
     }
 }
+
 
 fn backpropagate(
     model: &mut MultiLayerPerceptron,
     sample_expected_outputs: &[f32],
 ) {
-    for l in (1..model.layer_nbr + 1).rev() {
-        for n in 0..(model.neurons_per_layer[l]) {
-            for w in 0..model.neurons_per_layer[l - 1] {
-                
-            }
+    let last_layer_index: usize = model.d.len() - 1;
+
+    for j in 1..model.d[last_layer_index] + 1 {
+        model.deltas[last_layer_index][j] =
+            model.x[last_layer_index][j] - &sample_expected_outputs[j - 1];
+        if model.is_classification {
+            model.deltas[last_layer_index][j] *= 1.0 - model.x[last_layer_index][j].powi(2)
         }
     }
-    
-    // let error = model.activation[model.layer_nbr][0] - sample_expected_outputs[0];
-    // let tanh_prime = 1 as f32 - model.activation[model.layer_nbr][0].powf(2 as f32);
 
-    // model.gradients[model.layer_nbr] = error * tanh_prime;
+    for l in (2..last_layer_index).rev() {
+        for i in 1..model.d[l] + 1 {
+            let mut total: f32 = 0.0;
+            for j in 1..model.d[l] + 1 {
+                total += model.w[l][i][j] * model.x[l - 1][i]
+            }
+            total *= 1.0 - model.x[l - 1][i].powi(2);
+            model.deltas[l - 1][i] = total;
+        }
+    }
 }
 
+
 fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
-    for l in 1..model.layer_nbr + 1 {
-        for n in 0..(model.neurons_per_layer[l]) {
-            for w in 0..model.neurons_per_layer[l - 1] {
-                model.weights[l-1][n][w] -= alpha * model.gradients[l-1][n][w];
+    for l in 1..model.d.len() {
+        for i in 0..model.d[l - 1] + 1 {
+            for j in 1..model.d[l] + 1 {
+                model.w[l][i][j] -= alpha * model.x[l - 1][i] * model.deltas[l][j];
             }
         }
     }
@@ -142,11 +154,12 @@ pub extern "C" fn train_mlp(
 ) {
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
     
-    let input_col: usize = model_ref.neurons_per_layer[0] as usize;
-    let output_col: usize = model_ref.neurons_per_layer[model_ref.layer_nbr] as usize;
+    let input_col: usize = model_ref.d[0] as usize;
+    let output_col: usize = model_ref.d[model_ref.l] as usize;
     let data_size: usize = data_size as usize;
 
     let inputs: Vec<f32> = unsafe { Vec::from_raw_parts(inputs, data_size * input_col, data_size * input_col) };
+
     let outputs: Vec<f32> =
         unsafe { Vec::from_raw_parts(outputs, data_size * output_col, data_size * output_col) };
 
@@ -172,23 +185,29 @@ pub extern "C" fn predict_mlp(
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
 
     let sample_inputs: Vec<f32> =
-        unsafe { Vec::from_raw_parts(sample_inputs, model_ref.neurons_per_layer[0], model_ref.neurons_per_layer[0])};
+        unsafe { Vec::from_raw_parts(sample_inputs, model_ref.d[0], model_ref.d[0]) };
 
     propagate(model_ref, sample_inputs);
 
-    let mut result: Vec<f32> = model_ref.activation[model_ref.layer_nbr + 1].clone();
+    let last_layer: usize = model_ref.d.len() - 1;
+    let predictions: &[f32] = &model_ref.x[last_layer][1..];
+    let cloned_predictions: Vec<f32> = predictions.to_vec();
+    let result: &mut [f32] = Vec::leak(cloned_predictions);
+
     result.as_mut_ptr()
 }
+
 
 #[no_mangle]
 #[allow(dead_code)]
 pub extern "C" fn mlp_to_json(model: *mut MultiLayerPerceptron) -> *mut c_char {
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
     let json_obj: serde_json::Value = json!({
-        "weights": model_ref.weights,
-        "activation" : model_ref.activation,
-        "neurons_per_layer": model_ref.neurons_per_layer,
-        "layer_nbr": model_ref.layer_nbr,
+        "w": model_ref.w,
+        "d": model_ref.d,
+        "x": model_ref.x,
+        "deltas" : model_ref.deltas,
+        "l": model_ref.l,
         "is_classification": model_ref.is_classification,
     });
 

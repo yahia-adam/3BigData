@@ -130,7 +130,7 @@ fn main() {
     println!("");
     for i in 0..data_size {
         let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();
-        let output = predict_mlp(mlp, input_ptr);
+        let output: *mut f32 = predict_mlp(mlp, input_ptr);
         
         let res: Vec<f32> =
         unsafe { Vec::from_raw_parts(output, 1, 1) };
