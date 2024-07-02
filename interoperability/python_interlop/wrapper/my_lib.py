@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.dtypes import StrDType
 import ctypes
 from interoperability.python_interlop.wrapper.import_lib import init_lib
 
@@ -8,11 +7,11 @@ my_lib = init_lib()
 
 
 class MyModel:
-    def __init__(self, model_type: str, size: (int, list), is_classification: bool = False, is_3_classes: bool = False,
+    def __init__(self, model_type: str, size: (int, tuple), is_classification: bool = False, is_3_classes: bool = False,
                  cluster_size: int = 0, gamma: float = 0, ):
         if model_type not in ["ml", "mlp", "rbf"]:
             raise ValueError(f"Invalid model type: {model_type}")
-        if not isinstance(size, (int, list)):
+        if not isinstance(size, (int, tuple)):
             raise ValueError("Size must be an integer or a list of integers")
         if cluster_size < 0:
             raise ValueError("Cluster size must be non-negative")
@@ -36,6 +35,8 @@ class MyModel:
         if not self.__is_3_classes or self.__type != "ml":
             self.model = self._init_model()
         else:
+            # Initialise les modèles linéaires en tant que regression pour pouvoir
+            # comparer les résultat de chaque One vs Rest
             self.__is_classification = False
             self.model = [self._init_model() for _ in range(3)]
             self.__is_classification = True
@@ -115,40 +116,6 @@ class MyModel:
         else:
             self.print_regression(start=start_x, end=end_x)
 
-    # def get_prediction(self, x: np.ndarray):
-    #     """
-    #     Get the predicted value for a given point
-    #     :param x: coordinates of the point to predict
-    #     :return: the value predicted by the model
-    #     """
-    #     points_pointer = np.ctypeslib.as_ctypes(np.array(x, dtype=ctypes.c_float))
-    #
-    #     try:
-    #         if not self.__is_3_classes:
-    #             if self.__type == "ml":
-    #                 prediction = my_lib.predict_linear_model(self.model, points_pointer)
-    #             elif self.__type == "mlp":
-    #                 prediction = my_lib.predict_mlp(self.model, points_pointer)[0]
-    #                 if prediction > 0:
-    #                     prediction = 1
-    #                 else:
-    #                     prediction = -1
-    #             elif self.__type == "rbf":
-    #                 prediction = my_lib.predict_rbf_classification(self.model, points_pointer)
-    #             else:
-    #                 prediction = 0
-    #         else:
-    #             prediction = []
-    #             if self.__type == "ml":
-    #                 for i in range(3):
-    #                     prediction.append(my_lib.predict_linear_model(self.model[i], points_pointer))
-    #             elif self.__type == "mlp":
-    #                 for i in range(3):
-    #                     prediction.append(my_lib.predict_mlp(self.model[i], points_pointer))
-    #         return prediction
-    #     except Exception as e:
-    #         print(f"Prediction failed due to {e}")
-
     def print_classification(self, end_x, end_y, step, start_x=0, start_y=0):
         background_points = np.mgrid[start_x:end_x:step, start_y:end_y:step].reshape(2, -1).T
         background_colors = np.array(list(map(self._get_prediction_color, background_points)))
@@ -172,7 +139,7 @@ class MyModel:
     def _get_prediction_color(self, point: np.ndarray):
         prediction = self._predict_value(point)
         if not self.__is_3_classes:
-            return "lightblue" if prediction == 1 else "pink"
+            return "lightblue" if prediction > 0 else "pink"
         else:
             result = np.argmax(prediction)
             return ["lightblue", "pink", "lightgreen"][result] if result in [0, 1, 2] else "white"
