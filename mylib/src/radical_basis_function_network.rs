@@ -18,7 +18,7 @@ use std::ffi::CStr;
 use ndarray::prelude::*;
 use ndarray_rand::{rand};
 use ndarray_rand::rand::Rng;
-use std::slice::{from_raw_parts, from_raw_parts_mut};
+use std::slice::{from_raw_parts};
 use ndarray_linalg::*;
 use libm::*;
 use std::fs::File;
@@ -195,36 +195,33 @@ pub extern "C" fn predict_rbf_regression(model : *mut RadicalBasisFunctionNetwor
 }
 
 #[no_mangle]
-pub extern "C" fn train_rbf_rosenblatt(model : *mut RadicalBasisFunctionNetwork, sample_inputs_flat : *mut f32, expected_outputs : *mut f32, iterations_count : i32, alpha : f32, inputs_size : i32, sample_count : i32){
+pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, sample_inputs_flat: *mut f32, expected_outputs: *mut f32, iterations_count: i32, alpha: f32, inputs_size: i32, sample_count: i32) {
     let model = unsafe {
         model.as_mut().unwrap()
     };
     let cluster_num = model.weights.len() as i32;
     let sample_inputs_flat = unsafe {
-      from_raw_parts(sample_inputs_flat, (inputs_size * sample_count) as usize)
+        from_raw_parts(sample_inputs_flat, (inputs_size * sample_count) as usize)
     };
     let expected_outputs = unsafe {
-      from_raw_parts(expected_outputs, sample_count as usize)
+        from_raw_parts(expected_outputs, sample_count as usize)
     };
     let cluster_points = lloyd(sample_inputs_flat, cluster_num, 10, sample_count, inputs_size);
 
-    for _ in 0..sample_count as usize{
-        for j in 0..cluster_num as usize{
-            let cluster_pointsj = &cluster_points[(j * inputs_size as usize)..((j + 1) * inputs_size as usize)];
-            for n in 0..inputs_size as usize{
-                model.centers[j][n] = cluster_pointsj[n];
-            }
-        }
+    for j in 0..cluster_num as usize {
+        let cluster_pointsj = &cluster_points[(j * inputs_size as usize)..((j + 1) * inputs_size as usize)];
+        model.centers[j] = cluster_pointsj.to_vec();
     }
 
-    for _ in 0..iterations_count as usize{
+    for _ in 0..iterations_count as usize {
         let k = rand::thread_rng().gen_range(0..sample_count) as usize;
         let x = &sample_inputs_flat[(k * inputs_size as usize)..((k + 1) * inputs_size as usize)];
-        let yk = expected_outputs[k * 1];
+        let yk = expected_outputs[k];
         let gk = predict_rbf_classification_slice(model, x);
 
-        for i in 0..cluster_num as usize{
-            model.weights[i] += alpha * (yk - gk) * expf(-model.gamma * euclid(x, model.centers[i].as_slice()) * euclid(x, model.centers[i].as_slice()));
+        for i in 0..cluster_num as usize {
+            let rbf_value = expf(-model.gamma * euclid(x, &model.centers[i]).powi(2));
+            model.weights[i] += alpha * (yk - gk) * rbf_value;
         }
     }
 }
