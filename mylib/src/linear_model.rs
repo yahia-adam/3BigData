@@ -46,19 +46,19 @@ pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -
 #[no_mangle]
 pub extern "C" fn train_linear_model(
     model: *mut LinearModel,
-    features: *const c_float,
-    labels: *const c_float,
-    data_size: u32,
+    x_train: *const c_float,
+    y_train: *const c_float,
+    train_data_size: u32,
     learning_rate: f32,
     epochs: u32,
 ) {
-    let data_size: usize = data_size as usize;
+    let data_size: usize = train_data_size as usize;
 
     let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
     let features: &[f32] = unsafe {
-        std::slice::from_raw_parts(features, (data_size * model_ref.weights_count) as usize)
+        std::slice::from_raw_parts(x_train, (data_size * model_ref.weights_count) as usize)
     };
-    let labels: &[f32] = unsafe { std::slice::from_raw_parts(labels, data_size as usize) };
+    let labels: &[f32] = unsafe { std::slice::from_raw_parts(y_train, data_size as usize) };
 
     let mut features: Vec<f32> = features.to_vec().clone();
     let labels: Vec<f32> = labels.to_vec().clone();
@@ -96,7 +96,7 @@ pub extern "C" fn train_linear_model(
             let loss = mse_epoch(&y_true, &y_pred);
             model_ref.loss.push(loss);
             map.insert("loss".to_string(), loss);
-            writer.add_scalars("data/scalar_group", &map, n_iter as usize);
+            writer.add_scalars("data/linear_model", &map, n_iter as usize);
         }
         writer.flush();
     } else {
