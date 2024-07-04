@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module type="EMPTY_MODULE" version="4">
+<module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/mylib/benches" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/mylib/examples" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/mylib/src" isTestSource="false" />
-      <excludeFolder url="file://$MODULE_DIR$/mylib/target" />
+      <excludeFolder url="file://$MODULE_DIR$/flask-app/.env" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.12" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.12 (python_interlop)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PyDocumentationSettings">
+    <option name="format" value="PLAIN" />
+    <option name="myDocStringFormat" value="Plain" />
+  </component>
+  <component name="TemplatesService">
+    <option name="TEMPLATE_CONFIGURATION" value="Jinja2" />
+    <option name="TEMPLATE_FOLDERS">
+      <list>
+        <option value="$MODULE_DIR$/flask-app/templates" />
+      </list>
+    </option>
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="py.test" />
   </component>
 </module>
