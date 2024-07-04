@@ -1,10 +1,13 @@
 import ctypes
+import sys
 
 
 def init_lib():
+    if sys.platform == 'win32':
+        lib_path = "../../mylib/target/release/mylib.dll"
+    else:
+        lib_path = "../../mylib/target/release/mylib.so"
 
-
-    lib_path = "/home/adam/esgi/3BigData/mylib/target/release/mylib.so"
     my_lib = ctypes.cdll.LoadLibrary(lib_path)
     # --------------------------init_linear_model--------------------------
     # pub extern "C" fn init_linear_model(input_count: u32) -> *mut LinearModel;
