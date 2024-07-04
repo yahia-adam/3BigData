@@ -114,7 +114,7 @@ pub extern "C" fn train_linear_model(
                 }
                 model_ref.weights[0] += learning_rate * error;
 
-                pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2}", n_iter + 1, epochs, mse_epoch(&y_true, &y_pred), accuracy(&y_true, &y_pred)).as_str());
+                pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", n_iter + 1, epochs, mse_epoch(&y_true, &y_pred), accuracy(&y_true, &y_pred)).as_str());
                 pb.inc();
 
             }
