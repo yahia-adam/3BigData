@@ -83,10 +83,6 @@ path="examples/pmc/regression/non_linear_simple_2D.rs"
 name="mlp_resgression_non_linear_simple_3D"
 path="examples/pmc/regression/non_linear_simple_3D.rs"
 
-[[example]]
-name="test"
-path="src/support_vector_machine.rs"
-
 # <-------------------------------------------------- rbf ----------------------------------------------------->
 # classification
 [[example]]
@@ -104,3 +100,26 @@ path="examples/rbf/classification/multi_cross.rs"
 [[example]]
 name="rbf_classification_xor"
 path="examples/rbf/classification/xor.rs"
+
+# resgression
+[[example]]
+name="rbf_resgression_linear_simple_2D"
+path="examples/rbf/regression/linear_simple_2D.rs"
+[[example]]
+name="rbf_resgression_linear_simple_3D"
+path="examples/rbf/regression/linear_simple_3D.rs"
+[[example]]
+name="rbf_resgression_linear_tricky_3D"
+path="examples/rbf/regression/linear_tricky_3D.rs"
+[[example]]
+name="rbf_resgression_non_linear_simple_2D"
+path="examples/rbf/regression/non_linear_simple_2D.rs"
+[[example]]
+name="rbf_resgression_non_linear_simple_3D"
+path="examples/rbf/regression/non_linear_simple_3D.rs"
+
+# <-------------------------------------------------- svm ----------------------------------------------------->
+# classification
+[[example]]
+name="test"
+path="src/support_vector_machine.rs"

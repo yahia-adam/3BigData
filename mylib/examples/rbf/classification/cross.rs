@@ -534,11 +534,8 @@ fn main() {
     let x_ptr: *mut f32 = x_flatten.as_mut_ptr();
     let y_ptr: *mut f32 = y.as_mut_ptr();
 
-    let cluster_num = 32;
-    let gamma = 1.0;
-
-    let rbf_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim as i32, cluster_num, gamma);
-    train_rbf_rosenblatt(rbf_model, x_ptr, y_ptr, 2000000, 0.001, input_dim as i32, data_size as i32);
+    let rbf_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim as i32, 53, 1.0);
+    train_rbf_rosenblatt(rbf_model, x_ptr, y_ptr, 500000, 0.1, input_dim as i32, data_size as i32);
 
     println!("");
     println!(" Cross : RBF Classification Model : OK");
@@ -546,7 +543,7 @@ fn main() {
     for i in 0..data_size {
         let input_ptr: *mut f32 = x[i].as_mut_ptr();
         let output = predict_rbf_classification(rbf_model, input_ptr);
-        println!("X: {:?}, Y: [{:?}] ---> RBF model: {:?}", x[i], y[i], output);
+        println!("X: {:?}, Y: {:?} ---> RBF model: {:?}", x[i], y[i], output);
     }
     println!("");
 
