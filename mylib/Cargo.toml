@@ -22,8 +22,8 @@ tensorboard-rs = "0.5.9"
 # <-------------------------------------------------- lp ----------------------------------------------------->
 # classification
 [[example]]
-name="ml_classification_cros"
-path="examples/ml/classification/cros.rs"
+name="ml_classification_cross"
+path="examples/ml/classification/cross.rs"
 [[example]]
 name="ml_classification_linear_simple"
 path="examples/ml/classification/linear_simple.rs"
@@ -54,8 +54,8 @@ path="examples/ml/regression/non_linear_simple_3D.rs"
 # <-------------------------------------------------- pmc ----------------------------------------------------->
 # classification
 [[example]]
-name="mlp_classification_cros"
-path="examples/pmc/classification/cros.rs"
+name="mlp_classification_cross"
+path="examples/pmc/classification/cross.rs"
 [[example]]
 name="mlp_classification_linear_simple"
 path="examples/pmc/classification/linear_simple.rs"
@@ -96,5 +96,8 @@ path="examples/rbf/classification/linear_simple.rs"
 name="rbf_classification_linear_multiple"
 path="examples/rbf/classification/linear_multiple.rs"
 [[example]]
-name="rbf_classification_cros"
-path="examples/rbf/classification/cros.rs"
+name="rbf_classification_cross"
+path="examples/rbf/classification/cross.rs"
+[[example]]
+name="rbf_classification_multi_cross"
+path="examples/rbf/classification/multi_cross.rs"
