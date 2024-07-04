@@ -1,11 +1,9 @@
 #[allow(unused_imports)]
-use mylib::{
-    init_linear_model, load_linear_model, predict_linear_model, save_linear_model,
-    train_linear_model, LinearModel,
-};
+use mylib::{RadicalBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt,
+            predict_rbf_classification, free_rbf};
 
 fn main() {
-    let x: Vec<Vec<f32>> = vec![
+    let mut x: Vec<Vec<f32>> = vec![
         vec![1.7688197, 1.4136543],
         vec![1.35596694, 1.76459609],
         vec![1.46879524, 1.51093763],
@@ -107,7 +105,7 @@ fn main() {
         vec![2.65624267, 2.2146111],
         vec![2.56172637, 2.62409468],
     ];
-    let y: Vec<f32> = vec![
+    let mut y: Vec<f32> = vec![
         1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0,
@@ -116,20 +114,29 @@ fn main() {
         -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
         -1.0, -1.0,
     ];
-    let data_size = y.len();
-    let x_flaten: Vec<f32> = x.clone().into_iter().flatten().collect::<Vec<f32>>();
-    let x_ptr: *const f32 = Vec::leak(x_flaten.clone()).as_ptr();
-    let y_ptr: *const f32 = Vec::leak(y.clone()).as_ptr();
 
-    let linear_model: *mut LinearModel = init_linear_model(2, true);
-    train_linear_model(linear_model, x_ptr, y_ptr, data_size as u32, 0.0001, 1000_000);
+    let sample_count = y.len() as i32;
+    let input_dim = x[0].len() as i32;
+    let cluster_num = 10;
+    let gamma = 0.1;
+
+    let mut x_flatten: Vec<f32> = x.clone().into_iter().flatten().collect();
+    let x_ptr: *mut f32 = x_flatten.as_mut_ptr();
+    let y_ptr: *mut f32 = y.as_mut_ptr();
+
+    let rbf_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
+
+    train_rbf_rosenblatt(rbf_model, x_ptr, y_ptr, 10000, 0.01, input_dim, sample_count);
 
     println!("");
-    println!("Linear Multiple : Linear Model : OK");
-    for i in 0..data_size {
-        let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();
-        let output = predict_linear_model(linear_model, input_ptr);
-        println!("X:{:?}, Y:{:?} ---> mon model: {:?}", x[i], y[i], output);
+    println!("RBF Classification Model : OK");
+    println!("");
+    for i in 0..sample_count as usize {
+        let input_ptr: *mut f32 = x[i].as_mut_ptr();
+        let output = predict_rbf_classification(rbf_model, input_ptr);
+        println!("X: {:?}, Y: {:?} ---> RBF model: {:?}", x[i], y[i], output);
     }
     println!("");
+
+    free_rbf(rbf_model);
 }

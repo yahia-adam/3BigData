@@ -3,8 +3,8 @@ name = "mylib"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
+#[lib]
+#crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -22,8 +22,8 @@ tensorboard-rs = "0.5.9"
 # <-------------------------------------------------- lp ----------------------------------------------------->
 # classification
 [[example]]
-name="ml_classification_cros"
-path="examples/ml/classification/cros.rs"
+name="ml_classification_cross"
+path="examples/ml/classification/cross.rs"
 [[example]]
 name="ml_classification_linear_simple"
 path="examples/ml/classification/linear_simple.rs"
@@ -34,28 +34,28 @@ path="examples/ml/classification/linear_multiple.rs"
 name="ml_classification_xor"
 path="examples/ml/classification/xor.rs"
 
-# resgression
+# regression
 [[example]]
-name="ml_resgression_linear_simple_2D"
+name="ml_regression_linear_simple_2D"
 path="examples/ml/regression/linear_simple_2D.rs"
 [[example]]
-name="ml_resgression_linear_simple_3D"
+name="ml_regression_linear_simple_3D"
 path="examples/ml/regression/linear_simple_3D.rs"
 [[example]]
-name="ml_resgression_linear_tricky_3D"
+name="ml_regression_linear_tricky_3D"
 path="examples/ml/regression/linear_tricky_3D.rs"
 [[example]]
-name="ml_resgression_non_linear_simple_2D"
+name="ml_regression_non_linear_simple_2D"
 path="examples/ml/regression/non_linear_simple_2D.rs"
 [[example]]
-name="ml_resgression_non_linear_simple_3D"
+name="ml_regression_non_linear_simple_3D"
 path="examples/ml/regression/non_linear_simple_3D.rs"
 
 # <-------------------------------------------------- pmc ----------------------------------------------------->
 # classification
 [[example]]
-name="mlp_classification_cros"
-path="examples/pmc/classification/cros.rs"
+name="mlp_classification_cross"
+path="examples/pmc/classification/cross.rs"
 [[example]]
 name="mlp_classification_linear_simple"
 path="examples/pmc/classification/linear_simple.rs"
@@ -71,18 +71,55 @@ path="examples/pmc/classification/xor.rs"
 name="mlp_resgression_linear_simple_2D"
 path="examples/pmc/regression/linear_simple_2D.rs"
 [[example]]
-name="mlp_resgression_linear_simple_3D"
+name="mlp_regression_linear_simple_3D"
 path="examples/pmc/regression/linear_simple_3D.rs"
 [[example]]
-name="mlp_resgression_linear_tricky_3D"
+name="mlp_regression_linear_tricky_3D"
 path="examples/pmc/regression/linear_tricky_3D.rs"
 [[example]]
-name="mlp_resgression_non_linear_simple_2D"
+name="mlp_regression_non_linear_simple_2D"
 path="examples/pmc/regression/non_linear_simple_2D.rs"
 [[example]]
-name="mlp_resgression_non_linear_simple_3D"
+name="mlp_regression_non_linear_simple_3D"
 path="examples/pmc/regression/non_linear_simple_3D.rs"
 
+# <-------------------------------------------------- rbf ----------------------------------------------------->
+# classification
+[[example]]
+name="rbf_classification_linear_simple"
+path="examples/rbf/classification/linear_simple.rs"
+[[example]]
+name="rbf_classification_linear_multiple"
+path="examples/rbf/classification/linear_multiple.rs"
+[[example]]
+name="rbf_classification_cross"
+path="examples/rbf/classification/cross.rs"
+[[example]]
+name="rbf_classification_multi_cross"
+path="examples/rbf/classification/multi_cross.rs"
+[[example]]
+name="rbf_classification_xor"
+path="examples/rbf/classification/xor.rs"
+
+# resgression
+[[example]]
+name="rbf_regression_linear_simple_2D"
+path="examples/rbf/regression/linear_simple_2D.rs"
+[[example]]
+name="rbf_regression_linear_simple_3D"
+path="examples/rbf/regression/linear_simple_3D.rs"
+[[example]]
+name="rbf_regression_linear_tricky_3D"
+path="examples/rbf/regression/linear_tricky_3D.rs"
+[[example]]
+name="rbf_regression_non_linear_simple_2D"
+path="examples/rbf/regression/non_linear_simple_2D.rs"
+[[example]]
+name="rbf_regression_non_linear_simple_3D"
+path="examples/rbf/regression/non_linear_simple_3D.rs"
+
+# <-------------------------------------------------- svm ----------------------------------------------------->
+# classification
 [[example]]
 name="test"
 path="src/support_vector_machine.rs"

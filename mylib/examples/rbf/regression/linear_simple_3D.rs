@@ -1,35 +1,36 @@
 #[allow(unused_imports)]
-use mylib::{
-    init_linear_model, load_linear_model, predict_linear_model, save_linear_model,
-    train_linear_model, LinearModel,
-};
+use mylib::{RadicalBasisFunctionNetwork, init_rbf, train_rbf_regression, predict_rbf_regression, free_rbf};
 
 fn main() {
     let x: Vec<Vec<f32>> = vec![
         vec![1.0, 1.0],
         vec![2.0, 2.0],
-        vec![3.0, 1.0]
+        vec![3.0, 1.0],
+        vec![1.5, 1.5],
+        vec![2.5, 1.5],
     ];
-    let y: Vec<f32> = vec![
-        2.0,
-        3.0,
-        2.5
-    ];
-    let data_size = y.len();
+    let y: Vec<f32> = vec![2.0, 3.0, 2.5, 2.25, 2.75];
 
-    let x_flaten: Vec<f32> = x.clone().into_iter().flatten().collect::<Vec<f32>>();
-    let x_ptr: *const f32 = Vec::leak(x_flaten.clone()).as_ptr();
-    let y_ptr: *const f32 = Vec::leak(y.clone()).as_ptr();
-    
-    let linear_model: *mut LinearModel = init_linear_model(2, false);
-    train_linear_model(linear_model, x_ptr, y_ptr, data_size as u32, 0.01, 1000_000);
-    
+    let sample_count = y.len() as i32;
+    let input_dim = 2;
+    let cluster_num = 5;
+    let gamma = 0.1;
+
+    let mut x_flatten: Vec<f32> = x.clone().into_iter().flatten().collect();
+    let x_ptr: *mut f32 = x_flatten.as_mut_ptr();
+    let y_ptr: *mut f32 = y.clone().as_mut_ptr();
+
+    let rbf_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
+    train_rbf_regression(rbf_model, x_ptr, y_ptr, input_dim, sample_count);
+
     println!("");
-    println!("Linear Simple 3D : Linear Model    : OK");
-    for i in 0..data_size {
-        let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();
-        let output = predict_linear_model(linear_model, input_ptr);
-        println!("X:{:?}, Y:{:?} ---> mon model: {:?}", x[i], y[i], output);
+    println!("RBF Regression 3D : RBF Model : OK");
+    for i in 0..sample_count as usize {
+        let input_ptr: *mut f32 = x[i].clone().as_mut_ptr();
+        let output = predict_rbf_regression(rbf_model, input_ptr);
+        println!("X: {:?}, Y: {:?} ---> RBF model: {:?}", x[i], y[i], output);
     }
     println!("");
+
+    free_rbf(rbf_model);
 }
