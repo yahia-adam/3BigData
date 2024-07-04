@@ -1,8 +1,13 @@
 import ctypes
+import sys
 
 
 def init_lib():
-    lib_path = "../../mylib/target/release/mylib.dll"
+    if sys.platform == 'win32':
+        lib_path = "../../mylib/target/release/mylib.dll"
+    else:
+        lib_path = "../../mylib/target/release/mylib.so"
+
     my_lib = ctypes.cdll.LoadLibrary(lib_path)
     # --------------------------init_linear_model--------------------------
     # pub extern "C" fn init_linear_model(input_count: u32) -> *mut LinearModel;
