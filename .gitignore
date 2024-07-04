@@ -21,3 +21,5 @@ Cargo.lock
 .ipynb_checkpoints
 mylib/target
 /interoperability/.ipynb_checkpoints/
+/interoperability/python_interlop/.venv/
+/interoperability/python_interlop/.ipynb_checkpoints/

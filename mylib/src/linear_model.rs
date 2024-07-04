@@ -9,7 +9,7 @@
 /*   3IABD1 2023-2024                                     ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
-
+use std::collections::HashMap;
 use nalgebra::base::DMatrix;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -19,12 +19,14 @@ use std::ffi::{c_char, c_float, CStr};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+use tensorboard_rs::summary_writer::SummaryWriter;
 
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
     pub weights: Vec<f32>,
     pub weights_count: usize,
     pub is_classification: bool,
+    pub loss: Vec<f32>,
 }
 
 #[no_mangle]
@@ -33,6 +35,7 @@ pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -
         weights: vec![rand::thread_rng().gen_range(-1.0..1.0); (input_count + 1) as usize],
         weights_count: input_count as usize,
         is_classification: is_classification as bool,
+        loss: vec![]
     };
 
     let boxed_model: Box<LinearModel> = Box::new(model);
@@ -59,9 +62,15 @@ pub extern "C" fn train_linear_model(
 
     let mut features: Vec<f32> = features.to_vec().clone();
     let labels: Vec<f32> = labels.to_vec().clone();
+
+    let mut writer = SummaryWriter::new(&("../logs".to_string()));
+    let mut map = HashMap::new();
+
     if model_ref.is_classification {
         let mut input: Vec<f32> = vec![0.0; model_ref.weights_count];
-        for _ in 0..epochs {
+        let mut y_true:Vec<f32> = vec![];
+        let mut y_pred:Vec<f32> = vec![];
+        for n_iter in 0..epochs {
             for i in 0..(data_size - 1) {
                 let desired_output = labels[i];
 
@@ -75,6 +84,8 @@ pub extern "C" fn train_linear_model(
 
                 let predicted_output = guess(model_ref, input.clone());
                 let error = desired_output - predicted_output;
+                y_true.push(desired_output);
+                y_pred.push(predicted_output);
                 if error > 0.001 || error < -0.001 {
                     for i in 1..(model_ref.weights_count + 1) {
                         model_ref.weights[i] += learning_rate * error * input[i - 1];
@@ -82,7 +93,12 @@ pub extern "C" fn train_linear_model(
                     model_ref.weights[0] += learning_rate * error;
                 }
             }
+            let loss = mse_epoch(&y_true, &y_pred);
+            model_ref.loss.push(loss);
+            map.insert("loss".to_string(), loss);
+            writer.add_scalars("data/scalar_group", &map, n_iter as usize);
         }
+        writer.flush();
     } else {
         
         let mut i = 0;
@@ -202,4 +218,17 @@ pub extern "C" fn free_linear_model(model: *mut LinearModel) {
     unsafe {
         let _model= Box::from_raw(model);
     }
+}
+
+fn mse(y: f32, y_hat: f32) -> f32 {
+    (y - y_hat).powi(2) as f32
+}
+
+fn mse_epoch(y_true: &[f32], y_pred: &[f32]) -> f32 {
+    let n = y_true.len();
+    let total_mse: f32 = y_true.iter()
+        .zip(y_pred.iter())
+        .map(|(&y, &y_hat)| mse(y, y_hat))
+        .sum();
+    total_mse / n as f32
 }
