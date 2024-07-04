@@ -16,17 +16,23 @@ use serde::{Deserialize, Serialize};
 use serde_json::{self, json};
 use std::ffi::CString;
 use std::ffi::{c_char, c_float, CStr};
-use std::fs;
+use std::{fs, thread};
 use std::fs::File;
 use std::io::Write;
 use tensorboard_rs::summary_writer::SummaryWriter;
+use pbr::ProgressBar;
+use std::thread::sleep;
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
     pub weights: Vec<f32>,
     pub weights_count: usize,
     pub is_classification: bool,
-    pub loss: Vec<f32>,
+    pub train_loss: Vec<f32>,
+    pub test_loss: Vec<f32>,
+    pub train_accuracy: Vec<f32>,
+    pub test_accuracy: Vec<f32>
 }
 
 #[no_mangle]
@@ -35,7 +41,10 @@ pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -
         weights: vec![rand::thread_rng().gen_range(-1.0..1.0); (input_count + 1) as usize],
         weights_count: input_count as usize,
         is_classification: is_classification as bool,
-        loss: vec![]
+        train_loss: vec![],
+        test_loss: vec![],
+        train_accuracy: vec![],
+        test_accuracy: vec![],
     };
 
     let boxed_model: Box<LinearModel> = Box::new(model);
@@ -49,19 +58,25 @@ pub extern "C" fn train_linear_model(
     x_train: *const c_float,
     y_train: *const c_float,
     train_data_size: u32,
+    x_test: *const c_float,
+    y_test: *const c_float,
+    test_data_size: u32,
     learning_rate: f32,
     epochs: u32,
 ) {
-    let data_size: usize = train_data_size as usize;
-
     let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
-    let features: &[f32] = unsafe {
-        std::slice::from_raw_parts(x_train, (data_size * model_ref.weights_count) as usize)
-    };
-    let labels: &[f32] = unsafe { std::slice::from_raw_parts(y_train, data_size as usize) };
 
+    let data_size: usize = train_data_size as usize;
+    let features: &[f32] = unsafe { std::slice::from_raw_parts(x_train, (data_size * model_ref.weights_count) as usize)};
     let mut features: Vec<f32> = features.to_vec().clone();
+    let labels: &[f32] = unsafe { std::slice::from_raw_parts(y_train, data_size as usize)};
     let labels: Vec<f32> = labels.to_vec().clone();
+
+    let test_data_size = test_data_size as usize;
+    let x_test: &[f32] = unsafe { std::slice::from_raw_parts(x_test, (test_data_size * model_ref.weights_count) as usize)};
+    let x_test: Vec<f32> = x_test.to_vec().clone();
+    let y_test: &[f32] = unsafe { std::slice::from_raw_parts(y_test, test_data_size as usize)};
+    let y_test: Vec<f32> = y_test.to_vec().clone();
 
     let mut writer = SummaryWriter::new(&("../logs".to_string()));
     let mut map = HashMap::new();
@@ -71,6 +86,14 @@ pub extern "C" fn train_linear_model(
         let mut y_true:Vec<f32> = vec![];
         let mut y_pred:Vec<f32> = vec![];
         for n_iter in 0..epochs {
+            let mut pb = ProgressBar::new(data_size as u64);
+            pb.format("[=>-]");
+            pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", n_iter, epochs, 0.0, 0.0).as_str());
+            pb.show_tick = true;
+            pb.show_speed = false;
+            pb.show_percent = false;
+            pb.show_counter = false;
+
             for i in 0..(data_size - 1) {
                 let desired_output = labels[i];
 
@@ -86,19 +109,30 @@ pub extern "C" fn train_linear_model(
                 let error = desired_output - predicted_output;
                 y_true.push(desired_output);
                 y_pred.push(predicted_output);
-                if error > 0.001 || error < -0.001 {
-                    for i in 1..(model_ref.weights_count + 1) {
-                        model_ref.weights[i] += learning_rate * error * input[i - 1];
-                    }
-                    model_ref.weights[0] += learning_rate * error;
+                for i in 1..(model_ref.weights_count + 1) {
+                    model_ref.weights[i] += learning_rate * error * input[i - 1];
                 }
+                model_ref.weights[0] += learning_rate * error;
+
+                pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2}", n_iter + 1, epochs, mse_epoch(&y_true, &y_pred), accuracy(&y_true, &y_pred)).as_str());
+                pb.inc();
+
             }
-            let loss = mse_epoch(&y_true, &y_pred);
-            model_ref.loss.push(loss);
-            map.insert("loss".to_string(), loss);
+            let train_loss = mse_epoch(&y_true, &y_pred);
+            let train_accuracy = accuracy(&y_true, &y_pred);
+            model_ref.train_loss.push(train_loss);
+            model_ref.train_accuracy.push(train_accuracy);
+
+            map.insert("loss".to_string(), train_loss);
+            map.insert("validate".to_string(), validate_linear_model(model_ref, &x_test, &y_test, test_data_size));
             writer.add_scalars("data/linear_model", &map, n_iter as usize);
+
+            pb.finish_println(&format!(
+                "Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ",
+                n_iter, epochs, train_loss, train_accuracy
+            ));
         }
-        writer.flush();
+
     } else {
         
         let mut i = 0;
@@ -123,6 +157,32 @@ pub extern "C" fn train_linear_model(
     }
 }
 
+fn validate_linear_model(model: &mut LinearModel, x_test: &[f32], y_test: &[f32], test_data_size: usize) -> f32 {
+    let mut y_true:Vec<f32> = vec![];
+    let mut y_pred:Vec<f32> = vec![];
+
+    for i in 0..(test_data_size - 1) {
+        let mut input: Vec<f32> = vec![0.0; model.weights_count];
+        let desired_output = y_test[i];
+
+        let mut m = 0;
+        let start = i * model.weights_count;
+
+        for r in start..(start + model.weights_count) {
+            input[m] = x_test[r];
+            m += 1;
+        }
+
+        let predicted_output = guess(model, input.clone());
+        y_true.push(desired_output);
+        y_pred.push(predicted_output);
+    }
+    let loss =  mse_epoch(&y_true, &y_pred);
+    model.test_loss.push(loss);
+    let accuracy = accuracy(&y_true, &y_pred);
+    model.test_accuracy.push(accuracy);
+    loss
+}
 
 #[no_mangle]
 pub extern "C" fn predict_linear_model(model: *mut LinearModel, inputs: *mut f32) -> c_float {
@@ -154,6 +214,10 @@ pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {
     let model: &LinearModel = unsafe { model.as_ref().unwrap() };
     let json_obj: serde_json::Value = json!({
         "weights": model.weights,
+        "weights_count": model.weights_count,
+        "is_classification": model.is_classification,
+        "train_loss": model.train_loss,
+        "test_loss": model.test_loss,
     });
     let json_str: String =
         serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
@@ -231,4 +295,12 @@ fn mse_epoch(y_true: &[f32], y_pred: &[f32]) -> f32 {
         .map(|(&y, &y_hat)| mse(y, y_hat))
         .sum();
     total_mse / n as f32
+}
+fn accuracy(y_true: &[f32], y_pred: &[f32]) -> f32 {
+    let n = y_true.len();
+    let correct_predictions = y_true.iter()
+        .zip(y_pred.iter())
+        .filter(|(&y, &y_hat)| (y == 1.0 && y_hat >= 0.5) || (y == 0.0 && y_hat < 0.5))
+        .count();
+    (correct_predictions as f32) / (n as f32)
 }
