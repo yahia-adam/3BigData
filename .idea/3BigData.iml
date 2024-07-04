@@ -2,7 +2,15 @@
 <module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/.idea/inspectionProfiles" />
       <excludeFolder url="file://$MODULE_DIR$/flask-app/.env" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.venv/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.venv/etc" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.venv/lib" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.venv/share" />
+      <excludeFolder url="file://$MODULE_DIR$/mylib/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/mylib/target" />
     </content>
     <orderEntry type="jdk" jdkName="3BigData" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
