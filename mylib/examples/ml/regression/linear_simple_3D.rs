@@ -29,7 +29,7 @@ fn main() {
     for i in 0..data_size {
         let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();
         let output = predict_linear_model(linear_model, input_ptr);
-        println!("X:{:?}, Y:{:?} ---> mon model: {:?}", x[i], y[i], output);
+        println!("X:{:?}, Y:{:?} ---> Linear Model model: {:?}", x[i], y[i], output);
     }
     println!("");
 }

@@ -534,11 +534,11 @@ fn main() {
     let x_ptr: *mut f32 = Vec::leak(x_flatten.clone()).as_mut_ptr();
     let y_ptr: *mut f32 = Vec::leak(y.clone()).as_mut_ptr();
 
-    let cluster_num = 8;
-    let gamma = 0.01;
+    let cluster_num = 32;
+    let gamma = 1.0;
 
     let rbf: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim as i32, cluster_num, gamma);
-    train_rbf_rosenblatt(rbf, x_ptr, y_ptr, 1000000, 0.01, input_dim as i32, data_size as i32);
+    train_rbf_rosenblatt(rbf, x_ptr, y_ptr, 2000000, 0.001, input_dim as i32, data_size as i32);
 
     println!("");
     println!("Multi Cross : RBF Classification : KO");

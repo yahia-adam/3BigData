@@ -101,3 +101,6 @@ path="examples/rbf/classification/cross.rs"
 [[example]]
 name="rbf_classification_multi_cross"
 path="examples/rbf/classification/multi_cross.rs"
+[[example]]
+name="rbf_classification_xor"
+path="examples/rbf/classification/xor.rs"

@@ -34,8 +34,5 @@ fn main() {
     }
     println!("");
 
-    let loaded_model = rbf_to_json(b"rbf_model.json\0".as_ptr() as *const i8);
-
     free_rbf(rbf_class_model);
-    free_rbf(loaded_model);
 }
