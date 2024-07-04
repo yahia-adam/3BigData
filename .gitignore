@@ -3,6 +3,9 @@
 debug/
 target/
 .idea
+mylib/.idea
+flask-app/.idea
+documentation/.idea
 .vscode
 datasets/
 
