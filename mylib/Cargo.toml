@@ -34,21 +34,21 @@ path="examples/ml/classification/linear_multiple.rs"
 name="ml_classification_xor"
 path="examples/ml/classification/xor.rs"
 
-# resgression
+# regression
 [[example]]
-name="ml_resgression_linear_simple_2D"
+name="ml_regression_linear_simple_2D"
 path="examples/ml/regression/linear_simple_2D.rs"
 [[example]]
-name="ml_resgression_linear_simple_3D"
+name="ml_regression_linear_simple_3D"
 path="examples/ml/regression/linear_simple_3D.rs"
 [[example]]
-name="ml_resgression_linear_tricky_3D"
+name="ml_regression_linear_tricky_3D"
 path="examples/ml/regression/linear_tricky_3D.rs"
 [[example]]
-name="ml_resgression_non_linear_simple_2D"
+name="ml_regression_non_linear_simple_2D"
 path="examples/ml/regression/non_linear_simple_2D.rs"
 [[example]]
-name="ml_resgression_non_linear_simple_3D"
+name="ml_regression_non_linear_simple_3D"
 path="examples/ml/regression/non_linear_simple_3D.rs"
 
 # <-------------------------------------------------- pmc ----------------------------------------------------->
@@ -71,16 +71,16 @@ path="examples/pmc/classification/xor.rs"
 name="mlp_resgression_linear_simple_2D"
 path="examples/pmc/regression/linear_simple_2D.rs"
 [[example]]
-name="mlp_resgression_linear_simple_3D"
+name="mlp_regression_linear_simple_3D"
 path="examples/pmc/regression/linear_simple_3D.rs"
 [[example]]
-name="mlp_resgression_linear_tricky_3D"
+name="mlp_regression_linear_tricky_3D"
 path="examples/pmc/regression/linear_tricky_3D.rs"
 [[example]]
-name="mlp_resgression_non_linear_simple_2D"
+name="mlp_regression_non_linear_simple_2D"
 path="examples/pmc/regression/non_linear_simple_2D.rs"
 [[example]]
-name="mlp_resgression_non_linear_simple_3D"
+name="mlp_regression_non_linear_simple_3D"
 path="examples/pmc/regression/non_linear_simple_3D.rs"
 
 # <-------------------------------------------------- rbf ----------------------------------------------------->
@@ -103,19 +103,19 @@ path="examples/rbf/classification/xor.rs"
 
 # resgression
 [[example]]
-name="rbf_resgression_linear_simple_2D"
+name="rbf_regression_linear_simple_2D"
 path="examples/rbf/regression/linear_simple_2D.rs"
 [[example]]
-name="rbf_resgression_linear_simple_3D"
+name="rbf_regression_linear_simple_3D"
 path="examples/rbf/regression/linear_simple_3D.rs"
 [[example]]
-name="rbf_resgression_linear_tricky_3D"
+name="rbf_regression_linear_tricky_3D"
 path="examples/rbf/regression/linear_tricky_3D.rs"
 [[example]]
-name="rbf_resgression_non_linear_simple_2D"
+name="rbf_regression_non_linear_simple_2D"
 path="examples/rbf/regression/non_linear_simple_2D.rs"
 [[example]]
-name="rbf_resgression_non_linear_simple_3D"
+name="rbf_regression_non_linear_simple_3D"
 path="examples/rbf/regression/non_linear_simple_3D.rs"
 
 # <-------------------------------------------------- svm ----------------------------------------------------->
