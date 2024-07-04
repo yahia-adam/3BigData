@@ -92,3 +92,6 @@ path="src/support_vector_machine.rs"
 [[example]]
 name="rbf_classification_linear_simple"
 path="examples/rbf/classification/linear_simple.rs"
+[[example]]
+name="rbf_classification_linear_multiple"
+path="examples/rbf/classification/linear_multiple.rs"
