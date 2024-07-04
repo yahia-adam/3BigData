@@ -3,8 +3,8 @@ name = "mylib"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
+#[lib]
+#crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -86,3 +86,9 @@ path="examples/pmc/regression/non_linear_simple_3D.rs"
 [[example]]
 name="test"
 path="src/support_vector_machine.rs"
+
+# <-------------------------------------------------- rbf ----------------------------------------------------->
+# classification
+[[example]]
+name="rbf_classification_linear_simple"
+path="examples/rbf/classification/linear_simple.rs"
