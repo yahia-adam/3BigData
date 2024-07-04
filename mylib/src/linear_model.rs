@@ -10,7 +10,6 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-
 use nalgebra::base::DMatrix;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -21,14 +20,12 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 
-
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
     pub weights: Vec<f32>,
     pub weights_count: usize,
     pub is_classification: bool,
 }
-
 
 #[no_mangle]
 pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -> *mut LinearModel {
