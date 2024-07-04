@@ -81,3 +81,7 @@ path="examples/pmc/regression/non_linear_simple_2D.rs"
 [[example]]
 name="mlp_resgression_non_linear_simple_3D"
 path="examples/pmc/regression/non_linear_simple_3D.rs"
+
+[[example]]
+name="test"
+path="src/support_vector_machine.rs"
