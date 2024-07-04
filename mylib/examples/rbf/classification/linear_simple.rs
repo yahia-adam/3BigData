@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use mylib::{RadicalBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt,
-            predict_rbf_classification, free_rbf, save_rbf_model, rbf_to_json};
+            predict_rbf_classification, free_rbf};
 
 fn main() {
     let x: Vec<Vec<f32>> = vec![
