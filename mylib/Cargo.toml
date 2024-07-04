@@ -95,3 +95,6 @@ path="examples/rbf/classification/linear_simple.rs"
 [[example]]
 name="rbf_classification_linear_multiple"
 path="examples/rbf/classification/linear_multiple.rs"
+[[example]]
+name="rbf_classification_cros"
+path="examples/rbf/classification/cros.rs"
