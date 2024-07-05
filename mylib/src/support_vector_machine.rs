@@ -10,16 +10,23 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
+use libm::expf;
 use osqp::{CscMatrix, Problem, Settings};
+use serde::forward_to_deserialize_any;
 
-pub struct SVMModel{
-    weight:f32,
-    biais:f32,
+pub struct SVMModel {
+    weight: f32,
+    biais: f32,
+    sample_size: u32,
+    sample_len: u32,
+    kernel: String,
+    deg: i32,
 }
+
 fn main() {
 
     // Define problem data
-    let P = &[[4.0, 1.0],
+    /*let P = &[[4.0, 1.0],
         [1.0, 2.0]];
     let q = &[1.0, 1.0];
     let A = &[[1.0, 1.0],
@@ -42,11 +49,57 @@ fn main() {
     let result = prob.solve();
 
     // Print the solution
-    println!("{:?}", result.x().expect("failed to solve problem"));
+    println!("{:?}", result.x().expect("failed to solve problem"));*/
 
 
+    let mut model = SVMModel {
+        weight: 0.0,
+        biais: 0.0,
+        sample_size: 3,
+        sample_len: 9,
+        deg: 2,
+        kernel: "linear".parse().unwrap(),
+    };
+
+    let x: Vec<Vec<f32>> = Vec::from([
+        vec![1.0, 1.0],
+        vec![2.0, 1.0],
+        vec![2.0, 2.0],
+        vec![4.0, 1.0],
+        vec![4.0, 4.0],
+    ]);
+    let y = &[1, 1, -1, -1, -1,];
+    train(&model, &x, y, &2.0)
 }
 
-fn train(model: SVMModel, input: &[f32], labels: &[f32], gamma: &f32, kernel: &str){
+fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
+    if model.kernel == "linear" {
+        //poduit scalaire
+        xi.iter().zip(xj.iter()).map(|(i,j)| i*j).sum()
+    } /*else if model.kernel == "poly" {
+        f32::powi(1.0 + xi * xj, model.deg)
+    } else if model.kernel == "rad" {
+        expf(-f32::powi(xi, 2)) * expf(-f32::powi(xj, 2)) * expf(2.0 * xi * xj)
+    }
+    */else { 0.0 }
+}
 
+fn train(model: &SVMModel, inputs: &Vec<Vec<f32>>, labels: &[i32], gamma: &f32) {
+    /*let kernel_result: Vec<_> = inputs
+        .iter()
+        .map(|x| get_kernel(model, x[0] as f32, x[1] as f32))
+        .collect();
+
+    println!("Kernel Result : {:?}", kernel_result);
+*/
+    let mut big_matrix = Vec::new();
+
+    for i in 0..inputs.len(){
+        big_matrix.push(Vec::new());
+        for j in 0..inputs.len(){
+            big_matrix[i].push(labels[i] as f32 * labels[j] as f32 * get_kernel(model, &inputs[i], &inputs[j]))
+        }
+    }
+
+    println!("Big Matrix: {:?}", big_matrix);
 }
