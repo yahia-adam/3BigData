@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use mylib::{RadicalBasisFunctionNetwork, init_rbf, train_rbf_regression, predict_rbf_regression, free_rbf };
+use mylib::{RadicalBasisFunctionNetwork, init_rbf, train_rbf_regression, predict_rbf_regression, free_rbf};
 
 fn main() {
     let x: Vec<Vec<f32>> = vec![
