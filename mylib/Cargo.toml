@@ -101,6 +101,9 @@ path="examples/rbf/classification/multi_cross.rs"
 [[example]]
 name="rbf_classification_xor"
 path="examples/rbf/classification/xor.rs"
+[[example]]
+name="rbf_classification_multi_linear_3_classes"
+path="examples/rbf/classification/multi_linear_3_classes.rs"
 
 # resgression
 [[example]]
