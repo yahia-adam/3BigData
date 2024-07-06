@@ -152,9 +152,7 @@ pub extern "C" fn train_rbf_regression(model: *mut RadicalBasisFunctionNetwork, 
     let cluster_points = lloyd(sample_inputs_flat, cluster_num, 10, sample_count, inputs_size);
 
     let mut pb = ProgressBar::new(sample_count as u64);
-    pb.format("[=>-]");
-    pb.message("Training RBF Regression");
-    pb.show_tick = true;
+    pb.show_tick = false;
     pb.show_speed = false;
     pb.show_percent = false;
     pb.show_counter = false;
@@ -170,7 +168,6 @@ pub extern "C" fn train_rbf_regression(model: *mut RadicalBasisFunctionNetwork, 
                 model.centers[j][n] = cluster_pointsj[n];
             }
         }
-        pb.inc();
     }
 
     let y = Array::from(expected_outputs.to_vec());
