@@ -16,13 +16,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{self, json};
 use std::ffi::CString;
 use std::ffi::{c_char, c_float, CStr};
-use std::{fs, thread};
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use tensorboard_rs::summary_writer::SummaryWriter;
 use pbr::ProgressBar;
-use std::thread::sleep;
-use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
