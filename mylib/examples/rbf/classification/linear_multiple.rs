@@ -125,7 +125,7 @@ fn main() {
 
     let rbf_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
 
-    train_rbf_rosenblatt(rbf_model, x_ptr, y_ptr, 10000, 0.01, input_dim, sample_count);
+    train_rbf_rosenblatt(rbf_model, x_ptr, y_ptr, 1000, 0.01, input_dim, sample_count);
 
     println!("");
     println!("\n RBF Classification Model : OK");

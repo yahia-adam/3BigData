@@ -261,9 +261,8 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, 
         pb.show_speed = false;
         pb.show_percent = false;
         pb.show_counter = false;
-
-        let mut y_true: Vec<f32> = vec![];
-        let mut y_pred: Vec<f32> = vec![];
+        let mut y_true: Vec<f32> = Vec::with_capacity(sample_count as usize);
+        let mut y_pred: Vec<f32> = Vec::with_capacity(sample_count as usize);
 
         for k in 0..sample_count as usize {
             let x = &sample_inputs_flat[(k * inputs_size as usize)..((k + 1) * inputs_size as usize)];
@@ -284,6 +283,9 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, 
             pb.inc();
         }
 
+        // let current_loss = mse_epoch(&y_true, &y_pred);
+        // let current_accuracy = accuracy(&y_true, &y_pred);
+        // println!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2}", epoch + 1, iterations_count, current_loss, current_accuracy);
         let epoch_loss = mse_epoch(&y_true, &y_pred);
         let epoch_accuracy = accuracy(&y_true, &y_pred);
         model.train_loss.push(epoch_loss);
