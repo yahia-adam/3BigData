@@ -22,12 +22,17 @@ use libm::*;
 use std::fs::File;
 use std::io::{Write, BufReader};
 use std::os::raw::c_char;
+use pbr::ProgressBar;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadicalBasisFunctionNetwork {
     weights : Vec<f32>,
     centers : Vec<Vec<f32>>,
     gamma : f32,
+    pub train_loss: Vec<f32>,
+    pub test_loss: Vec<f32>,
+    pub train_accuracy: Vec<f32>,
+    pub test_accuracy: Vec<f32>
 }
 
 #[no_mangle]
@@ -49,6 +54,10 @@ pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *
         weights,
         centers,
         gamma,
+        train_loss: vec![],
+        test_loss: vec![],
+        train_accuracy: vec![],
+        test_accuracy: vec![],
     };
 
     let boxed_model = Box::new(model);
@@ -129,30 +138,39 @@ pub fn lloyd(data : &[f32], cluster_num : i32, iterations : i32, sample_count : 
 }
 
 #[no_mangle]
-pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork, sample_inputs_flat : *mut f32, expected_outputs : *mut f32, inputs_size : i32, sample_count : i32){
-    let model = unsafe{
+pub extern "C" fn train_rbf_regression(model: *mut RadicalBasisFunctionNetwork, sample_inputs_flat: *mut f32, expected_outputs: *mut f32, inputs_size: i32, sample_count: i32) {
+    let model = unsafe {
         model.as_mut().unwrap()
     };
     let cluster_num = model.weights.len() as i32;
-    let sample_inputs_flat = unsafe{
+    let sample_inputs_flat = unsafe {
         from_raw_parts(sample_inputs_flat, (inputs_size * sample_count) as usize)
     };
     let expected_outputs = unsafe {
-      from_raw_parts(expected_outputs, sample_count as usize)
+        from_raw_parts(expected_outputs, sample_count as usize)
     };
     let cluster_points = lloyd(sample_inputs_flat, cluster_num, 10, sample_count, inputs_size);
 
+    let mut pb = ProgressBar::new(sample_count as u64);
+    pb.format("[=>-]");
+    pb.message("Training RBF Regression");
+    pb.show_tick = true;
+    pb.show_speed = false;
+    pb.show_percent = false;
+    pb.show_counter = false;
+
     let mut phi = Array::default((sample_count as usize, cluster_num as usize));
 
-    for i in 0..sample_count as usize{
+    for i in 0..sample_count as usize {
         let xi = &sample_inputs_flat[(i * inputs_size as usize)..((i + 1) * inputs_size as usize)];
-        for j in 0..cluster_num as usize{
-            let cluster_pointsj = &cluster_points[(j * inputs_size as usize)..((j + 1 ) * inputs_size as usize)];
+        for j in 0..cluster_num as usize {
+            let cluster_pointsj = &cluster_points[(j * inputs_size as usize)..((j + 1) * inputs_size as usize)];
             phi[(i, j)] = expf(-model.gamma * euclid(xi, cluster_pointsj) * euclid(xi, cluster_pointsj));
-            for n in 0..inputs_size as usize{
+            for n in 0..inputs_size as usize {
                 model.centers[j][n] = cluster_pointsj[n];
             }
         }
+        pb.inc();
     }
 
     let y = Array::from(expected_outputs.to_vec());
@@ -160,9 +178,19 @@ pub extern "C" fn train_rbf_regression(model : *mut RadicalBasisFunctionNetwork,
     let phitphi_inv = phitphi.inv().unwrap();
     let w = (phitphi_inv.dot(&phi.t())).dot(&y);
 
-    for i in 0..cluster_num as usize{
+    for i in 0..cluster_num as usize {
         model.weights[i] = w[i];
     }
+
+    let mut y_pred = vec![0.0; sample_count as usize];
+    for i in 0..sample_count as usize {
+        let xi = &sample_inputs_flat[(i * inputs_size as usize)..((i + 1) * inputs_size as usize)];
+        y_pred[i] = predict_rbf_regression_slice(model, xi);
+    }
+    let final_loss = mse_epoch(expected_outputs, &y_pred);
+    model.train_loss.push(final_loss);
+
+    pb.finish_println(&format!("Training completed - Final loss: {:.4}\n", final_loss));
 }
 
 fn predict_rbf_regression_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
@@ -192,6 +220,23 @@ pub extern "C" fn predict_rbf_regression(model : *mut RadicalBasisFunctionNetwor
 
 }
 
+fn mse_epoch(y_true: &[f32], y_pred: &[f32]) -> f32 {
+    let n = y_true.len() as f32;
+    let sum_squared_error: f32 = y_true.iter().zip(y_pred.iter())
+        .map(|(&true_val, &pred_val)| (true_val - pred_val).powi(2))
+        .sum();
+    sum_squared_error / n
+}
+
+fn accuracy(y_true: &[f32], y_pred: &[f32]) -> f32 {
+    let correct_predictions: usize = y_true.iter().zip(y_pred.iter())
+        .filter(|(&true_val, &pred_val)| {
+            (true_val >= 0.5 && pred_val >= 0.5) || (true_val < 0.5 && pred_val < 0.5)
+        })
+        .count();
+    correct_predictions as f32 / y_true.len() as f32
+}
+
 #[no_mangle]
 pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, sample_inputs_flat: *mut f32, expected_outputs: *mut f32, iterations_count: i32, alpha: f32, inputs_size: i32, sample_count: i32) {
     let model = unsafe {
@@ -211,16 +256,46 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, 
         model.centers[j] = cluster_pointsj.to_vec();
     }
 
-    for _ in 0..iterations_count as usize {
-        let k = rand::thread_rng().gen_range(0..sample_count) as usize;
-        let x = &sample_inputs_flat[(k * inputs_size as usize)..((k + 1) * inputs_size as usize)];
-        let yk = expected_outputs[k];
-        let gk = predict_rbf_classification_slice(model, x);
+    for epoch in 0..iterations_count as usize {
+        let mut pb = ProgressBar::new(sample_count as u64);
+        pb.format("[=>-]");
+        pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", epoch + 1, iterations_count, 0.0, 0.0).as_str());
+        pb.show_tick = true;
+        pb.show_speed = false;
+        pb.show_percent = false;
+        pb.show_counter = false;
 
-        for i in 0..cluster_num as usize {
-            let rbf_value = expf(-model.gamma * euclid(x, &model.centers[i]).powi(2));
-            model.weights[i] += alpha * (yk - gk) * rbf_value;
+        let mut y_true: Vec<f32> = vec![];
+        let mut y_pred: Vec<f32> = vec![];
+
+        for k in 0..sample_count as usize {
+            let x = &sample_inputs_flat[(k * inputs_size as usize)..((k + 1) * inputs_size as usize)];
+            let yk = expected_outputs[k];
+            let gk = predict_rbf_classification_slice(model, x);
+
+            y_true.push(yk);
+            y_pred.push(gk);
+
+            for i in 0..cluster_num as usize {
+                let rbf_value = expf(-model.gamma * euclid(x, &model.centers[i]).powi(2));
+                model.weights[i] += alpha * (yk - gk) * rbf_value;
+            }
+
+            let current_loss = mse_epoch(&y_true, &y_pred);
+            let current_accuracy = accuracy(&y_true, &y_pred);
+            pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", epoch + 1, iterations_count, current_loss, current_accuracy).as_str());
+            pb.inc();
         }
+
+        let epoch_loss = mse_epoch(&y_true, &y_pred);
+        let epoch_accuracy = accuracy(&y_true, &y_pred);
+        model.train_loss.push(epoch_loss);
+        model.train_accuracy.push(epoch_accuracy);
+
+        pb.finish_println(&format!(
+            "Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ",
+            epoch + 1, iterations_count, epoch_loss, epoch_accuracy
+        ));
     }
 }
 

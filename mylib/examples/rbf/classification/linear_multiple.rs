@@ -128,7 +128,7 @@ fn main() {
     train_rbf_rosenblatt(rbf_model, x_ptr, y_ptr, 10000, 0.01, input_dim, sample_count);
 
     println!("");
-    println!("RBF Classification Model : OK");
+    println!("\n RBF Classification Model : OK");
     println!("");
     for i in 0..sample_count as usize {
         let input_ptr: *mut f32 = x[i].as_mut_ptr();

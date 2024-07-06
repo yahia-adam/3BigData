@@ -39,7 +39,7 @@ fn main() {
     train_rbf_rosenblatt(rbf_model, x_ptr as *mut f32, y_ptr as *mut f32, iterations_count, alpha, input_dim, data_size as i32);
 
     println!("");
-    println!("RBF Multilinear 3 Classes Classification : OK");
+    println!("\n RBF Multilinear 3 Classes Classification : OK");
     println!("");
     for i in 0..data_size {
         let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();

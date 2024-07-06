@@ -25,7 +25,7 @@ fn main() {
     let rbf_class_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
     train_rbf_rosenblatt(rbf_class_model, x_ptr, y_ptr, 1000, 0.01, input_dim, sample_count);
 
-    println!("RBF Classification Model: OK");
+    println!("\n RBF Classification Model: OK");
     println!("");
     for i in 0..sample_count as usize {
         let input_ptr: *mut f32 = x[i].clone().as_mut_ptr();
