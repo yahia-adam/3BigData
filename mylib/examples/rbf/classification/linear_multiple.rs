@@ -117,7 +117,7 @@ fn main() {
     let sample_count = y.len() as i32;
     let input_dim = x[0].len() as i32;
     let cluster_num = 10;
-    let gamma = 0.1;
+    let gamma = 1.0;
 
     let mut x_flatten: Vec<f32> = x.clone().into_iter().flatten().collect();
     let x_ptr: *mut f32 = x_flatten.as_mut_ptr();

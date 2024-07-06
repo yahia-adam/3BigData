@@ -29,10 +29,10 @@ pub struct RadicalBasisFunctionNetwork {
     weights : Vec<f32>,
     centers : Vec<Vec<f32>>,
     gamma : f32,
-    pub train_loss: Vec<f32>,
-    pub test_loss: Vec<f32>,
-    pub train_accuracy: Vec<f32>,
-    pub test_accuracy: Vec<f32>
+    train_loss: Vec<f32>,
+    test_loss: Vec<f32>,
+    train_accuracy: Vec<f32>,
+    test_accuracy: Vec<f32>
 }
 
 #[no_mangle]
@@ -254,6 +254,7 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, 
     }
 
     for epoch in 0..iterations_count as usize {
+
         let mut pb = ProgressBar::new(sample_count as u64);
         pb.format("[=>-]");
         pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", epoch + 1, iterations_count, 0.0, 0.0).as_str());
@@ -261,6 +262,7 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, 
         pb.show_speed = false;
         pb.show_percent = false;
         pb.show_counter = false;
+
         let mut y_true: Vec<f32> = Vec::with_capacity(sample_count as usize);
         let mut y_pred: Vec<f32> = Vec::with_capacity(sample_count as usize);
 
