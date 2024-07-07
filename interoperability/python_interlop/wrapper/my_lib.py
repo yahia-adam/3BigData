@@ -138,6 +138,7 @@ class MyModel:
 
     def _get_prediction_color(self, point: np.ndarray):
         prediction = self._predict_value(point)
+        # print(prediction)
         if not self.__is_3_classes:
             return "lightblue" if prediction > 0 else "pink"
         else:
@@ -170,6 +171,8 @@ class MyModel:
             return my_lib.predict_mlp(self.model, point_pointer)[0]
         elif self.__type == "rbf":
             if self.__is_classification:
+                # var = my_lib.predict_rbf_classification(self.model, point_pointer)
+                # print(var)
                 return my_lib.predict_rbf_classification(self.model, point_pointer)
             else:
                 return my_lib.predict_rbf_regression(self.model, point_pointer)
