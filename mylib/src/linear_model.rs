@@ -40,7 +40,7 @@ pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -
     let model: LinearModel = LinearModel {
         weights: vec![rand::thread_rng().gen_range(-1.0..1.0); (input_count + 1) as usize],
         weights_count: input_count as usize,
-        is_classification: is_classification as bool,
+        is_classification,
         train_loss: vec![],
         test_loss: vec![],
         train_accuracy: vec![],
@@ -67,15 +67,15 @@ pub extern "C" fn train_linear_model(
     let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
 
     let data_size: usize = train_data_size as usize;
-    let features: &[f32] = unsafe { std::slice::from_raw_parts(x_train, (data_size * model_ref.weights_count) as usize)};
+    let features: &[f32] = unsafe { std::slice::from_raw_parts(x_train, data_size * model_ref.weights_count)};
     let mut features: Vec<f32> = features.to_vec().clone();
-    let labels: &[f32] = unsafe { std::slice::from_raw_parts(y_train, data_size as usize)};
+    let labels: &[f32] = unsafe { std::slice::from_raw_parts(y_train, data_size)};
     let labels: Vec<f32> = labels.to_vec().clone();
 
     let test_data_size = test_data_size as usize;
-    let x_test: &[f32] = unsafe { std::slice::from_raw_parts(x_test, (test_data_size * model_ref.weights_count) as usize)};
+    let x_test: &[f32] = unsafe { std::slice::from_raw_parts(x_test, test_data_size * model_ref.weights_count)};
     let x_test: Vec<f32> = x_test.to_vec().clone();
-    let y_test: &[f32] = unsafe { std::slice::from_raw_parts(y_test, test_data_size as usize)};
+    let y_test: &[f32] = unsafe { std::slice::from_raw_parts(y_test, test_data_size)};
     let y_test: Vec<f32> = y_test.to_vec().clone();
 
     let mut writer = SummaryWriter::new(&("../logs".to_string()));
@@ -228,7 +228,7 @@ pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {
 
 
 #[no_mangle]
-pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const std::ffi::c_char) {
+pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const c_char) {
     let path_cstr: &CStr = unsafe { CStr::from_ptr(filepath) };
     let path_str: &str = match path_cstr.to_str() {
         Ok(s) => s,
@@ -240,7 +240,7 @@ pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const 
 
     let weights_str: &str = unsafe {
         let weights_ptr: *const c_char = to_json(model);
-        std::ffi::CStr::from_ptr(weights_ptr).to_str().unwrap_or("")
+        CStr::from_ptr(weights_ptr).to_str().unwrap_or("")
     };
 
     if let Ok(mut file) = File::create(path_str) {
@@ -285,7 +285,7 @@ pub extern "C" fn free_linear_model(model: *mut LinearModel) {
 }
 
 fn mse(y: f32, y_hat: f32) -> f32 {
-    (y - y_hat).powi(2) as f32
+    (y - y_hat).powi(2)
 }
 
 fn mse_epoch(y_true: &[f32], y_pred: &[f32]) -> f32 {
@@ -296,11 +296,13 @@ fn mse_epoch(y_true: &[f32], y_pred: &[f32]) -> f32 {
         .sum();
     total_mse / n as f32
 }
+
 fn accuracy(y_true: &[f32], y_pred: &[f32]) -> f32 {
-    let n = y_true.len();
-    let correct_predictions = y_true.iter()
-        .zip(y_pred.iter())
-        .filter(|(&y, &y_hat)| (y == 1.0 && y_hat >= 0.5) || (y == 0.0 && y_hat < 0.5))
-        .count();
-    (correct_predictions as f32) / (n as f32)
+    let mut predicted_true:i32 = 0;
+    for (y, y_hat) in y_true.iter().zip(y_pred.iter()) {
+        if *y as i32 == *y_hat as i32 {
+            predicted_true += 1;
+        }
+    }
+    predicted_true as f32 / y_true.len() as f32
 }
