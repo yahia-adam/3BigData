@@ -19,9 +19,9 @@ ndarray-linalg = { version = "0.16.0", features = ["intel-mkl"] }
 osqp = "0.6.2"
 tensorboard-rs = "0.5.9"
 pbr = "1.1.1"
-image = "0.25.1"
+image = "0.23.14"
 
-# <-------------------------------------------------- lp ----------------------------------------------------->
+# <-------------------------------------------------- lm ----------------------------------------------------->
 # classification
 [[example]]
 name="ml_classification_cross"
@@ -128,3 +128,9 @@ path="examples/rbf/regression/non_linear_simple_3D.rs"
 [[example]]
 name="test"
 path="src/support_vector_machine.rs"
+
+# <-------------------------------------------------- model training ----------------------------------------------------->
+# rbf
+[[example]]
+name="rbf_training"
+path="examples/training/rbf_training.rs"
