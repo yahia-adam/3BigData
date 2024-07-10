@@ -9,8 +9,7 @@
 /*   3IABD1 2023-2024                                     ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
-
-
+use std::collections::HashMap;
 use rand::Rng;
 use serde_json::{self, json};
 use std::ffi::c_char;
@@ -19,7 +18,7 @@ use std::ffi::CStr;
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
-
+use tensorboard_rs::summary_writer::SummaryWriter;
 
 pub struct MultiLayerPerceptron {
     d: Vec<usize>,
@@ -28,6 +27,7 @@ pub struct MultiLayerPerceptron {
     deltas: Vec<Vec<f32>>,
     l: usize,
     is_classification: bool,
+    loss: Vec<f32>
 }
 
 
@@ -45,6 +45,7 @@ pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32, is_classification: bool
         deltas: vec![vec![]; npl.len()],
         l:  npl_size as usize - 1,
         is_classification: is_classification as bool,
+        loss: vec![]
     };
     
     for l in 0..model.l + 1 {
@@ -164,7 +165,11 @@ pub extern "C" fn train_mlp(
     let outputs: Vec<f32> =
         unsafe { Vec::from_raw_parts(outputs, data_size * output_col, data_size * output_col) };
 
-    for _ in 0..nb_iteration {
+
+    let mut writer = SummaryWriter::new(&("./logdir".to_string()));
+
+    for n_iter in 0..nb_iteration {
+        let mut map = HashMap::new();
         let k: usize = rand::thread_rng().gen_range(0..data_size);
         let sample_inputs: Vec<f32> = inputs[k * input_col..(k + 1) * input_col].to_vec();
         let sample_expected_outputs: Vec<f32> =
@@ -173,7 +178,22 @@ pub extern "C" fn train_mlp(
         propagate(model_ref, sample_inputs);
         backpropagate(model_ref, &sample_expected_outputs);
         update_w(model_ref, alpha);
+
+
+        let mut mse: f32 = 0.0;
+        for j in 1..model_ref.d[model_ref.d.len() - 1] + 1 {
+            let error = model_ref.x[model_ref.d.len() - 1][j] - sample_expected_outputs[j - 1];
+            mse += error.powi(2);
+        }
+        mse /= model_ref.d[model_ref.d.len() - 1] as f32;
+        model_ref.loss.push(mse);
+        map.insert("i".to_string(), n_iter as f32);
+        map.insert("loss".to_string(), mse);
+        writer.add_scalars("data/scalar_group", &map, n_iter as usize);
+
+
     }
+    writer.flush();
 }
 
 

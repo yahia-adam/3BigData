@@ -1,13 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module type="EMPTY_MODULE" version="4">
+<module type="PYTHON_MODULE" version="4">
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/mylib/benches" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/mylib/examples" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/mylib/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/inspectionProfiles" />
+      <excludeFolder url="file://$MODULE_DIR$/flask-app/.env" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.venv/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.venv/etc" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.venv/lib" />
+      <excludeFolder url="file://$MODULE_DIR$/interoperability/python_interlop/.venv/share" />
+      <excludeFolder url="file://$MODULE_DIR$/mylib/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/mylib/target" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="3BigData" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="TemplatesService">
+    <option name="TEMPLATE_CONFIGURATION" value="Jinja2" />
+    <option name="TEMPLATE_FOLDERS">
+      <list>
+        <option value="$MODULE_DIR$/flask-app/templates" />
+      </list>
+    </option>
   </component>
 </module>
