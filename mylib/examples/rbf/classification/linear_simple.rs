@@ -23,7 +23,7 @@ fn main() {
     let y_ptr: *mut f32 = y.clone().as_mut_ptr();
 
     let rbf_class_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
-    train_rbf_rosenblatt(rbf_class_model, x_ptr, y_ptr, 1000, 0.01, input_dim, sample_count);
+    train_rbf_rosenblatt(rbf_class_model, x_ptr, y_ptr, 100, 0.01, input_dim, sample_count);
 
     println!("\n RBF Classification Model: OK");
     println!("");

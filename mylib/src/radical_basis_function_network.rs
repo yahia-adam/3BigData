@@ -24,6 +24,7 @@ use std::io::{Write, BufReader};
 use std::os::raw::c_char;
 use pbr::ProgressBar;
 
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadicalBasisFunctionNetwork {
     weights : Vec<f32>,
