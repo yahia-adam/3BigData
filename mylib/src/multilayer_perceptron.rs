@@ -18,6 +18,7 @@ use std::ffi::CStr;
 use std::ffi::CString;
 use std::fs::File;
 use std::io::Write;
+use pbr::ProgressBar;
 use tensorboard_rs::summary_writer::SummaryWriter;
 
 pub struct MultiLayerPerceptron {
@@ -27,9 +28,9 @@ pub struct MultiLayerPerceptron {
     deltas: Vec<Vec<f32>>,
     l: usize,
     is_classification: bool,
-    loss: Vec<f32>
+    pub loss: Vec<f32>,
+    pub accuracy: Vec<f32>,
 }
-
 
 #[no_mangle]
 #[allow(dead_code)]
@@ -45,7 +46,8 @@ pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32, is_classification: bool
         deltas: vec![vec![]; npl.len()],
         l:  npl_size as usize - 1,
         is_classification: is_classification as bool,
-        loss: vec![]
+        loss: vec![],
+        accuracy: vec![],
     };
     
     for l in 0..model.l + 1 {
@@ -85,7 +87,6 @@ pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32, is_classification: bool
     let boxed_model: Box<MultiLayerPerceptron> = Box::new(model);
     Box::leak(boxed_model)
 }
-
 
 fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: Vec<f32>) {
     for j in 0..sample_inputs.len() {
@@ -133,14 +134,53 @@ fn backpropagate(
 }
 
 
-fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
+fn update_w(model: &mut MultiLayerPerceptron, learning_rate: f32) {
     for l in 1..model.d.len() {
         for i in 0..model.d[l - 1] + 1 {
             for j in 1..model.d[l] + 1 {
-                model.w[l][i][j] -= alpha * model.x[l - 1][i] * model.deltas[l][j];
+                model.w[l][i][j] -= learning_rate * model.x[l - 1][i] * model.deltas[l][j];
             }
         }
     }
+}
+
+fn calculate_accuracy(
+    model: &mut MultiLayerPerceptron,
+    inputs: &Vec<f32>,
+    outputs: &Vec<f32>,
+    data_size: usize,
+    input_col: usize,
+    output_col: usize
+) -> f32 {
+    let mut correct_predictions = 0;
+
+    for k in 0..data_size {
+        let sample_inputs: Vec<f32> = inputs[k * input_col..(k + 1) * input_col].to_vec();
+        let sample_expected_outputs: Vec<f32> = outputs[k * output_col..(k + 1) * output_col].to_vec();
+
+        propagate(model, sample_inputs);
+
+        let last_layer_index = model.d.len() - 1;
+        let predicted_outputs = &model.x[last_layer_index][1..];
+
+        // For classification, find the index of the max value in both predicted and expected
+        let predicted_label = predicted_outputs.iter()
+            .enumerate()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+            .unwrap().
+            0;
+        let expected_label = sample_expected_outputs.iter().
+            enumerate()
+            .max_by(|a, b| a.1.partial_cmp(b.1).unwrap()).
+            unwrap().
+            0;
+
+        if predicted_label == expected_label {
+            correct_predictions += 1;
+        }
+    }
+
+    correct_predictions as f32 / data_size as f32
 }
 
 
@@ -148,54 +188,79 @@ fn update_w(model: &mut MultiLayerPerceptron, alpha: f32) {
 #[allow(dead_code)]
 pub extern "C" fn train_mlp(
     model: *mut MultiLayerPerceptron,
-    inputs: *mut c_float,
-    outputs: *mut c_float,
-    data_size: u32,
-    alpha: c_float,
-    nb_iteration: u32,
+    x_train: *mut c_float,
+    y_train: *mut c_float,
+    train_data_size: u32,
+    x_test: *mut c_float,
+    y_test: *mut c_float,
+    test_data_size: u32,
+    learning_rate: f32,
+    epochs: u32,
 ) {
     let model_ref: &mut MultiLayerPerceptron = unsafe { model.as_mut().unwrap() };
     
     let input_col: usize = model_ref.d[0] as usize;
     let output_col: usize = model_ref.d[model_ref.l] as usize;
-    let data_size: usize = data_size as usize;
+    let train_data_size: usize = train_data_size as usize;
+    let test_data_size: usize = test_data_size as usize;
 
-    let inputs: Vec<f32> = unsafe { Vec::from_raw_parts(inputs, data_size * input_col, data_size * input_col) };
+    let x_train: Vec<f32> =
+        unsafe { Vec::from_raw_parts(x_train, train_data_size * input_col, train_data_size * input_col)};
+    let y_train: Vec<f32> =
+        unsafe { Vec::from_raw_parts(y_train, train_data_size * output_col, train_data_size * output_col)};
 
-    let outputs: Vec<f32> =
-        unsafe { Vec::from_raw_parts(outputs, data_size * output_col, data_size * output_col) };
+    let x_test: Vec<f32> =
+        unsafe { Vec::from_raw_parts(x_test, test_data_size * input_col, test_data_size * input_col)};
+    let y_test: Vec<f32> =
+        unsafe { Vec::from_raw_parts(y_test, test_data_size * output_col, test_data_size * output_col)};
 
 
-    let mut writer = SummaryWriter::new(&("./logdir".to_string()));
+    let mut writer = SummaryWriter::new(&("../logs".to_string()));
 
-    for n_iter in 0..nb_iteration {
+    for n_iter in 1..epochs + 1 {
+        let mut pb = ProgressBar::new(train_data_size as u64);
+        pb.format("[=>-]");
+        pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", n_iter, epochs, 0.0, 0.0).as_str());
+        pb.show_tick = true;
+        pb.show_speed = false;
+        pb.show_percent = false;
+        pb.show_counter = false;
+
+        let mut sum_error = 0f32;
         let mut map = HashMap::new();
-        let k: usize = rand::thread_rng().gen_range(0..data_size);
-        let sample_inputs: Vec<f32> = inputs[k * input_col..(k + 1) * input_col].to_vec();
-        let sample_expected_outputs: Vec<f32> =
-            outputs[k * output_col..(k + 1) * output_col].to_vec();
 
-        propagate(model_ref, sample_inputs);
-        backpropagate(model_ref, &sample_expected_outputs);
-        update_w(model_ref, alpha);
+        for _i in 0..train_data_size {
+            let k: usize = rand::thread_rng().gen_range(0..train_data_size);
+            let sample_inputs: Vec<f32> = x_train[k * input_col..(k + 1) * input_col].to_vec();
+            let sample_expected_outputs: Vec<f32> =
+                y_train[k * output_col..(k + 1) * output_col].to_vec();
 
+            propagate(model_ref, sample_inputs);
+            backpropagate(model_ref, &sample_expected_outputs);
+            update_w(model_ref, learning_rate);
 
-        let mut mse: f32 = 0.0;
-        for j in 1..model_ref.d[model_ref.d.len() - 1] + 1 {
-            let error = model_ref.x[model_ref.d.len() - 1][j] - sample_expected_outputs[j - 1];
-            mse += error.powi(2);
+            let mse_iter = sample_expected_outputs.iter()
+                .zip(model_ref.x[model_ref.l].iter().skip(1))  // Assuming x[layer] contains the outputs
+                .map(|(y, y_hat)| (y - y_hat).powi(2))
+                .sum::<f32>();
+
+            sum_error += mse_iter;
+            let accuracy =  calculate_accuracy(model_ref, &x_test, &y_train, test_data_size, input_col, output_col);
+            pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", n_iter + 1, epochs, mse_iter, accuracy).as_str());
+            pb.inc();
         }
-        mse /= model_ref.d[model_ref.d.len() - 1] as f32;
-        model_ref.loss.push(mse);
-        map.insert("i".to_string(), n_iter as f32);
-        map.insert("loss".to_string(), mse);
-        writer.add_scalars("data/scalar_group", &map, n_iter as usize);
 
+        let mse_epoch = sum_error / (train_data_size as f32 * model_ref.d[model_ref.l] as f32);
+        model_ref.loss.push(mse_epoch);
+        map.insert("loss".to_string(), mse_epoch);
 
+        writer.add_scalars("data/multilayer_perceptron", &map, n_iter as usize);
+
+        let accuracy =  calculate_accuracy(model_ref, &x_test, &y_train, test_data_size, input_col, output_col);
+        pb.finish_println(&format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", n_iter, epochs, mse_epoch, accuracy));
     }
     writer.flush();
 }
-
 
 #[no_mangle]
 #[allow(dead_code)]

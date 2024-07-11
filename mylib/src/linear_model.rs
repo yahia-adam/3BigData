@@ -83,7 +83,7 @@ pub extern "C" fn train_linear_model(
         let mut input: Vec<f32> = vec![0.0; model_ref.weights_count];
         let mut y_true:Vec<f32> = vec![];
         let mut y_pred:Vec<f32> = vec![];
-        for n_iter in 0..epochs {
+        for n_iter in 1..epochs + 1 {
             let mut pb = ProgressBar::new(data_size as u64);
             pb.format("[=>-]");
             pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", n_iter, epochs, 0.0, 0.0).as_str());

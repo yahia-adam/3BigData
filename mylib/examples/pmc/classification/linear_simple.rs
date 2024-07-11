@@ -12,16 +12,20 @@ fn main() {
         -1.0,
         -1.0
     ];
-    
+
     let data_size = y.len();
-    
+
     let x_flaten: Vec<f32> = x.clone().into_iter().flatten().collect::<Vec<f32>>();
-    let x_ptr: *mut f32 = Vec::leak(x_flaten.clone()).as_mut_ptr();
-    let y_ptr: *mut f32 = Vec::leak(y.clone()).as_mut_ptr();
-    
+
+    let x_train_ptr: *mut f32 = Vec::leak(x_flaten.clone()).as_mut_ptr();
+    let y_train_ptr: *mut f32 = Vec::leak(y.clone()).as_mut_ptr();
+
+    let x_test_ptr: *mut f32 = Vec::leak(x_flaten.clone()).as_mut_ptr();
+    let y_test_ptr: *mut f32 = Vec::leak(y.clone()).as_mut_ptr();
+
     let mut npl: Vec<u32> = vec![2, 1];
     let mlp: *mut MultiLayerPerceptron = init_mlp(npl.as_mut_ptr(), 2, true);
-    train_mlp(mlp, x_ptr, y_ptr, data_size as u32, 0.001, 1_000_000);
+    train_mlp(mlp, x_train_ptr, y_train_ptr, data_size as u32, x_test_ptr, y_test_ptr, data_size as u32, 0.0001, 10);
     println!("");
     println!("\n Linear Simple : pmc : OK");
     println!("");
@@ -32,5 +36,4 @@ fn main() {
         println!("X:{:?}, Y:{:?} ---> MLP model: {:?}", x[i], y[i], res);
     }
     println!("");
-    
 }

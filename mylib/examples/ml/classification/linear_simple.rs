@@ -35,7 +35,7 @@ fn main() {
         x_test_ptr,
         y_test_ptr,
         test_data_size as u32,
-        0.001, 100_000_000);
+        0.001, 100_000);
 
 }
 
