@@ -196,13 +196,13 @@ pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
         sum += inputs[i - 1] * model.weights[i]
     }
     sum += model.weights[0];
-    if model.is_classification {
+    /*if model.is_classification {
         if sum >= 0.0 {
             sum = 1.0;
         } else {
             sum = -1.0;
         }
-    }
+    }*/
     sum
 }
 

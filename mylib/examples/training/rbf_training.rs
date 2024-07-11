@@ -1,10 +1,21 @@
+mod linear_model_training;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use mylib::{
+    RadicalBasisFunctionNetwork,
+    init_rbf,
+    train_rbf_regression,
+    train_rbf_rosenblatt,
+    predict_rbf_regression,
+    predict_rbf_classification,
+    free_rbf,
+    save_rbf_model,
+    rbf_to_json
+};
 
-#[path = "../../src/radical_basis_function_network.rs"]
-mod radical_basis_function_network;
-use radical_basis_function_network::*;
+use mylib::load_dataset;
 
 const IMAGE_SIZE: u32 = 32;
 const INPUT_DIM: usize = (IMAGE_SIZE * IMAGE_SIZE) as usize;
@@ -13,41 +24,8 @@ const GAMMA: f32 = 0.01;
 const EPOCHS: i32 = 100;
 const LEARNING_RATE: f32 = 0.01;
 
-fn load_dataset(base_dir: &str) -> (Vec<Vec<f32>>, Vec<f32>) {
-    let mut images = Vec::new();
-    let mut labels = Vec::new();
-    let classes = ["metal", "paper", "plastic"];
-
-    for class in classes.iter() {
-        let class_dir = Path::new(base_dir).join(class);
-        for entry in fs::read_dir(class_dir).expect("Erreur lors de la lecture du répertoire") {
-            let path = entry.expect("Erreur lors de la lecture de l'entrée").path();
-            if path.is_file() {
-                if let Ok(img) = image::open(&path) {
-                    let img = img.resize_exact(IMAGE_SIZE, IMAGE_SIZE, image::imageops::FilterType::Lanczos3);
-                    let img_data: Vec<f32> = img.to_luma8().into_raw()
-                        .into_iter()
-                        .map(|p| p as f32 / 255.0)
-                        .collect();
-
-                    images.push(img_data);
-                    labels.push(match *class {
-                        "metal" => -1.0,
-                        "paper" => 0.0,
-                        "plastic" => 1.0,
-                        _ => panic!("Classe inconnue"),
-                    });
-                } else {
-                    eprintln!("Impossible d'ouvrir l'image: {:?}", path);
-                }
-            }
-        }
-    }
-    (images, labels)
-}
-
 fn main() {
-    let base_dir = PathBuf::from(r"C:\Users\csalhab\OneDrive\Online Sessions\3iabd1\projet annuel\3BigData\dataset");
+    let base_dir = PathBuf::from("/home/adam/esgi/3BigData/dataset");
     let train_path = base_dir.join("train");
     let test_path = base_dir.join("test");
 

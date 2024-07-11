@@ -35,6 +35,9 @@ path="examples/ml/classification/linear_multiple.rs"
 [[example]]
 name="ml_classification_xor"
 path="examples/ml/classification/xor.rs"
+[[example]]
+name="linear_model_training"
+path="examples/training/linear_model_training.rs"
 
 # regression
 [[example]]
