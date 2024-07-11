@@ -18,6 +18,7 @@ fn main() {
     ];
     let train_data_size = x.len();
     let test_data_size = x.len();
+
     let x_flaten: Vec<f32> = x.clone().into_iter().flatten().collect::<Vec<f32>>();
     let x_train_ptr: *const f32 = Vec::leak(x_flaten.clone()).as_ptr();
     let y_train_ptr: *const f32 = Vec::leak(y.clone()).as_ptr();

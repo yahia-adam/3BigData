@@ -117,7 +117,7 @@ fn main() {
     let sample_count = y.len() as i32;
     let input_dim = x[0].len() as i32;
     let cluster_num = 10;
-    let gamma = 0.1;
+    let gamma = 1.0;
 
     let mut x_flatten: Vec<f32> = x.clone().into_iter().flatten().collect();
     let x_ptr: *mut f32 = x_flatten.as_mut_ptr();
@@ -125,10 +125,10 @@ fn main() {
 
     let rbf_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
 
-    train_rbf_rosenblatt(rbf_model, x_ptr, y_ptr, 10000, 0.01, input_dim, sample_count);
+    train_rbf_rosenblatt(rbf_model, x_ptr, y_ptr, 1000, 0.01, input_dim, sample_count);
 
     println!("");
-    println!("RBF Classification Model : OK");
+    println!("\n RBF Classification Model : OK");
     println!("");
     for i in 0..sample_count as usize {
         let input_ptr: *mut f32 = x[i].as_mut_ptr();

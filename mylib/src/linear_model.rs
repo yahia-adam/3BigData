@@ -16,13 +16,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{self, json};
 use std::ffi::CString;
 use std::ffi::{c_char, c_float, CStr};
-use std::{fs, thread};
+use std::fs;
 use std::fs::File;
 use std::io::Write;
 use tensorboard_rs::summary_writer::SummaryWriter;
 use pbr::ProgressBar;
-use std::thread::sleep;
-use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
@@ -198,13 +196,13 @@ pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
         sum += inputs[i - 1] * model.weights[i]
     }
     sum += model.weights[0];
-    if model.is_classification {
+    /*if model.is_classification {
         if sum >= 0.0 {
             sum = 1.0;
         } else {
             sum = -1.0;
         }
-    }
+    }*/
     sum
 }
 
@@ -237,14 +235,12 @@ pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const 
             return;
         }
     };
-
     let weights_str: &str = unsafe {
         let weights_ptr: *const c_char = to_json(model);
         CStr::from_ptr(weights_ptr).to_str().unwrap_or("")
     };
 
     if let Ok(mut file) = File::create(path_str) {
-        // Write the weights string to the file
         if let Err(_) = write!(file, "{}", weights_str) {
             println!("Unable to save model error writing to file");
         }

@@ -537,9 +537,9 @@ fn main() {
     
     let linear_model: *mut LinearModel = init_linear_model(2, true);
     train_linear_model(linear_model, x_ptr, y_ptr, data_size as u32, 0.01, 100000);
-    
+
     println!("");
-    println!(" Cross : Linear Model    : KO");
+    println!("\n Cross : Linear Model    : KO");
     println!("");
     for i in 0..data_size {
         let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();

@@ -26,7 +26,7 @@ fn main() {
     train_rbf_regression(rbf_model, x_ptr as *mut f32, y_ptr as *mut f32, input_dim, data_size as i32);
 
     println!("");
-    println!("RBF Tricky 3D : RBF Model : OK");
+    println!("\n RBF Tricky 3D : RBF Model : OK");
     println!("");
     for i in 0..data_size {
         let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();

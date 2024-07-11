@@ -537,7 +537,7 @@ fn main() {
     train_mlp(mlp, x_ptr, y_ptr, data_size as u32, 0.001, 10_000_000);
     
     println!("");
-    println!("Cros : pmc : OK");
+    println!("\n Cross : pmc : OK");
     println!("");
     for i in 0..data_size / 100 {
         let input_ptr: *mut f64 = Vec::leak(x[i].clone()).as_mut_ptr();

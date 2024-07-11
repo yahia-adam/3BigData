@@ -26,7 +26,7 @@ fn main() {
     // train_mlp(mlp, x_ptr, y_ptr, data_size as u32, 0.001, 1_000_000);
     
     // println!("");
-    // println!("Xor : pmc : OK");
+    // println!("\n Xor : pmc : OK");
     // println!("");
     // for i in 0..data_size {
     //     let input_ptr: *mut f32 = Vec::leak(x[i].clone()).as_mut_ptr();

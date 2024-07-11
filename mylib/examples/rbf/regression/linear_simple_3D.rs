@@ -24,7 +24,7 @@ fn main() {
     train_rbf_regression(rbf_model, x_ptr, y_ptr, input_dim, sample_count);
 
     println!("");
-    println!("RBF Regression 3D : RBF Model : OK");
+    println!("\n RBF Regression 3D : RBF Model : OK");
     for i in 0..sample_count as usize {
         let input_ptr: *mut f32 = x[i].clone().as_mut_ptr();
         let output = predict_rbf_regression(rbf_model, input_ptr);
