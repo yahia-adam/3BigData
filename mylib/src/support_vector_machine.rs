@@ -10,9 +10,8 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-use libm::expf;
+use nalgebra::DMatrix;
 use osqp::{CscMatrix, Problem, Settings};
-use serde::forward_to_deserialize_any;
 
 pub struct SVMModel {
     weight: f32,
@@ -68,14 +67,14 @@ fn main() {
         vec![4.0, 1.0],
         vec![4.0, 4.0],
     ]);
-    let y = &[1, 1, -1, -1, -1,];
+    let y = &[1, 1, -1, -1, -1, ];
     train(&model, &x, y, &2.0)
 }
 
 fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
     if model.kernel == "linear" {
         //poduit scalaire
-        xi.iter().zip(xj.iter()).map(|(i,j)| i*j).sum()
+        xi.iter().zip(xj.iter()).map(|(i, j)| i * j).sum()
     } /*else if model.kernel == "poly" {
         f32::powi(1.0 + xi * xj, model.deg)
     } else if model.kernel == "rad" {
@@ -85,21 +84,25 @@ fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
 }
 
 fn train(model: &SVMModel, inputs: &Vec<Vec<f32>>, labels: &[i32], gamma: &f32) {
-    /*let kernel_result: Vec<_> = inputs
-        .iter()
-        .map(|x| get_kernel(model, x[0] as f32, x[1] as f32))
-        .collect();
+    let mut big_matrix: Vec<Vec<f64>> = Vec::new();
 
-    println!("Kernel Result : {:?}", kernel_result);
-*/
-    let mut big_matrix = Vec::new();
-
-    for i in 0..inputs.len(){
+    for i in 0..inputs.len() {
         big_matrix.push(Vec::new());
-        for j in 0..inputs.len(){
-            big_matrix[i].push(labels[i] as f32 * labels[j] as f32 * get_kernel(model, &inputs[i], &inputs[j]))
+        for j in 0..inputs.len() {
+            big_matrix[i].push((labels[i] as f32 * labels[j] as f32 * get_kernel(model, &inputs[i], &inputs[j])) as f64)
         }
     }
 
     println!("Big Matrix: {:?}", big_matrix);
+
+    let p = CscMatrix::from(&big_matrix);
+
+    let q = vec![0.0f32; model.sample_size as usize].append(&mut vec![*gamma; inputs.len()]);
+
+    let identity = DMatrix::identity(model.sample_len as usize, model.sample_len as usize);
+    let diag =
+    //osqp::Problem::new
+
+    println!("q :{:?}", q);
+
 }
