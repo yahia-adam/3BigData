@@ -211,7 +211,7 @@ pub extern "C" fn train_mlp(
 
     let x_test: Vec<f32> =
         unsafe { Vec::from_raw_parts(x_test, test_data_size * input_col, test_data_size * input_col)};
-    let y_test: Vec<f32> =
+    let _y_test: Vec<f32> =
         unsafe { Vec::from_raw_parts(y_test, test_data_size * output_col, test_data_size * output_col)};
 
 
