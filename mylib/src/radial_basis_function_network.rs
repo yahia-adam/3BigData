@@ -200,10 +200,10 @@ fn predict_rbf_regression_slice(model : &RadialBasisFunctionNetwork, inputs : &[
     res
 }
 
-fn predict_rbf_classification_slice(model : &RadialBasisFunctionNetwork, inputs : &[f32])-> f32 {
-    let pred = predict_rbf_regression_slice(model, inputs);
-    return if pred >= 0.0 { 1.0 } else { -1.0 };
-}
+// fn predict_rbf_classification_slice(model : &RadialBasisFunctionNetwork, inputs : &[f32])-> f32 {
+//     let pred = predict_rbf_regression_slice(model, inputs);
+//     return if pred >= 0.0 { 1.0 } else { -1.0 };
+// }
 
 #[no_mangle]
 pub extern "C" fn predict_rbf_regression(model : *mut RadialBasisFunctionNetwork, inputs : *mut f32) -> f32{
