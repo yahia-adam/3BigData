@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use mylib::{RadicalBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt,
+use mylib::{RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt,
             predict_rbf_classification, free_rbf};
 
 fn main() {
@@ -22,7 +22,7 @@ fn main() {
     let x_ptr: *mut f32 = x_flatten.as_mut_ptr();
     let y_ptr: *mut f32 = y.clone().as_mut_ptr();
 
-    let rbf_class_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
+    let rbf_class_model: *mut RadialBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
     train_rbf_rosenblatt(rbf_class_model, x_ptr, y_ptr, 100, 0.01, input_dim, sample_count);
 
     println!("\n RBF Classification Model: OK");

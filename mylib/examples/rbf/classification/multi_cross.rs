@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use mylib::{RadicalBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt, predict_rbf_classification, free_rbf};
+use mylib::{RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt, predict_rbf_classification, free_rbf};
 
 fn main() {
     let x: Vec<Vec<f32>> = vec![
@@ -537,7 +537,7 @@ fn main() {
     let cluster_num = 32;
     let gamma = 1.0;
 
-    let rbf: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim as i32, cluster_num, gamma);
+    let rbf: *mut RadialBasisFunctionNetwork = init_rbf(input_dim as i32, cluster_num, gamma);
     train_rbf_rosenblatt(rbf, x_ptr, y_ptr, 10000000, 0.001, input_dim as i32, data_size as i32);
 
     println!("");

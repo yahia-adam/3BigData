@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use mylib::{
-    RadicalBasisFunctionNetwork,
+    RadialBasisFunctionNetwork,
     init_rbf,
     train_rbf_regression,
     train_rbf_rosenblatt,

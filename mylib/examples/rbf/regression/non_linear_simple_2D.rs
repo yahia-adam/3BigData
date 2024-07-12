@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use mylib::{ RadicalBasisFunctionNetwork, init_rbf, train_rbf_regression, predict_rbf_regression, free_rbf };
+use mylib::{ RadialBasisFunctionNetwork, init_rbf, train_rbf_regression, predict_rbf_regression, free_rbf };
 
 fn main() {
     let x: Vec<Vec<f32>> = vec![
@@ -22,7 +22,7 @@ fn main() {
     let cluster_num = 3;
     let gamma = 0.5;
 
-    let rbf_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
+    let rbf_model: *mut RadialBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
     train_rbf_regression(rbf_model, x_ptr as *mut f32, y_ptr as *mut f32, input_dim, data_size as i32);
 
     println!("");

@@ -1,6 +1,6 @@
 #[allow(unused_imports)]
 use mylib::{
-    RadicalBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt,
+    RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt,
     predict_rbf_classification, free_rbf, save_rbf_model, rbf_to_json,
 };
 
@@ -31,7 +31,7 @@ fn main() {
     let cluster_num = 6;
     let gamma = 1.0;
 
-    let rbf_model: *mut RadicalBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
+    let rbf_model: *mut RadialBasisFunctionNetwork = init_rbf(input_dim, cluster_num, gamma);
 
     let iterations_count = 1000;
     let alpha = 0.01;

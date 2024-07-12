@@ -1,7 +1,7 @@
 /* ********************************************************************************************************* */
 /*                                                                                                           */
 /*                                                              :::::::::: ::::::::   :::::::: :::::::::::   */
-/*   radical_basis_function_network.rs                         :+:       :+:    :+: :+:    :+:    :+:        */
+/*   Radial_basis_function_network.rs                         :+:       :+:    :+: :+:    :+:    :+:        */
 /*                                                            +:+       +:+        +:+           +:+         */
 /*   By: YAHIA ABDCHAFAA Adam, SALHAB Charbel, ELOY Theo     +#++:++#  +#++:++#++ :#:           +#+          */
 /*                                                          +#+              +#+ +#+   +#+#    +#+           */
@@ -24,9 +24,8 @@ use std::io::{Write, BufReader};
 use std::os::raw::c_char;
 use pbr::ProgressBar;
 
-
 #[derive(Serialize, Deserialize, Debug)]
-pub struct RadicalBasisFunctionNetwork {
+pub struct RadialBasisFunctionNetwork {
     weights : Vec<f32>,
     centers : Vec<Vec<f32>>,
     gamma : f32,
@@ -37,7 +36,7 @@ pub struct RadicalBasisFunctionNetwork {
 }
 
 #[no_mangle]
-pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *mut RadicalBasisFunctionNetwork{
+pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *mut RadialBasisFunctionNetwork{
     let mut weights = Vec::with_capacity(cluster_num as usize);
     for _ in 0..cluster_num as usize{
         weights.push(0f32);
@@ -51,7 +50,7 @@ pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *
         }
     }
 
-    let model = RadicalBasisFunctionNetwork {
+    let model = RadialBasisFunctionNetwork {
         weights,
         centers,
         gamma,
@@ -68,7 +67,7 @@ pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *
 
 pub fn euclid(x : &[f32], y : &[f32]) -> f32{
     let mut res = 0f32;
-    for i in 0..(x.len()){
+    for i in 0..x.len(){
         res += powf(y[i] - x[i], 2f32);
     }
     sqrtf(res)
@@ -139,7 +138,7 @@ pub fn lloyd(data : &[f32], cluster_num : i32, iterations : i32, sample_count : 
 }
 
 #[no_mangle]
-pub extern "C" fn train_rbf_regression(model: *mut RadicalBasisFunctionNetwork, sample_inputs_flat: *mut f32, expected_outputs: *mut f32, inputs_size: i32, sample_count: i32) {
+pub extern "C" fn train_rbf_regression(model: *mut RadialBasisFunctionNetwork, sample_inputs_flat: *mut f32, expected_outputs: *mut f32, inputs_size: i32, sample_count: i32) {
     let model = unsafe {
         model.as_mut().unwrap()
     };
@@ -174,7 +173,7 @@ pub extern "C" fn train_rbf_regression(model: *mut RadicalBasisFunctionNetwork, 
     let y = Array::from(expected_outputs.to_vec());
     let phitphi = phi.t().dot(&phi);
     let phitphi_inv = phitphi.inv().unwrap();
-    let w = (phitphi_inv.dot(&phi.t())).dot(&y);
+    let w = phitphi_inv.dot(&phi.t()).dot(&y);
 
     for i in 0..cluster_num as usize {
         model.weights[i] = w[i];
@@ -191,7 +190,7 @@ pub extern "C" fn train_rbf_regression(model: *mut RadicalBasisFunctionNetwork, 
     pb.finish_println(&format!("Training completed - Final loss: {:.4}\n", final_loss));
 }
 
-fn predict_rbf_regression_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
+fn predict_rbf_regression_slice(model : &RadialBasisFunctionNetwork, inputs : &[f32])-> f32{
     let mut res = 0f32;
     for i in 0..model.weights.len(){
         res += model.weights[i] * expf(-model.gamma * euclid(inputs, model.centers[i].as_slice()) * euclid(inputs, model.centers[i].as_slice()));
@@ -199,19 +198,19 @@ fn predict_rbf_regression_slice(model : &RadicalBasisFunctionNetwork, inputs : &
     res
 }
 
-fn predict_rbf_classification_slice(model : &RadicalBasisFunctionNetwork, inputs : &[f32])-> f32{
+fn predict_rbf_classification_slice(model : &RadialBasisFunctionNetwork, inputs : &[f32])-> f32{
     let pred = predict_rbf_regression_slice(model, inputs);
     return if pred >= 0.0 { 1.0 } else { -1.0 };
 }
 
 #[no_mangle]
-pub extern "C" fn predict_rbf_regression(model : *mut RadicalBasisFunctionNetwork, inputs : *mut f32) -> f32{
+pub extern "C" fn predict_rbf_regression(model : *mut RadialBasisFunctionNetwork, inputs : *mut f32) -> f32{
     let model = unsafe {
-      model.as_mut().unwrap()
+        model.as_mut().unwrap()
     };
 
     let inputs = unsafe{
-      from_raw_parts(inputs, model.centers[0].len())
+        from_raw_parts(inputs, model.centers[0].len())
     };
 
     predict_rbf_regression_slice(model, inputs)
@@ -236,7 +235,7 @@ fn accuracy(y_true: &[f32], y_pred: &[f32]) -> f32 {
 }
 
 #[no_mangle]
-pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, sample_inputs_flat: *mut f32, expected_outputs: *mut f32, iterations_count: i32, alpha: f32, inputs_size: i32, sample_count: i32) {
+pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, sample_inputs_flat: *mut f32, expected_outputs: *mut f32, iterations_count: i32, alpha: f32, inputs_size: i32, sample_count: i32) {
     let model = unsafe {
         model.as_mut().unwrap()
     };
@@ -255,23 +254,21 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, 
     }
 
     for epoch in 0..iterations_count as usize {
+        let mut y_true: Vec<f32> = Vec::with_capacity(sample_count as usize);
+        let mut y_pred: Vec<f32> = Vec::with_capacity(sample_count as usize);
 
         let mut pb = ProgressBar::new(sample_count as u64);
         pb.format("[=>-]");
-        pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", epoch + 1, iterations_count, 0.0, 0.0).as_str());
+        pb.message(format!("Epoch {}/{} - Processing samples", epoch + 1, iterations_count).as_str());
         pb.show_tick = true;
         pb.show_speed = false;
         pb.show_percent = false;
         pb.show_counter = false;
 
-        let mut y_true: Vec<f32> = Vec::with_capacity(sample_count as usize);
-        let mut y_pred: Vec<f32> = Vec::with_capacity(sample_count as usize);
-
         for k in 0..sample_count as usize {
             let x = &sample_inputs_flat[(k * inputs_size as usize)..((k + 1) * inputs_size as usize)];
             let yk = expected_outputs[k];
             let gk = predict_rbf_classification_slice(model, x);
-
             y_true.push(yk);
             y_pred.push(gk);
 
@@ -280,35 +277,29 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadicalBasisFunctionNetwork, 
                 model.weights[i] += alpha * (yk - gk) * rbf_value;
             }
 
-            let current_loss = mse_epoch(&y_true, &y_pred);
-            let current_accuracy = accuracy(&y_true, &y_pred);
-            pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", epoch + 1, iterations_count, current_loss, current_accuracy).as_str());
             pb.inc();
         }
 
-        // let current_loss = mse_epoch(&y_true, &y_pred);
-        // let current_accuracy = accuracy(&y_true, &y_pred);
-        // println!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2}", epoch + 1, iterations_count, current_loss, current_accuracy);
         let epoch_loss = mse_epoch(&y_true, &y_pred);
         let epoch_accuracy = accuracy(&y_true, &y_pred);
         model.train_loss.push(epoch_loss);
         model.train_accuracy.push(epoch_accuracy);
 
         pb.finish_println(&format!(
-            "Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ",
+            "Epoch {}/{} - loss: {:.4} - accuracy: {:.2}",
             epoch + 1, iterations_count, epoch_loss, epoch_accuracy
         ));
     }
 }
 
 #[no_mangle]
-pub extern "C" fn predict_rbf_classification(model : *mut RadicalBasisFunctionNetwork, inputs : *mut f32)-> f32{
+pub extern "C" fn predict_rbf_classification(model : *mut RadialBasisFunctionNetwork, inputs : *mut f32)-> f32{
     let pred = predict_rbf_regression(model, inputs);
     return if pred >= 0.0 { 1.0 } else { -1.0 };
 }
 
 #[no_mangle]
-pub extern "C" fn rbf_to_json(path : *const c_char)-> *mut RadicalBasisFunctionNetwork{
+pub extern "C" fn rbf_to_json(path : *const c_char)-> *mut RadialBasisFunctionNetwork{
     let path = unsafe{
         CStr::from_ptr(path).to_str().unwrap()
     };
@@ -322,14 +313,14 @@ pub extern "C" fn rbf_to_json(path : *const c_char)-> *mut RadicalBasisFunctionN
 }
 
 #[no_mangle]
-pub extern "C" fn free_rbf(model : *mut RadicalBasisFunctionNetwork){
+pub extern "C" fn free_rbf(model : *mut RadialBasisFunctionNetwork){
     unsafe{
         let _ = Box::from_raw(model);
     }
 }
 
 #[no_mangle]
-pub extern "C" fn save_rbf_model(model : *mut RadicalBasisFunctionNetwork, path : *const c_char){
+pub extern "C" fn save_rbf_model(model : *mut RadialBasisFunctionNetwork, path : *const c_char){
     let model = unsafe{
         model.as_mut().unwrap()
     };
