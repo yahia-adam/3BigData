@@ -97,12 +97,22 @@ fn train(model: &SVMModel, inputs: &Vec<Vec<f32>>, labels: &[i32], gamma: &f32) 
 
     let p = CscMatrix::from(&big_matrix);
 
-    let q = vec![0.0f32; model.sample_size as usize].append(&mut vec![*gamma; inputs.len()]);
-
-    let identity = DMatrix::identity(model.sample_len as usize, model.sample_len as usize);
-    let diag =
-    //osqp::Problem::new
-
+    let q = vec![0f32; model.sample_size as usize].append(&mut vec![*gamma; inputs.len()]);
     println!("q :{:?}", q);
 
+    let identity = DMatrix::identity(model.sample_len as usize, model.sample_len as usize);
+
+    const LENGTH: u32 = model.sample_len;
+
+    let mut a_matrix = [[0f64; LENGTH * 2 + 1]; LENGTH];
+
+    for i in 0..LENGTH {
+        a_matrix[0][i] = labels[i] as f64;
+        a_matrix[i + 1][i] = 1f64;
+        a_matrix[i + LENGTH + 1][i] = -1f64;
+    }
+    println!("a :{:?}", a_matrix);
+
+    let settings = osqp::Settings::default().verbose(true);
+    //osqp::Problem::new
 }
