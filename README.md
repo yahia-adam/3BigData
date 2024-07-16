@@ -1,22 +1,18 @@
-# 3BigData | Documentation
+# 3BigData | README
 > Bienvenue dans la documentation de notre projet de classification des déchets.
 
 ## Introduction
 
 ### Présentation du Projet
 
-Ce projet vise à développer un système de classification des déchets en utilisant des modèles de Machine Learning. L'objectif principal est de créer une application web qui permet de classer les déchets dans les catégories suivantes :
-
-- **poubelle décheterie**: électroniques (ram, processor, motherboard).
-
-- **poubelle jaune**: cartons, plastiques, papiers, metal.
-
-- **poubelle à verre**: verre.
+Ce projet vise à implémenter des algorithmes d'apprentissage automatique à partir de zéro en utilisant Rust. 
+Il comprend des implémentations pour divers algorithmes tels que le perceptron multicouche, la machine à vecteurs de support, 
+les modèles linéaires et le réseau de fonction à base radicale.
 
 ### Objectifs du Projet
 
 - Implémenter divers modèles et algorithmes de Machine Learning.
-- Créer une application web interactive en utilisant Laravel.
+- Créer une application web interactive en utilisant flask.
 - Fournir une bibliothèque en Rust pour les modèles de ML.
 - Analyser et commenter les résultats obtenus.
 - Fournir une documentation détaillée et complète.
@@ -55,12 +51,12 @@ https://github.com/yahia-adam/3BigData
 
 Le projet est organisé de la manière suivante :
 
-- **application** : Contient le code de l'application web Laravel.
-- **datasets** : Contient les jeux de données utilisés pour entraîner les modèles.
-- **docs** : Contient la documentation du projet, générée avec Elixir et Erlang.
+- **flask-app** : Contient le code de l'application web flask.
+- **dataset** : Contient les jeux de données utilisés pour entraîner les modèles.
+- **documentation** : Contient la documentation du projet, générée avec Elixir et Erlang.
 - **interoperability** : Contient des exemples d'utilisation de la bibliothèque en Rust avec différents langages.
 - **mylib** : Contient le code de la bibliothèque en Rust.
-- **saved_models** : Contient les modèles de Machine Learning sauvegardés.
+- **models** : Contient les modèles de Machine Learning sauvegardés.
 - **README.md** : Le fichier README du projet.
 
 ## Maintainers

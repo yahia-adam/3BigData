@@ -23,8 +23,8 @@ use std::fs::File;
 use std::io::{Write, BufReader};
 use std::os::raw::c_char;
 use pbr::ProgressBar;
-use tensorboard_rs::summary_writer::SummaryWriter;
-use std::collections::HashMap;
+// use tensorboard_rs::summary_writer::SummaryWriter;
+// use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadialBasisFunctionNetwork {
@@ -313,7 +313,6 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, s
 
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn predict_rbf_classification(model : *mut RadialBasisFunctionNetwork, inputs : *mut f32)-> f32{

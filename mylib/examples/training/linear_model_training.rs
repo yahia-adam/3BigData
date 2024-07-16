@@ -1,5 +1,6 @@
 use std::ffi::CString;
 use std::path::PathBuf;
+
 #[allow(unused_imports)]
 use mylib::{
     LinearModel,
@@ -7,6 +8,7 @@ use mylib::{
     save_linear_model,
     train_linear_model
 };
+
 use mylib::{image_resize_vec, load_dataset, predict_linear_model};
 
 fn main() {
@@ -32,12 +34,12 @@ fn main() {
     let test_data_size = test_labels.len();
     let input_count = train_images[0].len();
 
-    let train_images_flaten: Vec<f32> = train_images.clone().into_iter().flatten().collect::<Vec<f32>>();
-    let x_train_ptr: *const f32 = Vec::leak(train_images_flaten.clone()).as_ptr();
+    let train_images_flatten: Vec<f32> = train_images.clone().into_iter().flatten().collect::<Vec<f32>>();
+    let x_train_ptr: *const f32 = Vec::leak(train_images_flatten.clone()).as_ptr();
     let y_train_ptr: *const f32 = Vec::leak(train_labels.clone()).as_ptr();
 
-    let test_images_flaten: Vec<f32> = test_images.clone().into_iter().flatten().collect::<Vec<f32>>();
-    let x_test_ptr: *const f32 = Vec::leak(test_images_flaten.clone()).as_ptr();
+    let test_images_flatten: Vec<f32> = test_images.clone().into_iter().flatten().collect::<Vec<f32>>();
+    let x_test_ptr: *const f32 = Vec::leak(test_images_flatten.clone()).as_ptr();
     let y_test_ptr: *const f32 = Vec::leak(test_labels.clone()).as_ptr();
 
     let plastic_vs_other: *mut LinearModel = init_linear_model(input_count as u32, true);
@@ -158,7 +160,7 @@ fn main() {
     println!("paperVsOther = {}", metal1_paper_vs_other);
 
 
-    println!("papaer");
+    println!("paper");
     let paper1 = "../dataset/train/paper/paper_3044.jpg";
     let metal1_plastic_vs_other = predict_linear_model(plastic_vs_other,image_resize_vec(paper1, 32).as_mut_ptr());
     let metal1_metal_vs_other = predict_linear_model(metal_vs_other,image_resize_vec(paper1, 32).as_mut_ptr());
@@ -167,7 +169,7 @@ fn main() {
     println!("metalVsOther = {}", metal1_metal_vs_other);
     println!("paperVsOther = {}", metal1_paper_vs_other);
 
-    println!("plastique");
+    println!("plastic");
     let plastique1 = "../dataset/train/plastic/plastic_6064.jpg";
     let metal1_plastic_vs_other = predict_linear_model(plastic_vs_other,image_resize_vec(plastique1, 32).as_mut_ptr());
     let metal1_metal_vs_other = predict_linear_model(metal_vs_other,image_resize_vec(plastique1, 32).as_mut_ptr());

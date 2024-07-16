@@ -7,7 +7,9 @@ Dans cette section, on retrouve un ensemble de tests pour les différents modèl
 1. Tests pour le Modèle Linéaire:
    - ml_classification_linear_simple
    - ml_classification_linear_multiple
-   - ml_classification_cros
+   - ml_classification_multi_linear_3_classes
+   - ml_classification_cross
+   - ml_classification_multi_cross
    - ml_classification_xor
    - ml_regression_linear_simple_2D
    - ml_regression_linear_simple_3D
@@ -19,7 +21,9 @@ Dans cette section, on retrouve un ensemble de tests pour les différents modèl
 2. Tests pour MLP (Multi-Layer Perceptron):
    - mlp_classification_linear_simple
    - mlp_classification_linear_multiple
-   - mlp_classification_cros
+   - mlp_classification_multi_linear_3_classes
+   - mlp_classification_cross
+   - mlp_classification_multi_cross
    - mlp_classification_xor
    - mlp_regression_linear_simple_2D
    - mlp_regression_linear_simple_3D
@@ -31,7 +35,9 @@ Dans cette section, on retrouve un ensemble de tests pour les différents modèl
 3. Tests pour RBF (Radial Basis Function):
    - rbf_classification_linear_simple
    - rbf_classification_linear_multiple
-   - rbf_classification_cros
+   - rbf_classification_multi_linear_3_classes
+   - rbf_classification_cross
+   - rbf_classification_multi_cross
    - rbf_classification_xor
    - rbf_regression_linear_simple_2D
    - rbf_regression_linear_simple_3D
@@ -43,7 +49,9 @@ Dans cette section, on retrouve un ensemble de tests pour les différents modèl
 4. Tests pour SVM (Support Vector Machine):
    - svm_classification_linear_simple
    - svm_classification_linear_multiple
-   - svm_classification_cros
+   - svm_classification_multi_linear_3_classes
+   - svm_classification_cross
+   - svm_classification_multi_cross
    - svm_classification_xor
 
 La nomenclature des tests suit le format suivant : `modele_classification_ou_regression_nom_du_test`
