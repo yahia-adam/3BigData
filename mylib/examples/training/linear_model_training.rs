@@ -40,7 +40,10 @@ fn main() {
     let x_test_ptr: *const f32 = Vec::leak(test_images_flaten.clone()).as_ptr();
     let y_test_ptr: *const f32 = Vec::leak(test_labels.clone()).as_ptr();
 
-    let plastic_vs_other: *mut LinearModel = init_linear_model(input_count as u32, true);
+
+    let log_filename = "plastic_vs_other";
+    let log_filename = CString::new(log_filename).expect("CString::new failed");
+    let plastic_vs_other: *mut LinearModel = init_linear_model(input_count as u32, true, false);
     train_linear_model(
         plastic_vs_other,
         x_train_ptr,
@@ -49,7 +52,9 @@ fn main() {
         x_test_ptr,
         y_test_ptr,
         test_data_size as u32,
-        0.001, 1_000_000);
+        0.001, 1_000_000,
+        log_filename.as_ptr()
+    );
     let model_path = "../models/mlp_plastic_vs_other.json";
     let model_path_cstr = CString::new(model_path).expect("CString::new failed");
     save_linear_model(
@@ -85,7 +90,10 @@ fn main() {
     let x_test_ptr: *const f32 = Vec::leak(test_images_flaten.clone()).as_ptr();
     let y_test_ptr: *const f32 = Vec::leak(test_labels.clone()).as_ptr();
 
-    let metal_vs_other: *mut LinearModel = init_linear_model(input_count as u32, true);
+    let metal_vs_other: *mut LinearModel = init_linear_model(input_count as u32, true, false);
+
+    let log_filename = "metal_vs_other";
+    let log_filename = CString::new(log_filename).expect("CString::new failed");
     train_linear_model(
         metal_vs_other,
         x_train_ptr,
@@ -94,7 +102,9 @@ fn main() {
         x_test_ptr,
         y_test_ptr,
         test_data_size as u32,
-        0.001, 1_000_000);
+        0.001, 1_000_000,
+        log_filename.as_ptr()
+    );
     let model_path = "../models/mlp_metal_vs_other.json";
     let model_path_cstr = CString::new(model_path).expect("CString::new failed");
     save_linear_model(
@@ -129,7 +139,10 @@ fn main() {
     let x_test_ptr: *const f32 = Vec::leak(test_images_flaten.clone()).as_ptr();
     let y_test_ptr: *const f32 = Vec::leak(test_labels.clone()).as_ptr();
 
-    let paper_vs_other: *mut LinearModel = init_linear_model(input_count as u32, true);
+
+    let log_filename = "paper_vs_other";
+    let log_filename = CString::new(log_filename).expect("CString::new failed");
+    let paper_vs_other: *mut LinearModel = init_linear_model(input_count as u32, true, false);
     train_linear_model(
         paper_vs_other,
         x_train_ptr,
@@ -138,7 +151,9 @@ fn main() {
         x_test_ptr,
         y_test_ptr,
         test_data_size as u32,
-        0.001, 1_000_000);
+        0.001, 1_000_000,
+        log_filename.as_ptr()
+    );
 
     let model_path = "../../models/mlp_plastic_vs_other.json";
     let model_path_cstr = CString::new(model_path).expect("CString::new failed");

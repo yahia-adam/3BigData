@@ -171,8 +171,8 @@ pub extern "C" fn train_mlp(
 
     for epoch in 1..=epochs {
         let mut total_loss = 0.0;
-
-        for _ in 0..train_data_size {
+        
+        for _ in 1..=train_data_size {
             let k = rand::thread_rng().gen_range(0..train_data_size) as usize;
             let sample_inputs = &x_train[k * input_col..(k + 1) * input_col];
             let sample_expected_outputs = &y_train[k * output_col..(k + 1) * output_col];
