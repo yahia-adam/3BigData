@@ -6,7 +6,7 @@ use mylib::{RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt, predict_
 use mylib::{image_resize_vec, load_dataset};
 
 fn main() {
-    let base_dir = PathBuf::from("../mini_dataset");
+    let base_dir = PathBuf::from("../dataset");
     let train_path = base_dir.join("train");
     // let test_path = base_dir.join("test");
 
@@ -36,13 +36,13 @@ fn main() {
     // let x_test_ptr: *const f32 = Vec::leak(test_images_flatten.clone()).as_ptr();
     // let y_test_ptr: *const f32 = Vec::leak(test_labels.clone()).as_ptr();
 
-    let rbf_model: *mut RadialBasisFunctionNetwork = init_rbf(input_count as i32, 5, 1.5);
+    let rbf_model: *mut RadialBasisFunctionNetwork = init_rbf(input_count as i32, 3, 1.0);
     train_rbf_rosenblatt(
         rbf_model,
         x_train_ptr as *mut f32,
         y_train_ptr as *mut f32,
-        10000000,
-        0.1,
+        100_000,
+        0.001,
         input_count as i32,
         train_data_size as i32
     );

@@ -249,11 +249,13 @@
                             <img src="{{ url_for('static', filename='images/paper.png') }}" alt="paper" id="green-box">
                         </div>
 
-                        <div class="image-section-1">
+                       {% if 'image' in session %}
+                            <div class="image-section-1">
                                 <div>
                                     <img src="{{ url_for('static', filename='uploads/' + session['image']) }}" alt="Uploaded Image">
                                 </div>
-                        </div>
+                            </div>
+                       {% endif %}
 
                     </div>
                 </main>

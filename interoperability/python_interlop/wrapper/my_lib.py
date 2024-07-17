@@ -102,11 +102,8 @@ class MyModel:
                 my_lib.train_mlp(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
             elif self.__type == "rbf":
                 if self.__is_classification:
-                    my_lib.train_rbf_rosenblatt(self.model, x_flat_ptr, y_flat_ptr,
-                                                ctypes.c_int32(epochs),
-                                                ctypes.c_float(learning_rate),
-                                                ctypes.c_int32(self.__dims),
-                                                ctypes.c_int32(sample_count))
+                    my_lib.train_rbf_rosenblatt(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate,
+                                                epochs, sample_count)
                 # else:
                 #     my_lib.train_rbf_regression(self.model, x_flat_ptr, y_flat_ptr, inputs_size, sample_count)
         except Exception as e:

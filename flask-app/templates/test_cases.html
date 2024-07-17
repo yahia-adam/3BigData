@@ -269,6 +269,38 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.5);
         }
+
+        .container-2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-top: 40px;
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            /*padding: 20px;*/
+        }
+
+        .flex-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .flex-item h4 {
+            margin-bottom: 10px;
+            color: dodgerblue;
+        }
+
+        .flex-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
     </style>
 </head>
 <body class="font-sans antialiased dark:bg-black dark:text-white/50" id="body">
@@ -304,12 +336,22 @@
                             <input type="submit" value="Validate My Choice" class="validate-btn">
                         </form>
 
+                        <div class="container-2">
+                            <div class="flex-item">
+                                <h4><b>Loss Curve</b></h4>
+                                <img src="">
+                            </div>
+                            <div class="flex-item">
+                                <h4><b>Test Case : {{ selected_test_case }}</b></h4>
+                                <img src="">
+                            </div>
+                        </div>
                     </div>
                 </main>
 
-                <footer class="py-16 text-center text-sm text-black dark:text-white/70">
-                    Charbel SALHAB, Theo ELOY, Adam Yahia ABDCHAFEE <b>[ESGI 3IABD1 2023-2024]</b>
-                </footer>
+<!--                <footer class="py-16 text-center text-sm text-black dark:text-white/70">-->
+<!--                    Charbel SALHAB, Theo ELOY, Adam Yahia ABDCHAFEE <b>[ESGI 3IABD1 2023-2024]</b>-->
+<!--                </footer>-->
             </div>
         </div>
     </div>
