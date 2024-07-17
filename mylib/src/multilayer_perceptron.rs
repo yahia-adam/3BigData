@@ -237,7 +237,6 @@ fn evaluate(model: &mut MultiLayerPerceptron, x_test: &[f32], y_test: &[f32]) ->
 pub extern "C" fn predict_mlp(
     model: *mut MultiLayerPerceptron,
     sample_inputs: *const f32,
-    output_size: *mut usize,
 ) -> *mut f32 {
     let model = match unsafe { model.as_mut() } {
         Some(m) => m,
@@ -252,14 +251,9 @@ pub extern "C" fn predict_mlp(
         return std::ptr::null_mut();
     }
 
-    let last_layer = model.l;
-    let predictions = &model.x[last_layer][1..];
+    let predictions = &model.x[model.l][1..];
 
     let output = predictions.to_vec();
-
-    unsafe {
-        *output_size = output.len();
-    }
 
     let _ptr = output.as_ptr() as *mut f32;
     Box::into_raw(output.into_boxed_slice()) as *mut f32

@@ -53,8 +53,8 @@ class MyModel:
         elif self.__type == "rbf":
             return my_lib.init_rbf(self.__dims, self.__cluster_size, self.__gamma)
 
-    def train(self, x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray, y_test: np.ndarray,
-              learning_rate: float, epochs: int, log_filename="model"):
+    def train(self, x_train: np.ndarray, y_train: np.ndarray, x_test=None, y_test=None,
+              learning_rate=0.01, epochs=10_000, log_filename="model"):
         """
         Trains the model on the given data
         :param x_train: Input data
@@ -67,6 +67,10 @@ class MyModel:
         """
         if len(x_train) != len(y_train):
             raise ValueError("x_train and y_train must have same length")
+
+        if x_test is None or y_test is None:
+            x_test = x_train
+            y_test = y_train
 
         if len(x_test) != len(y_test):
             raise ValueError("x_test and y_test must have same length")
@@ -121,11 +125,16 @@ class MyModel:
                                           x_test_flat_ptr, y_test_flat_ptr, test_data_size,
                                           learning_rate, epochs, log_filename)
             elif self.__type == "mlp":
-                my_lib.train_mlp(self.model, x_train_flat_ptr, y_test_flat_ptr, train_data_size, learning_rate, epochs)
+                print("begin traing the mlp")
+                my_lib.train_mlp(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size,
+                                 x_test_flat_ptr, y_test_flat_ptr, test_data_size,
+                                 learning_rate, epochs)
+                print("finish traing the mlp")
+
             elif self.__type == "rbf":
                 if self.__is_classification:
-                    my_lib.train_rbf_rosenblatt(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size, learning_rate,
-                                                epochs, sample_count)
+                    my_lib.train_rbf_rosenblatt(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size,
+                                                learning_rate, epochs, 3)
                 # else:
                 #     my_lib.train_rbf_regression(self.model, x_flat_ptr, y_flat_ptr, inputs_size, sample_count)
         except Exception as e:
@@ -190,7 +199,7 @@ class MyModel:
             else:
                 return [my_lib.predict_linear_model(self.model[i], point_pointer) for i in range(3)]
         elif self.__type == "mlp":
-            return my_lib.predict_mlp(self.model, point_pointer)[0]
+            return my_lib.predict_mlp(self.model, point_pointer, )[0]
         elif self.__type == "rbf":
             if self.__is_classification:
                 # var = my_lib.predict_rbf_classification(self.model, point_pointer)
