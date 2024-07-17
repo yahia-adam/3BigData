@@ -23,7 +23,7 @@ pub use multilayer_perceptron::{
     train_mlp,
     predict_mlp,
     free_mlp,
-    save_mlp_model
+    save_mlp_model,
 };
 
 #[allow(unused_imports)]
