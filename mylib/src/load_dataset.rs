@@ -14,6 +14,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+use rand::Rng;
 
 const IMAGE_SIZE: u32 = 32;
 
@@ -88,4 +89,26 @@ pub fn load_dataset(base_dir: &str, paper_label: f32, metal_label: f32, plastic_
     }
     shuffle_dataset(&mut images, &mut labels);
     (images, labels)
+}
+
+pub fn generate_dataset() -> (Vec<Vec<f32>>, Vec<f32>) {
+    let mut rng = rand::thread_rng();
+
+    let mut points1 = Vec::new();
+    for _ in 0..50 {
+        points1.push(vec![rng.gen::<f32>() * 0.9 + 1.0, rng.gen::<f32>() * 0.9 + 1.0]);
+    }
+
+    let mut points2 = Vec::new();
+    for _ in 0..50 {
+        points2.push(vec![rng.gen::<f32>() * 0.9 + 2.0, rng.gen::<f32>() * 0.9 + 2.0]);
+    }
+
+    let mut points = points1;
+    points.extend(points2);
+
+    let mut labels = vec![1.0; 50];
+    labels.extend(vec![-1.0; 50]);
+
+    (points, labels)
 }

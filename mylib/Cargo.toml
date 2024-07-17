@@ -3,8 +3,8 @@ name = "mylib"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
+#[lib]
+#crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -35,9 +35,6 @@ path="examples/ml/classification/linear_multiple.rs"
 [[example]]
 name="ml_classification_xor"
 path="examples/ml/classification/xor.rs"
-[[example]]
-name="linear_model_training"
-path="examples/training/linear_model_training.rs"
 
 # regression
 [[example]]
@@ -137,3 +134,6 @@ path="src/support_vector_machine.rs"
 [[example]]
 name="rbf_training"
 path="examples/training/rbf_training.rs"
+[[example]]
+name="linear_model_training"
+path="examples/training/linear_model_training.rs"
