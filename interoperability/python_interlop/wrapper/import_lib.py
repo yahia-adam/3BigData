@@ -9,22 +9,49 @@ def init_lib():
         lib_path = "../../mylib/target/release/libmylib.so"
 
     my_lib = ctypes.cdll.LoadLibrary(lib_path)
-    # --------------------------init_linear_model--------------------------
-    # pub extern "C" fn init_linear_model(input_count: u32) -> *mut LinearModel;
-    my_lib.init_linear_model.argtypes = [ctypes.c_uint32, ctypes.c_bool]
+
+    """ 
+    init_linear_model(
+        input_count: u32,
+        is_classification: bool,
+        is_multiclass: bool
+    ) -> *mut LinearModel
+    """
+    my_lib.init_linear_model.argtypes = [ctypes.c_uint32, ctypes.c_bool, ctypes.c_bool]
     my_lib.init_linear_model.restype = ctypes.c_void_p
-    # pub extern "C" fn train_linear_model( model: *mut LinearModel, features: *const c_float,
-    #                                       labels: *const c_float, data_size: u32, learning_rate: f32, epochs: u32)
-    my_lib.train_linear_model.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float),
-                                          ctypes.POINTER(ctypes.c_float),
-                                          ctypes.c_uint32, ctypes.c_float, ctypes.c_uint32]
+
+    """ 
+    train_linear_model( 
+        model: *mut LinearModel,
+        x_train: *const c_float,
+        y_train: *const c_float,
+        train_data_size: u32,
+        x_test: *const c_float,
+        y_test: *const c_float,
+        test_data_size: u32,
+        learning_rate: f32,
+        epochs: u32,
+        log_filename: *const c_char)
+    """
+    my_lib.train_linear_model.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_uint32, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_uint32, ctypes.c_float, ctypes.POINTER(ctypes.c_char)]
     my_lib.train_linear_model.restype = None
-    # pub extern "C" fn predict_linear_model(model: *mut LinearModel, inputs: *mut f32) -> c_float
+    """
+    predict_linear_model(
+        model: *mut LinearModel,
+        inputs: *mut f32
+    ) -> c_float 
+    """
     my_lib.predict_linear_model.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float)]
     my_lib.predict_linear_model.restype = ctypes.c_float
-    # pub extern "C" fn free_linear_model(model: *mut LinearModel)
+    """
+    free_linear_model(
+        model: *mut LinearModel
+    )
+    """
     my_lib.free_linear_model.argtypes = [ctypes.c_void_p]
     my_lib.free_linear_model.restype = None
+
+
     # -------------------------- init mlp --------------------------
     # pub extern "C" fn init_mlp(npl: *mut u32, npl_size: u32) -> *mut MultiLayerPerceptron
     my_lib.init_mlp.argtypes = [ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint32, ctypes.c_bool]

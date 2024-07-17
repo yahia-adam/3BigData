@@ -1,3 +1,4 @@
+use std::ffi::CString;
 #[allow(unused_imports)]
 use mylib::{
     init_linear_model, load_linear_model, predict_linear_model, save_linear_model,
@@ -26,7 +27,10 @@ fn main() {
     let x_test_ptr: *const f32 = Vec::leak(x_flaten.clone()).as_ptr();
     let y_test_ptr: *const f32 = Vec::leak(y.clone()).as_ptr();
 
-    let linear_model: *mut LinearModel = init_linear_model(2, true);
+    let linear_model: *mut LinearModel = init_linear_model(2, true, false);
+
+    let log_filename = "linear_simple";
+    let log_filename = CString::new(log_filename).expect("CString::new failed");
     train_linear_model(
         linear_model,
         x_train_ptr,
@@ -35,7 +39,9 @@ fn main() {
         x_test_ptr,
         y_test_ptr,
         test_data_size as u32,
-        0.001, 100_000);
-
+        0.001,
+        15_000,
+        log_filename.as_ptr(),
+    );
 }
 
