@@ -3,7 +3,7 @@ use mylib::{RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt, predict_
 use mylib::generate_dataset;
 
 fn main() {
-    let (x, y) = generate_dataset();
+    let (x, mut y) = generate_dataset();
     let data_size = y.len();
     let input_dim = x[0].len();
 

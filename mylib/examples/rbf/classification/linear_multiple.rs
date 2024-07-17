@@ -3,7 +3,7 @@ use mylib::{RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt, predict_
 
 fn main() {
 
-    let (x, y) = generate_dataset();
+    let (x, mut y) = generate_dataset();
     let sample_count = y.len() as i32;
     let input_dim = x[0].len() as i32;
     let cluster_num = 10;

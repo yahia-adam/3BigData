@@ -3,7 +3,7 @@ use mylib::{MultiLayerPerceptron , init_mlp, train_mlp, predict_mlp, free_mlp, s
 use mylib::{generate_dataset};
 
 fn main() {
-    let (x, y) = generate_dataset();
+    let (x, mut y) = generate_dataset();
 
     let data_size = y.len();
     let x_flaten: Vec<f32> = x.clone().into_iter().flatten().collect::<Vec<f32>>();

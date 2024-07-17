@@ -4,7 +4,7 @@ use mylib::{
     predict_rbf_regression, predict_rbf_classification, free_rbf, generate_dataset};
 
 fn main() {
-    let (x, y) = generate_dataset();
+    let (x, mut y) = generate_dataset();
     let data_size = y.len();
     let input_dim = x[0].len();
     let mut x_flatten: Vec<f32> = x.clone().into_iter().flatten().collect::<Vec<f32>>();
