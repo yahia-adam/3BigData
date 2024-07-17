@@ -199,7 +199,11 @@ class MyModel:
             else:
                 return [my_lib.predict_linear_model(self.model[i], point_pointer) for i in range(3)]
         elif self.__type == "mlp":
-            return my_lib.predict_mlp(self.model, point_pointer, )[0]
+
+            if not self.__is_3_classes:
+                return my_lib.predict_mlp(self.model, point_pointer)[0]
+            else:
+                return np.ctypeslib.as_array(my_lib.predict_mlp(self.model, point_pointer), (3,))
         elif self.__type == "rbf":
             if self.__is_classification:
                 # var = my_lib.predict_rbf_classification(self.model, point_pointer)
