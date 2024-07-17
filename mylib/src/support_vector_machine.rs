@@ -22,34 +22,6 @@ pub struct SVMModel {
 }
 
 fn main() {
-
-    // Define problem data
-    /*let P = &[[4.0, 1.0],
-        [1.0, 2.0]];
-    let q = &[1.0, 1.0];
-    let A = &[[1.0, 1.0],
-        [1.0, 0.0],
-        [0.0, 1.0]];
-    let l = &[1.0, 0.0, 0.0];
-    let u = &[1.0, 0.7, 0.7];
-
-    // Extract the upper triangular elements of `P`
-    let P = CscMatrix::from(P);
-
-    // Disable verbose output
-    let settings = Settings::default()
-        .verbose(false);
-
-    // Create an OSQP problem
-    let mut prob = Problem::new(P, q, A, l, u, &settings).expect("failed to setup problem");
-
-    // Solve problem
-    let result = prob.solve();
-
-    // Print the solution
-    println!("{:?}", result.x().expect("failed to solve problem"));*/
-
-
     let mut model = SVMModel {
         weight: Vec::new(),
         biais: 0.0,
@@ -60,7 +32,7 @@ fn main() {
     };
 
 
-    let x1: Vec<Vec<f32>> = vec![
+    let mut x1: Vec<Vec<f32>> = vec![
         vec![1.0, 1.0],
         vec![2.0, 3.0],
         vec![3.0, 3.0]
@@ -72,7 +44,7 @@ fn main() {
     ];
 
 
-    let x: Vec<Vec<f32>> = vec![
+    let mut x: Vec<Vec<f32>> = vec![
         vec![1.7688197, 1.4136543],
         vec![1.35596694, 1.76459609],
         vec![1.46879524, 1.51093763],
@@ -184,7 +156,8 @@ fn main() {
         -1.0, -1.0,
     ];
 
-    train(model, &x1, &y1, &2.0, y1.len() as u32, x1[0].len() as u32);
+    normalize_data(&mut x);
+    train(model, &x1, &y1, 3.0, 1, 1);
 
 }
 
@@ -200,8 +173,22 @@ fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
     */else { 0.0 }
 }
 
+fn normalize_data(data: &mut Vec<Vec<f32>>) {
+    let features = data[0].len();
+    for feature in 0..features {
+        let mut min = f32::MAX;
+        let mut max = f32::MIN;
+        for sample in data.iter() {
+            min = min.min(sample[feature]);
+            max = max.max(sample[feature]);
+        }
+        for sample in data.iter_mut() {
+            sample[feature] = (sample[feature] - min) / (max - min);
+        }
+    }
+}
 
-fn train(mut model: SVMModel, inputs: &Vec<Vec<f32>>, labels: &Vec<f32>, gamma: &f32, input_length: u32, dimensions: u32) {
+fn train(mut model: SVMModel, inputs: &Vec<Vec<f32>>, labels: &Vec<f32>, c: f32, input_length: u32, dimensions: u32) {
     let dimensions = inputs[1].len() as usize;
     let input_length = labels.len() as usize;
 
@@ -280,16 +267,21 @@ fn train(mut model: SVMModel, inputs: &Vec<Vec<f32>>, labels: &Vec<f32>, gamma: 
     println!("weights: {:?}", w);
 
 
-    let support_vector = alphas.iter().position(|alpha| *alpha >= 1e-6).unwrap();
-    println!("sup_vec: {}", support_vector);
+    let mut bias = 0f32;
+    let mut sv_count = 0;
+    for i in 0..input_length {
+        if alphas[i] > 1e-6 && alphas[i] < c as f64{
+            bias += labels[i] - inputs[i].iter().zip(&w).map(|(x, w)| x * w).sum::<f32>();
+            sv_count += 1;
+        }
+    }
+    if sv_count > 0 {
+        bias /= sv_count as f32;
+    } else {
+        println!("Warning: No support vectors found. The model may not be well-fitted.");
+    }
 
-    let bias =
-        1f32 / labels[support_vector]
-            + inputs[support_vector].iter()
-            .map(|i| i * alphas[support_vector] as f32)
-            .sum::<f32>();
-
-    println!("bias: {}", bias);
+    println!("bias: {} with {} sv", bias, sv_count);
     model.biais = bias;
     model.weight = w;
 
@@ -299,9 +291,11 @@ fn train(mut model: SVMModel, inputs: &Vec<Vec<f32>>, labels: &Vec<f32>, gamma: 
     }
 }
 
-pub fn predict_svm(model: &SVMModel, inputs: &Vec<f32>, label: f32) -> f32 {
-    let result: f32 = inputs.iter().zip(&model.weight).map(|(i, w)| w * i + model.biais).sum::<f32>();
 
-    println!("result {:?}({}): {}", inputs, label, result);
-    result
+pub fn predict_svm(model: &SVMModel, inputs: &Vec<f32>, label: f32) -> f32 {
+    let result: f32 = inputs.iter().zip(&model.weight).map(|(i, w)| i * w).sum::<f32>() + model.biais;
+    let predicted_label = if result > 0.0 { 1.0 } else { -1.0 };
+    println!("Input: {:?}, True label: {}, Predicted: {}, Raw score: {}", inputs, label, predicted_label, result);
+    predicted_label
 }
+
