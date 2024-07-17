@@ -5,7 +5,7 @@ use mylib::{
 };
 
 fn main() {
-    let (x, mut y) = generate_dataset();
+    let (mut x, mut y) = generate_dataset();
     let data_size = y.len();
     let x_flaten: Vec<f32> = x.clone().into_iter().flatten().collect::<Vec<f32>>();
     let x_ptr: *const f32 = Vec::leak(x_flaten.clone()).as_ptr();
