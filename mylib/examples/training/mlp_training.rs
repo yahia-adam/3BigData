@@ -12,7 +12,7 @@ use mylib::{
 use mylib::{image_resize_vec, load_dataset};
 
 fn main() {
-    let base_dir = PathBuf::from("../mini_dataset");
+    let base_dir = PathBuf::from("../dataset");
     let train_path = base_dir.join("train");
     let test_path = base_dir.join("test");
     
@@ -46,7 +46,7 @@ fn main() {
     let x_test_ptr: *const f32 = test_images_flatten.as_ptr();
     let y_test_ptr: *const f32 = test_labels.as_ptr();
     
-    let npl: Vec<u32> = vec![input_size as u32, 64, 32, 3];
+    let npl: Vec<u32> = vec![input_size as u32, 512, 256, 128, 3];
     let npl_size = npl.len();
     let model: *mut MultiLayerPerceptron = unsafe { init_mlp(npl.as_ptr(), npl_size as u32, true) };
     
@@ -62,7 +62,7 @@ fn main() {
             y_test_ptr,
             test_data_size as u32,
             0.001,
-            10_000
+            5_000
         );
         
         if success {
