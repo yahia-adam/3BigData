@@ -44,4 +44,3 @@ fn main() {
         log_filename.as_ptr(),
     );
 }
-
