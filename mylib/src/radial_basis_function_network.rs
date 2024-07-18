@@ -23,8 +23,8 @@ use std::fs::File;
 use std::io::{Write, BufReader};
 use std::os::raw::c_char;
 use pbr::ProgressBar;
-use tensorboard_rs::summary_writer::SummaryWriter;
-use std::collections::HashMap;
+// use tensorboard_rs::summary_writer::SummaryWriter;
+// use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadialBasisFunctionNetwork {
@@ -32,7 +32,9 @@ pub struct RadialBasisFunctionNetwork {
     centers : Vec<Vec<f32>>,
     gamma : f32,
     train_loss: Vec<f32>,
+    test_loss: Vec<f32>,
     train_accuracy: Vec<f32>,
+    test_accuracy: Vec<f32>
 }
 
 #[no_mangle]
@@ -55,7 +57,9 @@ pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *
         centers,
         gamma,
         train_loss: vec![],
+        test_loss: vec![],
         train_accuracy: vec![],
+        test_accuracy: vec![],
     };
 
     let boxed_model = Box::new(model);
@@ -251,8 +255,8 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, s
         model.centers[j] = cluster_pointsj.to_vec();
     }
 
-    let mut writer = SummaryWriter::new(&("../logs".to_string()));
-    let mut map = HashMap::new();
+    // let mut writer = SummaryWriter::new(&("../logs".to_string()));
+    // let mut map = HashMap::new();
 
     for epoch in 0..iterations_count as usize {
 
@@ -297,8 +301,8 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, s
 
         // println!("epoch loss : {:?}, epoch accuracy : {:?}", epoch_loss, epoch_accuracy);
 
-        map.insert("loss".to_string(), epoch_loss);
-        writer.add_scalars("data/rbf", &map, epoch);
+        // map.insert("loss".to_string(), epoch_loss);
+        // writer.add_scalars("data/rbf", &map, epoch);
 
         pb.finish_println(&format!(
             "Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ",
