@@ -19,17 +19,11 @@ fn main() {
     println!("Loading train dataset...");
     let (train_images, train_labels) = load_dataset(
         train_path.to_str().unwrap(),
-        -1.0,
-        0.0,
-        1.0
     );
-    
+
     println!("Loading test dataset...");
     let (test_images, test_labels) = load_dataset(
         test_path.to_str().unwrap(),
-        -1.0,
-        0.0,
-        1.0
     );
     
     println!("Finished loading dataset");
@@ -40,18 +34,23 @@ fn main() {
     
     let train_images_flatten: Vec<f32> = train_images.into_iter().flatten().collect();
     let x_train_ptr: *const f32 = train_images_flatten.as_ptr();
-    let y_train_ptr: *const f32 = train_labels.as_ptr();
+    let train_labels_flatten: Vec<f32> = train_labels.into_iter().flatten().collect();
+    let y_train_ptr: *const f32 = train_labels_flatten.as_ptr();
     
     let test_images_flatten: Vec<f32> = test_images.into_iter().flatten().collect();
     let x_test_ptr: *const f32 = test_images_flatten.as_ptr();
-    let y_test_ptr: *const f32 = test_labels.as_ptr();
+    let test_label_flatten: Vec<f32> = test_labels.into_iter().flatten().collect();
+    let y_test_ptr: *const f32 = test_label_flatten.as_ptr();
     
     let npl: Vec<u32> = vec![input_size as u32, 64, 32, 3];
     let npl_size = npl.len();
-    let model: *mut MultiLayerPerceptron = unsafe { init_mlp(npl.as_ptr(), npl_size as u32, true) };
+    let model: *mut MultiLayerPerceptron = init_mlp(npl.as_ptr(), npl_size as u32, true);
     
     println!("Finished initializing model");
-    
+
+    let c_log_filename = CString::new("dataset").expect("CString::new failed");
+    let c_model_filename = CString::new("../models/dataset/mlp/model.json").expect("CString::new failed");
+
     unsafe {
         let success = train_mlp(
             model,
@@ -61,16 +60,17 @@ fn main() {
             x_test_ptr,
             y_test_ptr,
             test_data_size as u32,
-            0.001,
-            10_000
+            1e-4,
+            10_000,
+            c_log_filename.as_ptr(),
+            c_model_filename.as_ptr()
         );
         
         if success {
             println!("Training completed successfully");
-            
-            let model_path = "../models/pmc_dataset.json";
-            let model_path_cstr = CString::new(model_path).expect("CString::new failed");
-            save_mlp_model(model, model_path_cstr.as_ptr());
+
+            let c_model_filename = CString::new("../models/dataset/mlp/model.json").expect("CString::new failed");
+            save_mlp_model(model, c_model_filename.as_ptr());
             
             println!("Testing on a metal image:");
             let metal1 = "../dataset/train/metal/metal_1025.jpg";

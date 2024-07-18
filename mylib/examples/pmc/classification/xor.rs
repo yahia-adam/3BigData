@@ -1,3 +1,4 @@
+use std::ffi::CString;
 #[allow(unused_imports)]
 use mylib::{free_mlp, init_mlp, predict_mlp, save_mlp_model, train_mlp, MultiLayerPerceptron};
 
@@ -28,7 +29,12 @@ fn main() {
     let npl: Vec<u32> = vec![2, 3, 1];
     let mlp: *mut MultiLayerPerceptron = init_mlp(npl.as_ptr(), npl.len() as u32, true);
 
+
+    let c_log_filename = CString::new("clf_xor").expect("CString::new failed");
+    let c_model_filename = CString::new("../models/examples/mlp/classification/xor.json").expect("CString::new failed");
+
     unsafe {
+
         let success = train_mlp(
             mlp,
             x_train_ptr,
@@ -39,6 +45,7 @@ fn main() {
             data_size as u32,
             0.001,
             50_000,
+            c_log_filename.as_ptr()
         );
 
         if success {
@@ -56,7 +63,10 @@ fn main() {
             }
             let accuracy = correct as f32 / data_size as f32;
             println!("Accuracy: {:.2}%", accuracy * 100.0);
-            save_mlp_model(mlp, std::ffi::CString::new("model.json").unwrap().as_ptr());
+
+            // let model_file_name = "model.json";
+            // let model_file_name = CString::new(model_file_name).expect("CString::new failed");
+            // save_mlp_model(mlp, model_file_name.as_ptr());
         } else {
             println!("Training failed.");
         }
