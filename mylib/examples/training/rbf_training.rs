@@ -42,7 +42,7 @@ fn main() {
         x_train_ptr as *mut f32,
         y_train_ptr as *mut f32,
         100_000,
-        0.001,
+        0.01,
         input_count as i32,
         train_data_size as i32
     );
