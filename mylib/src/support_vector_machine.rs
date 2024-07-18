@@ -156,9 +156,10 @@ fn main() {
         -1.0, -1.0,
     ];
 
+    //normalize_data(&mut x1);
     normalize_data(&mut x);
-    train(model, &x1, &y1, 3.0, 1, 1);
-
+    //train(model, &x, &y, 1.0,);
+    train(model, &x1, &y1, 1.0,);
 }
 
 fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
@@ -188,7 +189,7 @@ fn normalize_data(data: &mut Vec<Vec<f32>>) {
     }
 }
 
-fn train(mut model: SVMModel, inputs: &Vec<Vec<f32>>, labels: &Vec<f32>, c: f32, input_length: u32, dimensions: u32) {
+fn train(mut model: SVMModel, inputs: &Vec<Vec<f32>>, labels: &Vec<f32>, c: f32, ) {
     let dimensions = inputs[1].len() as usize;
     let input_length = labels.len() as usize;
 
@@ -270,7 +271,7 @@ fn train(mut model: SVMModel, inputs: &Vec<Vec<f32>>, labels: &Vec<f32>, c: f32,
     let mut bias = 0f32;
     let mut sv_count = 0;
     for i in 0..input_length {
-        if alphas[i] > 1e-6 && alphas[i] < c as f64{
+        if alphas[i].abs() > 1e-3 && alphas[i].abs() < c as f64{
             bias += labels[i] - inputs[i].iter().zip(&w).map(|(x, w)| x * w).sum::<f32>();
             sv_count += 1;
         }
@@ -285,17 +286,27 @@ fn train(mut model: SVMModel, inputs: &Vec<Vec<f32>>, labels: &Vec<f32>, c: f32,
     model.biais = bias;
     model.weight = w;
 
+    let mut predictions: Vec<f32> = Vec::new();
+
     println!();
     for i in 0..input_length {
-        predict_svm(&model, &inputs[i], labels[i]);
+        predictions.push(predict_svm(&model, &inputs[i], labels[i]));
     }
+
+    println!("MSE : {}", mse_svm(labels, &predictions));
 }
 
+pub fn mse_svm(expected:&Vec<f32>, prediction:&Vec<f32>)->f32{
+    let error:f32 = expected.iter().zip(prediction).map(|(exp, pred)|(exp-pred).powi(2)).sum::<f32>();
+    let result:f32 = error / expected.len() as f32;
+
+    result
+}
 
 pub fn predict_svm(model: &SVMModel, inputs: &Vec<f32>, label: f32) -> f32 {
     let result: f32 = inputs.iter().zip(&model.weight).map(|(i, w)| i * w).sum::<f32>() + model.biais;
     let predicted_label = if result > 0.0 { 1.0 } else { -1.0 };
     println!("Input: {:?}, True label: {}, Predicted: {}, Raw score: {}", inputs, label, predicted_label, result);
-    predicted_label
+    result
 }
 
