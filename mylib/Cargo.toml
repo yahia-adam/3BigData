@@ -3,8 +3,8 @@ name = "mylib"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
+#[lib]
+#crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -61,6 +61,9 @@ path="examples/ml/regression/non_linear_simple_3D.rs"
 [[example]]
 name="mlp_classification_cross"
 path="examples/pmc/classification/cross.rs"
+[[example]]
+name="mlp_classification_multi_cross"
+path="examples/pmc/classification/multi_cross.rs"
 [[example]]
 name="mlp_classification_linear_simple"
 path="examples/pmc/classification/linear_simple.rs"
