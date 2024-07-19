@@ -54,7 +54,8 @@ class MyModel:
             return my_lib.init_rbf(self.__dims, self.__cluster_size, self.__gamma)
 
     def train(self, x_train: np.ndarray, y_train: np.ndarray, x_test=None, y_test=None,
-              learning_rate=0.01, epochs=10_000, log_filename="model", model_filename="model"):
+              learning_rate=0.01, epochs=10_000, log_filename="model", model_filename="model",
+              display_loss=False, display_tensorboad=False, save_model=False):
         """
         Trains the model on the given data
         :param model_filename:
@@ -102,7 +103,7 @@ class MyModel:
             y_test_flat_ptr = y_test.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size, x_test_flat_ptr, y_test_flat_ptr,
                               test_data_size, learning_rate, epochs, ctypes.c_char_p(log_filename.encode()),
-                              ctypes.c_char_p(model_filename.encode()))
+                              ctypes.c_char_p(model_filename.encode()), display_loss, display_tensorboad, save_model)
         else:
             y_train = np.transpose(y_train)
             y_test = np.transpose(y_test)
@@ -119,7 +120,7 @@ class MyModel:
     def _train_model(self,
                      x_train_flat_ptr: np.ndarray, y_train_flat_ptr: np.ndarray, train_data_size: int,
                      x_test_flat_ptr: np.ndarray, y_test_flat_ptr: np.ndarray, test_data_size: int,
-                     learning_rate: float, epochs: int, log_filename, model_filename, index=None):
+                     learning_rate: float, epochs: int, log_filename, model_filename, display_loss, display_tensorboad, save_model, index=None):
         """
         Calls the lib to train the model
         """
@@ -135,7 +136,7 @@ class MyModel:
                                  x_test_flat_ptr, y_test_flat_ptr, test_data_size,
                                  learning_rate, epochs,
                                  log_filename,
-                                 model_filename)
+                                 model_filename, display_loss, display_tensorboad, save_model)
                 print("finish training the mlp")
 
             elif self.__type == "rbf":

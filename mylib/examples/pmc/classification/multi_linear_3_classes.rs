@@ -59,7 +59,7 @@ fn main() {
                 let output: *mut f32 = predict_mlp(mlp, input_ptr);
                 if !output.is_null() {
                     let res: Vec<f32> = Vec::from_raw_parts(output, 3, 3);
-                    // println!("X: {:?}, Y: {:?} ---> MLP model: {:?}", x[i], y[i], res);
+                    println!("X: {:?}, Y: {:?} ---> MLP model: {:?}", x[i], y[i], res);
                     
                     let pred_class = res.iter().enumerate().max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap().0;
                     let true_class = y[i].iter().enumerate().max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap().0;

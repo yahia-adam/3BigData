@@ -9,7 +9,7 @@ CLASSIFICATION_EXAMPLES := \
     mlp_classification_xor
 
 REGRESSION_EXAMPLES := \
-    mlp_resgression_linear_simple_2D \
+    mlp_regression_linear_simple_2D \
     mlp_regression_linear_simple_3D \
     mlp_regression_linear_tricky_3D \
     mlp_regression_non_linear_simple_2D \
