@@ -539,7 +539,7 @@ fn main() {
     let x_test_ptr: *const f32 = x_flaten.as_ptr();
     let y_test_ptr: *const f32 = y_train.as_ptr();
 
-    let npl: Vec<u32> = vec![2, 3, 3, 1];
+    let npl: Vec<u32> = vec![2, 3, 3, 3];
     let mlp: *mut MultiLayerPerceptron = init_mlp(npl.as_ptr(), npl.len() as u32, true);
 
 

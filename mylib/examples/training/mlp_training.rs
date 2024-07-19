@@ -74,7 +74,8 @@ fn main() {
             c_log_filename.as_ptr(),
             c_model_filename.clone().as_ptr(),
             true,
-            true
+            true,
+            true,
         );
         
         if success {

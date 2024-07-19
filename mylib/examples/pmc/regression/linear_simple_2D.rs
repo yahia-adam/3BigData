@@ -19,7 +19,7 @@ fn main() {
     let y_train_ptr: *const f32 = y_train.as_ptr();
     let x_test_ptr: *const f32 = x_flatten.as_ptr();
     let y_test_ptr: *const f32 = y_train.as_ptr();
-    let npl: Vec<u32> = vec![1, 1];  // 1 entrée, une couche cachée de 2 neurones, 1 sortie
+    let npl: Vec<u32> = vec![1, 1];
     let mlp: *mut MultiLayerPerceptron = init_mlp(npl.as_ptr(), npl.len() as u32, false);
 
 
