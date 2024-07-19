@@ -139,7 +139,7 @@ fn backpropagate(
     sample_expected_outputs: &[f32],
     learning_rate: f32,
 ) -> Result<(), String> {
-    let last_layer_index = model.d.len() - 1;
+    let last_layer_index = model.l;
 
     if sample_expected_outputs.len() != model.d[last_layer_index] {
         return Err("La taille des sorties attendues ne correspond pas à la dimension de la couche de sortie".to_string());
@@ -321,16 +321,16 @@ pub extern "C" fn train_mlp(
         match evaluate(model, x_test, y_test) {
             Ok((test_accuracy, test_loss)) => {
                 map.insert("train_loss".to_string(), train_loss as f32);
-                //map.insert("train_accuracy".to_string(), train_accuracy);
                 map.insert("test_loss".to_string(), test_loss as f32);
-                //map.insert("test_accuracy".to_string(), test_accuracy);
 
                 println!(
-                    "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%",
+                    "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%, Test_Loss = {:.4}, Test_Acuuracy = {:.4}%",
                     epoch,
                     epochs,
                     train_loss,
-                    train_accuracy * 100.0
+                    train_accuracy * 100.0,
+                    test_loss,
+                    test_accuracy,
                 );
             }
             Err(e) => {
