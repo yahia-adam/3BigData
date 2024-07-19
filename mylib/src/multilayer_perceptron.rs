@@ -199,7 +199,9 @@ fn get_multiclass_accuracy(model: &mut MultiLayerPerceptron, expected_output: &[
 }
 
 fn get_mse(model: &mut MultiLayerPerceptron, expected_output: &[f32]) -> f64 {
-    model.x[model.l].iter().skip(1)
+    model.x[model.l]
+        .iter()
+        .skip(1)
         .zip(expected_output)
         .map(|(y, y_hat)| (y - y_hat).powi(2))
         .sum::<f32>() as f64
@@ -218,6 +220,9 @@ pub extern "C" fn train_mlp(
     epochs: u32,
     log_filename: *const c_char,
     model_filename: *const c_char,
+    display_loss: bool,
+    display_tensorboad: bool,
+    save_model: bool,
 ) -> bool {
     if model.is_null()
         || x_train.is_null()
@@ -241,18 +246,6 @@ pub extern "C" fn train_mlp(
         eprintln!("Error: Data size cannot be zero");
         return false;
     }
-
-    let logfilename = format!(
-        "{}{}_epochs{}_lr={}",
-        "data/mlp/",
-        {
-            let c_str = unsafe { CStr::from_ptr(log_filename) };
-            let recipient = c_str.to_str().unwrap_or_else(|_| "_{}_{}_");
-            recipient
-        },
-        epochs,
-        learning_rate
-    );
 
     let x_train = unsafe { slice::from_raw_parts(x_train, (train_data_size as usize) * input_dim) };
     let y_train =
@@ -282,6 +275,18 @@ pub extern "C" fn train_mlp(
         return false;
     }
 
+    let logfilename = format!(
+        "{}{}_epochs{}_lr={}",
+        "data/mlp/",
+        {
+            let c_str = unsafe { CStr::from_ptr(log_filename) };
+            let recipient = c_str.to_str().unwrap_or_else(|_| "_{}_{}_");
+            recipient
+        },
+        epochs,
+        learning_rate
+    );
+
     let mut writer = SummaryWriter::new(&("../logs".to_string()));
     let mut map = HashMap::new();
 
@@ -309,42 +314,54 @@ pub extern "C" fn train_mlp(
                     return false;
                 }
             }
-            train_loss.push(get_mse(model, sample_expected_outputs));
-            train_accuracy.push(get_multiclass_accuracy(model, sample_expected_outputs));
-        }
-
-        let train_accuracy = train_accuracy.iter().filter(|&n| *n == 1f64).count() as f32
-            / train_accuracy.len() as f32;
-        let train_loss =
-            train_loss.iter().sum::<f64>() / train_loss.len() as f64 * model.d[model.l] as f64;
-
-        match evaluate(model, x_test, y_test) {
-            Ok((test_accuracy, test_loss)) => {
-                map.insert("train_loss".to_string(), train_loss as f32);
-                map.insert("test_loss".to_string(), test_loss as f32);
-
-                println!(
-                    "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%, Test_Loss = {:.4}, Test_Acuuracy = {:.4}%",
-                    epoch,
-                    epochs,
-                    train_loss,
-                    train_accuracy * 100.0,
-                    test_loss,
-                    test_accuracy,
-                );
-            }
-            Err(e) => {
-                eprintln!("Evaluation error: {}", e);
-                return false;
+            if display_loss || display_tensorboad {
+                train_loss.push(get_mse(model, sample_expected_outputs));
+                train_accuracy.push(get_multiclass_accuracy(model, sample_expected_outputs));
             }
         }
 
-        writer.add_scalars(&logfilename, &map, epoch as usize);
-        if epoch % SAVE_INTERVAL == 0 {
-            save_mlp_model(model, model_filename);
+        if display_loss || display_tensorboad {
+            let train_accuracy = train_accuracy.iter().filter(|&n| *n == 1f64).count() as f32
+                / train_accuracy.len() as f32;
+            let train_loss =
+                train_loss.iter().sum::<f64>() / train_loss.len() as f64 * model.d[model.l] as f64;
+
+            match evaluate(model, x_test, y_test) {
+                Ok((test_accuracy, test_loss)) => {
+                    if display_tensorboad {
+                        map.insert("train_loss".to_string(), train_loss as f32);
+                        map.insert("test_loss".to_string(), test_loss as f32);
+                    }
+                    if display_loss {
+                        println!(
+                            "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%, Test_Loss = {:.4}, Test_Acuuracy = {:.4}%",
+                            epoch,
+                            epochs,
+                            train_loss,
+                            train_accuracy * 100.0,
+                            test_loss,
+                            test_accuracy,
+                        );
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Evaluation error: {}", e);
+                    return false;
+                }
+            }
+        }
+        if display_tensorboad {
+            writer.add_scalars(&logfilename, &map, epoch as usize);
+        }
+        if save_model {
+            if epoch % SAVE_INTERVAL == 0 {
+                save_mlp_model(model, model_filename);
+            }
         }
     }
-    writer.flush();
+    if display_tensorboad {
+        writer.flush();
+    }
     true
 }
 

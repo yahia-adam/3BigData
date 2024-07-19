@@ -45,7 +45,11 @@ fn main() {
             data_size as u32,
             0.001,
             50_000,
-            c_log_filename.as_ptr()
+            c_log_filename.as_ptr(),
+            c_model_filename.as_ptr(),
+            false,
+            false,
+            false,
         );
 
         if success {
@@ -55,7 +59,7 @@ fn main() {
                 let output: *mut f32 = predict_mlp(mlp, input_ptr);
                 if !output.is_null() {
                     let res: Vec<f32> = Vec::from_raw_parts(output, 1, 1);
-                    println!("X: {:?}, Y: {:?} ---> MLP model: {:?}", x[i], y[i], res);
+                    // println!("X: {:?}, Y: {:?} ---> MLP model: {:?}", x[i], y[i], res);
                     if (res[0] > 0.0 && y[i] > 0.0) || (res[0] <= 0.0 && y[i] <= 0.0) {
                         correct += 1;
                     }

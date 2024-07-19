@@ -72,7 +72,9 @@ fn main() {
             LEARNING_RATE,
             EPOCHS,
             c_log_filename.as_ptr(),
-            c_model_filename.clone().as_ptr()
+            c_model_filename.clone().as_ptr(),
+            true,
+            true
         );
         
         if success {

@@ -39,7 +39,10 @@ fn main() {
             0.001,
             50_000,
             c_log_filename.as_ptr(),
-            c_model_filename.as_ptr()
+            c_model_filename.as_ptr(),
+            false,
+            false,
+            false,
         );
 
         if success {
@@ -50,7 +53,7 @@ fn main() {
                 let output: *mut f32 = predict_mlp(mlp, input_ptr);
                 if !output.is_null() {
                     let res: Vec<f32> = Vec::from_raw_parts(output, 1, 1);
-                    println!("X: {:?}, Y: {:?} ---> MLP model: {:?}", x[i], y[i], res);
+                    // println!("X: {:?}, Y: {:?} ---> MLP model: {:?}", x[i], y[i], res);
                     
                     let error = (res[0] - y[i]).abs();
                     total_mse += error * error;
