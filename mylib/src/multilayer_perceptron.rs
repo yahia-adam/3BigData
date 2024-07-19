@@ -321,9 +321,9 @@ pub extern "C" fn train_mlp(
         match evaluate(model, x_test, y_test) {
             Ok((test_accuracy, test_loss)) => {
                 map.insert("train_loss".to_string(), train_loss as f32);
-                map.insert("train_accuracy".to_string(), train_accuracy);
+                //map.insert("train_accuracy".to_string(), train_accuracy);
                 map.insert("test_loss".to_string(), test_loss as f32);
-                map.insert("test_accuracy".to_string(), test_accuracy);
+                //map.insert("test_accuracy".to_string(), test_accuracy);
 
                 println!(
                     "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%",
