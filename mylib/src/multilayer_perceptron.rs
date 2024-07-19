@@ -339,7 +339,7 @@ pub extern "C" fn train_mlp(
                     if epoch % DISPLAY_INTERVAL == 0 {
                         if display_loss {
                             println!(
-                                "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%, Test_Loss = {:.4}, Test_Acuuracy = {:.4}%",
+                                "Epoch {}/{}: Loss = {:.4}, Accuracy = {:.4}%, Test_Loss = {:.4}, Test_Accuracy = {:.4}%",
                                 epoch,
                                 epochs,
                                 train_loss,
