@@ -345,7 +345,7 @@ pub extern "C" fn train_mlp(
                                 train_loss,
                                 train_accuracy * 100.0,
                                 test_loss,
-                                test_accuracy,
+                                test_accuracy * 100.0,
                             );
                         }
                     }
