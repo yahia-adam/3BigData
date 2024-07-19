@@ -9,16 +9,19 @@
 /*   3IABD1 2023-2024                                     ########## ########   ######## ###########         */
 /*                                                                                                           */
 /* ********************************************************************************************************* */
-
-use rand::Rng;
+use ndarray::{Array1, Array2};
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use serde_json::{self, json};
+use std::collections::HashMap;
 use std::ffi::{c_char, c_float, CStr, CString};
 use std::fs::File;
 use std::io::Write;
 use std::slice;
-use ndarray::{Array1, Array2};
+use tensorboard_rs::summary_writer::SummaryWriter;
 
-const EPSILON: f32 = 1e-6;
+const SEED: u64 = 42;
+const SAVE_INTERVAL: u32 = 10;
 
 #[derive(Debug)]
 pub struct MultiLayerPerceptron {
@@ -28,18 +31,16 @@ pub struct MultiLayerPerceptron {
     deltas: Vec<Vec<f32>>,
     l: usize,
     is_classification: bool,
-    pub loss: Vec<f32>,
-    pub accuracy: Vec<f32>,
+    rng: StdRng,
 }
 
-fn activation(x: f32, derivative: bool) -> f32 {
+fn tanh_activation(x: f32, derivative: bool) -> f32 {
     if derivative {
         1.0 - x.tanh().powi(2)
     } else {
         x.tanh()
     }
 }
-
 
 #[no_mangle]
 pub extern "C" fn init_mlp(
@@ -48,6 +49,7 @@ pub extern "C" fn init_mlp(
     is_classification: bool,
 ) -> *mut MultiLayerPerceptron {
     let result = init_mlp_internal(npl, npl_size, is_classification);
+
     match result {
         Ok(model) => Box::into_raw(Box::new(model)),
         Err(e) => {
@@ -62,15 +64,14 @@ fn init_mlp_internal(
     npl_size: u32,
     is_classification: bool,
 ) -> Result<MultiLayerPerceptron, String> {
-
-    if npl.is_null(){
+    if npl.is_null() {
         return Err("Invalid input parameters".to_string());
     }
     if npl_size < 2 {
         return Err("Error: npl_size must be gratter than 2".to_string());
     }
 
-    let npl = unsafe { std::slice::from_raw_parts(npl, npl_size as usize) };
+    let npl = unsafe { slice::from_raw_parts(npl, npl_size as usize) };
 
     let mut model = MultiLayerPerceptron {
         d: npl.iter().map(|&x| x as usize).collect(),
@@ -79,8 +80,7 @@ fn init_mlp_internal(
         deltas: Vec::with_capacity(npl.len()),
         l: npl.len() - 1,
         is_classification,
-        loss: Vec::new(),
-        accuracy: Vec::new(),
+        rng: StdRng::seed_from_u64(SEED),
     };
 
     model.w = vec![Vec::new(); model.l + 1];
@@ -90,7 +90,7 @@ fn init_mlp_internal(
                 let mut neuron_weights = vec![0.0];
                 neuron_weights.extend((1..=model.d[l]).map(|_| {
                     let limit = (6.0 / (model.d[l - 1] + model.d[l]) as f32).sqrt();
-                    rand::thread_rng().gen_range(-limit..limit)
+                    model.rng.gen_range(-limit..limit)
                 }));
                 neuron_weights
             })
@@ -112,20 +112,21 @@ fn init_mlp_internal(
 
 fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: &[f32]) -> Result<(), String> {
     if sample_inputs.len() != model.d[0] {
-        return Err("La taille des entrées ne correspond pas à la dimension de la couche d'entrée".to_string());
+        return Err(
+            "La taille des entrées ne correspond pas à la dimension de la couche d'entrée"
+                .to_string(),
+        );
     }
 
     model.x[0][1..].copy_from_slice(sample_inputs);
     for l in 1..=model.l {
-        let prev_layer = Array1::from_vec(model.x[l-1].clone());
-        let weights = Array2::from_shape_vec((model.d[l-1]+1, model.d[l]+1), model.w[l].concat())
-            .map_err(|e| e.to_string())?;
-        
-        let mut activations = weights.t().dot(&prev_layer);
+        let prev_layer = Array1::from_vec(model.x[l - 1].clone());
+        let weights =
+            Array2::from_shape_vec((model.d[l - 1] + 1, model.d[l] + 1), model.w[l].concat())
+                .map_err(|e| e.to_string())?;
 
-        if l < model.l || model.is_classification {
-            activations.mapv_inplace(|x| activation(x, false));
-        }
+        let mut activations = weights.t().dot(&prev_layer);
+        activations.mapv_inplace(|x| tanh_activation(x, false));
 
         model.x[l][0] = 1.0;
         model.x[l][1..].copy_from_slice(&activations.as_slice().unwrap()[1..]);
@@ -133,7 +134,11 @@ fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: &[f32]) -> Result<
     Ok(())
 }
 
-fn backpropagate(model: &mut MultiLayerPerceptron, sample_expected_outputs: &[f32], learning_rate: f32) -> Result<(), String> {
+fn backpropagate(
+    model: &mut MultiLayerPerceptron,
+    sample_expected_outputs: &[f32],
+    learning_rate: f32,
+) -> Result<(), String> {
     let last_layer_index = model.d.len() - 1;
 
     if sample_expected_outputs.len() != model.d[last_layer_index] {
@@ -143,7 +148,7 @@ fn backpropagate(model: &mut MultiLayerPerceptron, sample_expected_outputs: &[f3
     for j in 1..=model.d[last_layer_index] {
         let output_error = model.x[last_layer_index][j] - sample_expected_outputs[j - 1];
         model.deltas[last_layer_index][j] = if model.is_classification {
-            output_error * activation(model.x[last_layer_index][j], true)
+            output_error * tanh_activation(model.x[last_layer_index][j], true)
         } else {
             output_error
         };
@@ -154,7 +159,7 @@ fn backpropagate(model: &mut MultiLayerPerceptron, sample_expected_outputs: &[f3
             let error_sum: f32 = (1..=model.d[l + 1])
                 .map(|j| model.w[l + 1][i][j] * model.deltas[l + 1][j])
                 .sum();
-            model.deltas[l][i] = error_sum * activation(model.x[l][i], true);
+            model.deltas[l][i] = error_sum * tanh_activation(model.x[l][i], true);
         }
     }
 
@@ -170,6 +175,36 @@ fn backpropagate(model: &mut MultiLayerPerceptron, sample_expected_outputs: &[f3
     Ok(())
 }
 
+fn get_multiclass_accuracy(model: &mut MultiLayerPerceptron, expected_output: &[f32]) -> f64 {
+    let predicted_output = &model.x[model.l][1..];
+    let expected_output_max_index = expected_output
+        .iter()
+        .enumerate()
+        .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+        .map(|(index, _)| index)
+        .unwrap_or(0);
+
+    let predicted_output_max_index: usize = predicted_output
+        .iter()
+        .enumerate()
+        .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+        .map(|(index, _)| index)
+        .unwrap_or(0);
+
+    if expected_output_max_index == predicted_output_max_index {
+        1f64
+    } else {
+        0f64
+    }
+}
+
+fn get_mse(model: &mut MultiLayerPerceptron, expected_output: &[f32]) -> f64 {
+    model.x[model.l].iter().skip(1)
+        .zip(expected_output)
+        .map(|(y, y_hat)| (y - y_hat).powi(2))
+        .sum::<f32>() as f64
+}
+
 #[no_mangle]
 pub extern "C" fn train_mlp(
     model: *mut MultiLayerPerceptron,
@@ -181,8 +216,15 @@ pub extern "C" fn train_mlp(
     test_data_size: u32,
     learning_rate: f32,
     epochs: u32,
+    log_filename: *const c_char,
+    model_filename: *const c_char,
 ) -> bool {
-    if model.is_null() || x_train.is_null() || y_train.is_null() || x_test.is_null() || y_test.is_null() {
+    if model.is_null()
+        || x_train.is_null()
+        || y_train.is_null()
+        || x_test.is_null()
+        || y_test.is_null()
+    {
         eprintln!("Error: Null pointer passed to train_mlp");
         return false;
     }
@@ -200,10 +242,23 @@ pub extern "C" fn train_mlp(
         return false;
     }
 
-    let x_train = unsafe { std::slice::from_raw_parts(x_train, (train_data_size as usize) * input_dim) };
-    let y_train = unsafe { std::slice::from_raw_parts(y_train, (train_data_size as usize) * output_dim) };
-    let x_test = unsafe { std::slice::from_raw_parts(x_test, (test_data_size as usize) * input_dim) };
-    let y_test = unsafe { std::slice::from_raw_parts(y_test, (test_data_size as usize) * output_dim) };
+    let logfilename = format!(
+        "{}{}_epochs{}_lr={}",
+        "data/mlp/",
+        {
+            let c_str = unsafe { CStr::from_ptr(log_filename) };
+            let recipient = c_str.to_str().unwrap_or_else(|_| "_{}_{}_");
+            recipient
+        },
+        epochs,
+        learning_rate
+    );
+
+    let x_train = unsafe { slice::from_raw_parts(x_train, (train_data_size as usize) * input_dim) };
+    let y_train =
+        unsafe { slice::from_raw_parts(y_train, (train_data_size as usize) * output_dim) };
+    let x_test = unsafe { slice::from_raw_parts(x_test, (test_data_size as usize) * input_dim) };
+    let y_test = unsafe { slice::from_raw_parts(y_test, (test_data_size as usize) * output_dim) };
 
     if x_train.len() != train_data_size as usize * input_dim {
         eprintln!("Error: Inconsistent x_train dimensions");
@@ -227,16 +282,20 @@ pub extern "C" fn train_mlp(
         return false;
     }
 
+    let mut writer = SummaryWriter::new(&("../logs".to_string()));
+    let mut map = HashMap::new();
+
     for epoch in 1..=epochs {
-        let mut total_loss = 0.0;
-        
+        let mut train_accuracy: Vec<f64> = Vec::new();
+        let mut train_loss: Vec<f64> = Vec::new();
+
         for _ in 1..=train_data_size {
-            let k = rand::thread_rng().gen_range(0..train_data_size) as usize;
+            let k = model.rng.gen_range(0..train_data_size) as usize;
             let sample_inputs = &x_train[k * input_dim..(k + 1) * input_dim];
             let sample_expected_outputs = &y_train[k * output_dim..(k + 1) * output_dim];
 
             match propagate(model, sample_inputs) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     eprintln!("Propagation error: {}", e);
                     return false;
@@ -244,57 +303,56 @@ pub extern "C" fn train_mlp(
             }
 
             match backpropagate(model, sample_expected_outputs, learning_rate) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     eprintln!("Backpropagation error: {}", e);
                     return false;
                 }
             }
-
-            total_loss += match calculate_loss(model, sample_expected_outputs) {
-                Ok(loss) => loss,
-                Err(e) => {
-                    eprintln!("Error calculating loss: {}", e);
-                    return false;
-                }
-            };
+            train_loss.push(get_mse(model, sample_expected_outputs));
+            train_accuracy.push(get_multiclass_accuracy(model, sample_expected_outputs));
         }
 
-        let avg_loss = total_loss / train_data_size as f32;
-        model.loss.push(avg_loss);
+        let train_accuracy = train_accuracy.iter().filter(|&n| *n == 1f64).count() as f32
+            / train_accuracy.len() as f32;
+        let train_loss =
+            train_loss.iter().sum::<f64>() / train_loss.len() as f64 * model.d[model.l] as f64;
 
-        if epoch % 10 == 0 {
-            match evaluate(model, x_test, y_test) {
-                Ok(accuracy) => {
-                    model.accuracy.push(accuracy);
-                    println!("Epoch {}/{}: Loss = {:.4}, Accuracy = {:.2}%", epoch, epochs, avg_loss, accuracy * 100.0);
-                },
-                Err(e) => {
-                    eprintln!("Evaluation error: {}", e);
-                    return false;
-                }
+        match evaluate(model, x_test, y_test) {
+            Ok((test_accuracy, test_loss)) => {
+                map.insert("train_loss".to_string(), train_loss as f32);
+                map.insert("train_accuracy".to_string(), train_accuracy);
+                map.insert("test_loss".to_string(), test_loss as f32);
+                map.insert("test_accuracy".to_string(), test_accuracy);
+
+                println!(
+                    "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%",
+                    epoch,
+                    epochs,
+                    train_loss,
+                    train_accuracy * 100.0
+                );
+            }
+            Err(e) => {
+                eprintln!("Evaluation error: {}", e);
+                return false;
             }
         }
-    }
 
+        writer.add_scalars(&logfilename, &map, epoch as usize);
+        if epoch % SAVE_INTERVAL == 0 {
+            save_mlp_model(model, model_filename);
+        }
+    }
+    writer.flush();
     true
 }
 
-fn calculate_loss(model: &MultiLayerPerceptron, expected: &[f32]) -> Result<f32, String> {
-    if model.x[model.l].len() - 1 != expected.len() {
-        return Err("Mismatch between model output and expected output sizes".to_string());
-    }
-    
-    let loss = model.x[model.l][1..].iter()
-        .zip(expected.iter())
-        .map(|(output, expected)| (output - expected).powi(2))
-        .sum::<f32>() / expected.len() as f32;
-    
-    Ok(loss)
-}
-
-fn evaluate(model: &mut MultiLayerPerceptron, x_test: &[f32], y_test: &[f32]) -> Result<f32, String> {
-    let mut correct = 0;
+fn evaluate(
+    model: &mut MultiLayerPerceptron,
+    x_test: &[f32],
+    y_test: &[f32],
+) -> Result<(f32, f64), String> {
     let test_size = y_test.len() / model.d[model.l];
 
     if x_test.len() % model.d[0] != 0 {
@@ -310,40 +368,30 @@ fn evaluate(model: &mut MultiLayerPerceptron, x_test: &[f32], y_test: &[f32]) ->
         return Err(format!("Le nombre d'échantillons d'entrée ({}) ne correspond pas au nombre d'échantillons de sortie ({})", test_size_x, test_size_y));
     }
 
+    let mut test_accuracy: Vec<f64> = Vec::new();
+    let mut test_loss: Vec<f64> = Vec::new();
+
     for i in 0..test_size {
         let inputs = &x_test[i * model.d[0]..(i + 1) * model.d[0]];
-        let expected = &y_test[i * model.d[model.l]..(i + 1) * model.d[model.l]];
-        
-        propagate(model, inputs).map_err(|e| format!("Erreur lors de la propagation de l'échantillon {}: {}", i, e))?;
-        let predicted = &model.x[model.l][1..];
-        
-        if model.is_classification {
-            let pred_max_index = predicted.iter()
-                .enumerate()
-                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
-                .ok_or_else(|| format!("Erreur lors de la prédiction pour l'échantillon {}: impossible de trouver la valeur maximale", i))?
-                .0;
-            
-            let actual_max_index = expected.iter()
-                .enumerate()
-                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
-                .ok_or_else(|| format!("Erreur dans les données attendues pour l'échantillon {}: impossible de trouver la valeur maximale", i))?
-                .0;
-            
-            if pred_max_index == actual_max_index {
-                correct += 1;
-            }
-        } else {
-            let all_close = predicted.iter().zip(expected.iter())
-                .all(|(p, a)| (p - a).abs() < EPSILON);
-            
-            if all_close {
-                correct += 1;
-            }
-        }
+        let expected_output = &y_test[i * model.d[model.l]..(i + 1) * model.d[model.l]];
+
+        propagate(model, inputs).map_err(|e| {
+            format!(
+                "Erreur lors de la propagation de l'échantillon {}: {}",
+                i, e
+            )
+        })?;
+
+        test_loss.push(get_mse(model, expected_output));
+        test_accuracy.push(get_multiclass_accuracy(model, expected_output));
     }
 
-    Ok(correct as f32 / test_size as f32)
+    let test_mean_accuracy =
+        test_accuracy.iter().filter(|&n| *n == 1f64).count() as f32 / test_accuracy.len() as f32;
+    let test_mean_loss =
+        test_loss.iter().sum::<f64>() / test_loss.len() as f64 * model.d[model.l] as f64;
+
+    Ok((test_mean_accuracy, test_mean_loss))
 }
 
 #[no_mangle]
@@ -361,13 +409,13 @@ pub extern "C" fn predict_mlp(
 
     let input_size = model.d[0];
     let sample_inputs = unsafe { slice::from_raw_parts(sample_inputs, input_size) };
-    
+
     match propagate(model, sample_inputs) {
         Ok(_) => {
             let predictions = &model.x[model.l][1..];
             let output = predictions.to_vec();
             Box::into_raw(output.into_boxed_slice()) as *mut f32
-        },
+        }
         Err(e) => {
             eprintln!("Prediction error: {}", e);
             std::ptr::null_mut()
@@ -396,7 +444,7 @@ pub extern "C" fn mlp_to_json(model: *const MultiLayerPerceptron) -> *mut c_char
         }
     };
 
-match CString::new(json_str) {
+    match CString::new(json_str) {
         Ok(c_str) => c_str.into_raw(),
         Err(e) => {
             eprintln!("CString conversion error: {}", e);
@@ -415,7 +463,10 @@ pub extern "C" fn free_mlp(ptr: *mut MultiLayerPerceptron) {
 }
 
 #[no_mangle]
-pub extern "C" fn save_mlp_model(model: *const MultiLayerPerceptron, filepath: *const c_char) -> bool {
+pub extern "C" fn save_mlp_model(
+    model: *const MultiLayerPerceptron,
+    filepath: *const c_char,
+) -> bool {
     let path_str = match unsafe { CStr::from_ptr(filepath) }.to_str() {
         Ok(s) => s,
         Err(_) => {

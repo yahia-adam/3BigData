@@ -1,3 +1,4 @@
+use std::ffi::CString;
 #[allow(unused_imports)]
 use mylib::{free_mlp, init_mlp, predict_mlp, save_mlp_model, train_mlp, MultiLayerPerceptron};
 
@@ -25,6 +26,10 @@ fn main() {
     let npl: Vec<u32> = vec![2, 2, 1];
     let mlp: *mut MultiLayerPerceptron = init_mlp(npl.as_ptr(), npl.len() as u32, false);
 
+
+    let c_log_filename = CString::new("rg_non_linear_simple_3D").expect("CString::new failed");
+    let c_model_filename = CString::new("../models/examples/mlp/classification/non_linear_simple_3D.json").expect("CString::new failed");
+
     unsafe {
         let success = train_mlp(
             mlp,
@@ -36,6 +41,8 @@ fn main() {
             data_size as u32,
             0.001,
             10_000,
+            c_log_filename.as_ptr(),
+            c_model_filename.as_ptr()
         );
 
         if success {
@@ -60,8 +67,10 @@ fn main() {
             println!("Mean Squared Error: {:.4}", mse);
             println!("Root Mean Squared Error: {:.4}", rmse);
             println!("Max Absolute Error: {:.4}", max_error);
-            
-            // save_mlp_model(mlp, std::ffi::CString::new("model.json").unwrap().as_ptr());
+
+            // let model_file_name = "model.json";
+            // let model_file_name = CString::new(model_file_name).expect("CString::new failed");
+            // save_mlp_model(mlp, model_file_name.as_ptr());
         } else {
             println!("Training failed.");
         }
