@@ -11,7 +11,13 @@ use mylib::{
 };
 use mylib::{image_resize_vec, load_dataset};
 
+const LEARNING_RATE: f32 = 0.0001;
+const EPOCHS: u32 = 500;
+const DIM:  &[u32] = &[128, 64, 32, 3];
+
 fn main() {
+
+    println!("{:?}",format!("dim={:?}epoch={}lr={}", DIM,EPOCHS,LEARNING_RATE));
     let base_dir = PathBuf::from("../dataset");
     let train_path = base_dir.join("train");
     let test_path = base_dir.join("test");
@@ -42,14 +48,17 @@ fn main() {
     let test_label_flatten: Vec<f32> = test_labels.into_iter().flatten().collect();
     let y_test_ptr: *const f32 = test_label_flatten.as_ptr();
     
-    let npl: Vec<u32> = vec![input_size as u32, 30, 20, 3];
+    let mut npl: Vec<u32> = vec![input_size as u32];
+    npl.extend(DIM);
+
     let npl_size = npl.len();
     let model: *mut MultiLayerPerceptron = init_mlp(npl.as_ptr(), npl_size as u32, true);
     
     println!("Finished initializing model");
 
-    let c_log_filename = CString::new("dataset").expect("CString::new failed");
-    let c_model_filename = CString::new("../models/dataset/mlp/model.json").expect("CString::new failed");
+    let model_prameter: String = format!("dim={:?}epoch={}lr={}", DIM,EPOCHS,LEARNING_RATE);
+    let c_log_filename: CString = CString::new(model_prameter.clone()).expect("CString::new failed");
+    let c_model_filename: CString = CString::new(format!("../models/dataset/mlp/{}.json", model_prameter) ).expect("CString::new failed");
 
     unsafe {
         let success = train_mlp(
@@ -60,16 +69,15 @@ fn main() {
             x_test_ptr,
             y_test_ptr,
             test_data_size as u32,
-            0.0001,
-            100,
+            LEARNING_RATE,
+            EPOCHS,
             c_log_filename.as_ptr(),
-            c_model_filename.as_ptr()
+            c_model_filename.clone().as_ptr()
         );
         
         if success {
             println!("Training completed successfully");
 
-            let c_model_filename = CString::new("../models/dataset/mlp/model.json").expect("CString::new failed");
             save_mlp_model(model, c_model_filename.as_ptr());
             
             println!("Testing on a metal image:");
