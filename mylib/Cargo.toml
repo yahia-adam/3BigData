@@ -3,8 +3,8 @@ name = "mylib"
 version = "0.1.0"
 edition = "2021"
 
-# [lib]
-# crate-type = ["cdylib"]
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -79,7 +79,7 @@ path="examples/pmc/classification/xor.rs"
 
 # resgression
 [[example]]
-name="mlp_resgression_linear_simple_2D"
+name="mlp_regression_linear_simple_2D"
 path="examples/pmc/regression/linear_simple_2D.rs"
 [[example]]
 name="mlp_regression_linear_simple_3D"

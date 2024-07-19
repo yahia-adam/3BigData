@@ -22,6 +22,7 @@ use tensorboard_rs::summary_writer::SummaryWriter;
 
 const SEED: u64 = 42;
 const SAVE_INTERVAL: u32 = 10;
+const DISPLAY_INTERVAL: u32 = 100;
 
 #[derive(Debug)]
 pub struct MultiLayerPerceptron {
@@ -126,7 +127,10 @@ fn propagate(model: &mut MultiLayerPerceptron, sample_inputs: &[f32]) -> Result<
                 .map_err(|e| e.to_string())?;
 
         let mut activations = weights.t().dot(&prev_layer);
-        activations.mapv_inplace(|x| tanh_activation(x, false));
+
+        if l < model.l || model.is_classification {
+            activations.mapv_inplace(|x| tanh_activation(x, false));
+        }
 
         model.x[l][0] = 1.0;
         model.x[l][1..].copy_from_slice(&activations.as_slice().unwrap()[1..]);
@@ -332,16 +336,18 @@ pub extern "C" fn train_mlp(
                         map.insert("train_loss".to_string(), train_loss as f32);
                         map.insert("test_loss".to_string(), test_loss as f32);
                     }
-                    if display_loss {
-                        println!(
-                            "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%, Test_Loss = {:.4}, Test_Acuuracy = {:.4}%",
-                            epoch,
-                            epochs,
-                            train_loss,
-                            train_accuracy * 100.0,
-                            test_loss,
-                            test_accuracy,
-                        );
+                    if epoch % DISPLAY_INTERVAL == 0 {
+                        if display_loss {
+                            println!(
+                                "Epoch {}/{}: Loss = {:.4}, Acuuracy = {:.4}%, Test_Loss = {:.4}, Test_Acuuracy = {:.4}%",
+                                epoch,
+                                epochs,
+                                train_loss,
+                                train_accuracy * 100.0,
+                                test_loss,
+                                test_accuracy,
+                            );
+                        }
                     }
                 }
                 Err(e) => {

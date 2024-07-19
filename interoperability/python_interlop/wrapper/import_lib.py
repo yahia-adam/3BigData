@@ -106,6 +106,9 @@ def init_lib():
         epochs: u32,
         log_filename: *const c_char,
         model_filename: *const c_char,
+        display_loss: bool,
+        display_tensorboad: bool,
+        save_model: bool,
     ) -> bool
     """
 
@@ -121,6 +124,9 @@ def init_lib():
         ctypes.c_uint32,  # epochs
         ctypes.c_char_p,  # log_filename
         ctypes.c_char_p,  # model_filename
+        ctypes.c_bool,  # display_loss
+        ctypes.c_bool,  # display_tensorboad
+        ctypes.c_bool,  # save_model
     ]
     my_lib.train_mlp.restype = ctypes.c_bool
 
