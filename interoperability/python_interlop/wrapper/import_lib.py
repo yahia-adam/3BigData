@@ -17,6 +17,7 @@ def init_lib():
         is_multiclass: bool
     ) -> *mut LinearModel
     """
+
     my_lib.init_linear_model.argtypes = [ctypes.c_uint32, ctypes.c_bool, ctypes.c_bool]
     my_lib.init_linear_model.restype = ctypes.c_void_p
 
@@ -33,6 +34,7 @@ def init_lib():
         epochs: u32,
         log_filename: *const c_char)
     """
+
     my_lib.train_linear_model.argtypes = [
         ctypes.c_void_p,  # model
         ctypes.POINTER(ctypes.c_float),  # x_train
@@ -45,26 +47,33 @@ def init_lib():
         ctypes.c_uint32,  # epochs
         ctypes.POINTER(ctypes.c_char)  # log_filename
     ]
+
     my_lib.train_linear_model.restype = None
+
     """
     predict_linear_model(
         model: *mut LinearModel,
         inputs: *mut f32
     ) -> c_float 
     """
+
     my_lib.predict_linear_model.argtypes = [
         ctypes.c_void_p,  # model
         ctypes.POINTER(ctypes.c_float)  # inputs
     ]
+
     my_lib.predict_linear_model.restype = ctypes.c_float
+
     """
     free_linear_model(
         model: *mut LinearModel
     )
     """
+
     my_lib.free_linear_model.argtypes = [
         ctypes.c_void_p  # model
     ]
+
     my_lib.free_linear_model.restype = None
 
     # -------------------------- init mlp --------------------------
@@ -75,12 +84,15 @@ def init_lib():
         is_classification: bool,
     ) -> *mut MultiLayerPerceptron
     """
+
     my_lib.init_mlp.argtypes = [
         ctypes.POINTER(ctypes.c_uint32),  # model
         ctypes.c_uint32,  # npl_size
         ctypes.c_bool  # is classification
     ]
+
     my_lib.init_mlp.restype = ctypes.c_void_p
+
     """
     train_mlp(
         model: *mut MultiLayerPerceptron,
@@ -92,8 +104,11 @@ def init_lib():
         test_data_size: u32,
         learning_rate: f32,
         epochs: u32,
+        log_filename: *const c_char,
+        model_filename: *const c_char,
     ) -> bool
     """
+
     my_lib.train_mlp.argtypes = [
         ctypes.c_void_p,  # model
         ctypes.POINTER(ctypes.c_float),  # x_train
@@ -104,8 +119,10 @@ def init_lib():
         ctypes.c_uint32,  # test_data_size
         ctypes.c_float,  # learning_rate
         ctypes.c_uint32,  # epochs
+        ctypes.c_char_p,  # log_filename
+        ctypes.c_char_p,  # model_filename
     ]
-    my_lib.train_mlp.restype = None
+    my_lib.train_mlp.restype = ctypes.c_bool
 
     """
     predict_mlp(
@@ -113,10 +130,12 @@ def init_lib():
         sample_inputs: *const f32,
     ) -> *mut f32 {
     """
+
     my_lib.predict_mlp.argtypes = [
         ctypes.c_void_p,  # model
         ctypes.POINTER(ctypes.c_float)  # inputs
     ]
+
     my_lib.predict_mlp.restype = ctypes.POINTER(ctypes.c_float)
 
     """
@@ -124,10 +143,13 @@ def init_lib():
         ptr: *mut MultiLayerPerceptron
     )
     """
+
     my_lib.free_mlp.argtypes = [
         ctypes.c_void_p  # model
     ]
+    
     my_lib.free_mlp.restype = None
+
     # ---------------------------- init RBF --------------------------
     # pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *mut RadicalBasisFunctionNetwork
     my_lib.init_rbf.argtypes = [ctypes.c_int32, ctypes.c_int32, ctypes.c_float]

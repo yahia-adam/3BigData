@@ -54,9 +54,10 @@ class MyModel:
             return my_lib.init_rbf(self.__dims, self.__cluster_size, self.__gamma)
 
     def train(self, x_train: np.ndarray, y_train: np.ndarray, x_test=None, y_test=None,
-              learning_rate=0.01, epochs=10_000, log_filename="model"):
+              learning_rate=0.01, epochs=10_000, log_filename="model", model_filename="model"):
         """
         Trains the model on the given data
+        :param model_filename:
         :param x_train: Input data
         :param x_test: Input data
         :param y_test: Label data
@@ -100,21 +101,25 @@ class MyModel:
             y_train_flat_ptr = y_train.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             y_test_flat_ptr = y_test.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size, x_test_flat_ptr, y_test_flat_ptr,
-                              test_data_size, learning_rate, epochs, ctypes.c_char_p(log_filename.encode()))
+                              test_data_size, learning_rate, epochs, ctypes.c_char_p(log_filename.encode()),
+                              ctypes.c_char_p(model_filename.encode()))
         else:
             y_train = np.transpose(y_train)
             y_test = np.transpose(y_test)
             for i in range(3):
-                y_train_flat_ptr = y_train[i].flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-                y_test_flat_ptr = y_test[i].flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+                y_train_flat_ptr = y_train[i].flatten().astype(ctypes.c_float).ctypes.data_as(
+                    ctypes.POINTER(ctypes.c_float))
+                y_test_flat_ptr = y_test[i].flatten().astype(ctypes.c_float).ctypes.data_as(
+                    ctypes.POINTER(ctypes.c_float))
                 if self.__type == "ml":
                     self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size,
                                       x_test_flat_ptr, y_test_flat_ptr, train_data_size,
                                       learning_rate, epochs, ctypes.c_char_p(log_filename.encode()), index=i)
+
     def _train_model(self,
                      x_train_flat_ptr: np.ndarray, y_train_flat_ptr: np.ndarray, train_data_size: int,
                      x_test_flat_ptr: np.ndarray, y_test_flat_ptr: np.ndarray, test_data_size: int,
-                     learning_rate: float, epochs: int, log_filename, index=None):
+                     learning_rate: float, epochs: int, log_filename, model_filename, index=None):
         """
         Calls the lib to train the model
         """
@@ -125,11 +130,13 @@ class MyModel:
                                           x_test_flat_ptr, y_test_flat_ptr, test_data_size,
                                           learning_rate, epochs, log_filename)
             elif self.__type == "mlp":
-                print("begin traing the mlp")
+                print("begin training the mlp")
                 my_lib.train_mlp(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size,
                                  x_test_flat_ptr, y_test_flat_ptr, test_data_size,
-                                 learning_rate, epochs)
-                print("finish traing the mlp")
+                                 learning_rate, epochs,
+                                 log_filename,
+                                 model_filename)
+                print("finish training the mlp")
 
             elif self.__type == "rbf":
                 if self.__is_classification:
