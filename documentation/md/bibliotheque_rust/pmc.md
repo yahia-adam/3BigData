@@ -57,7 +57,7 @@ Pour chaque cas de test, nous avons généré et inclus des images des courbes e
 
 - **mlp_classification_multi_cross** :
 
-  ![Classification MULTI CROSS](images/mlp_classification_multi_cros.png)
+    ![Classification MULTI CROSS](images/mlp_classification_multi_cros.png)
 
 
 - **mlp_classification_xor** : 
