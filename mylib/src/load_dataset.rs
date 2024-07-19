@@ -66,7 +66,7 @@ fn z_score_normalize(data: &mut Vec<f32>) {
     }
 }
 
-pub fn load_dataset(base_dir: &str) -> (Vec<Vec<f32>>, Vec<Vec<f32>>) {
+pub fn load_mlp_dataset(base_dir: &str) -> (Vec<Vec<f32>>, Vec<Vec<f32>>) {
     let mut images = Vec::new();
     let mut labels = Vec::new();
     let classes = ["metal", "paper", "plastic"];
@@ -98,5 +98,41 @@ pub fn load_dataset(base_dir: &str) -> (Vec<Vec<f32>>, Vec<Vec<f32>>) {
         }
     }
     shuffle_dataset(&mut images, &mut labels);
+    (images, labels)
+}
+
+
+pub fn load_ml_dataset(base_dir: &str, paper_label: f32, metal_label: f32, plastic_label: f32) -> (Vec<Vec<f32>>, Vec<f32>) {
+    let mut images = Vec::new();
+    let mut labels = Vec::new();
+    let classes = ["metal", "paper", "plastic"];
+
+    for class in classes.iter() {
+        let class_dir = Path::new(base_dir).join(class);
+        for entry in fs::read_dir(class_dir).expect("Erreur lors de la lecture du répertoire") {
+            let path = entry.expect("Erreur lors de la lecture de l'entrée").path();
+            if path.is_file() {
+                if let Ok(img) = image::open(&path) {
+                    let img = img.resize_exact(IMAGE_SIZE, IMAGE_SIZE, image::imageops::FilterType::Lanczos3);
+                    let img_data: Vec<f32> = img.to_luma8().into_raw()
+                        .into_iter()
+                        .map(|p| p as f32 / 255.0)
+                        .collect();
+
+                    images.push(img_data);
+                    labels.push(match *class {
+                        "metal" => vec![metal_label],
+                        "paper" => vec![paper_label],
+                        "plastic" => vec![plastic_label],
+                        _ => panic!("Classe inconnue"),
+                    });
+                } else {
+                    eprintln!("Impossible d'ouvrir l'image: {:?}", path);
+                }
+            }
+        }
+    }
+    shuffle_dataset(&mut images, &mut labels);
+    let labels = labels.into_iter().flatten().collect();
     (images, labels)
 }
