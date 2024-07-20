@@ -29,3 +29,4 @@ mylib/target
 /interoperability/python_interlop/.ipynb_checkpoints/
 venv
 /flask-app/static/uploads
+/interoperability/__pycache__/
