@@ -3,8 +3,8 @@ name = "mylib"
 version = "0.1.0"
 edition = "2021"
 
-#[lib]
-#crate-type = ["cdylib"]
+# [lib]
+# crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -23,117 +23,183 @@ image = "0.23.14"
 
 # <-------------------------------------------------- lm ----------------------------------------------------->
 # classification
+
 [[example]]
-name="ml_classification_cross"
-path="examples/ml/classification/cross.rs"
+name = "lm_classification_cross"
+path = "examples/linear_model/classification/cross.rs"
+
 [[example]]
-name="ml_classification_linear_simple"
-path="examples/ml/classification/linear_simple.rs"
+name = "lm_classification_linear_simple"
+path = "examples/linear_model/classification/linear_simple.rs"
+
 [[example]]
-name="ml_classification_linear_multiple"
-path="examples/ml/classification/linear_multiple.rs"
+name = "lm_classification_linear_multiple"
+path = "examples/linear_model/classification/linear_multiple.rs"
+
 [[example]]
-name="ml_classification_xor"
-path="examples/ml/classification/xor.rs"
+name = "lm_classification_xor"
+path = "examples/linear_model/classification/xor.rs"
 
 # regression
 [[example]]
-name="ml_regression_linear_simple_2D"
-path="examples/ml/regression/linear_simple_2D.rs"
-[[example]]
-name="ml_regression_linear_simple_3D"
-path="examples/ml/regression/linear_simple_3D.rs"
-[[example]]
-name="ml_regression_linear_tricky_3D"
-path="examples/ml/regression/linear_tricky_3D.rs"
-[[example]]
-name="ml_regression_non_linear_simple_2D"
-path="examples/ml/regression/non_linear_simple_2D.rs"
-[[example]]
-name="ml_regression_non_linear_simple_3D"
-path="examples/ml/regression/non_linear_simple_3D.rs"
+name = "lm_regression_linear_simple_2D"
+path = "examples/linear_model/regression/linear_simple_2D.rs"
 
-# <-------------------------------------------------- pmc ----------------------------------------------------->
+[[example]]
+name = "lm_regression_linear_simple_3D"
+path = "examples/linear_model/regression/linear_simple_3D.rs"
+
+[[example]]
+name = "lm_regression_linear_tricky_3D"
+path = "examples/linear_model/regression/linear_tricky_3D.rs"
+
+[[example]]
+name = "lm_regression_non_linear_simple_2D"
+path = "examples/linear_model/regression/non_linear_simple_2D.rs"
+
+[[example]]
+name = "lm_regression_non_linear_simple_3D"
+path = "examples/linear_model/regression/non_linear_simple_3D.rs"
+
+# <-------------------------------------------------- mlp ----------------------------------------------------->
 # classification
-[[example]]
-name="mlp_classification_cross"
-path="examples/pmc/classification/cross.rs"
-[[example]]
-name="mlp_classification_linear_simple"
-path="examples/pmc/classification/linear_simple.rs"
-[[example]]
-name="mlp_classification_linear_multiple"
-path="examples/pmc/classification/linear_multiple.rs"
-[[example]]
-name="mlp_classification_xor"
-path="examples/pmc/classification/xor.rs"
 
-# resgression
 [[example]]
-name="mlp_resgression_linear_simple_2D"
-path="examples/pmc/regression/linear_simple_2D.rs"
+name = "mlp_classification_cross"
+path = "examples/multilayer_perceptron/classification/cross.rs"
+
 [[example]]
-name="mlp_regression_linear_simple_3D"
-path="examples/pmc/regression/linear_simple_3D.rs"
+name = "mlp_classification_multi_cross"
+path = "examples/multilayer_perceptron/classification/multi_cross.rs"
+
 [[example]]
-name="mlp_regression_linear_tricky_3D"
-path="examples/pmc/regression/linear_tricky_3D.rs"
+name = "mlp_classification_linear_multiple"
+path = "examples/multilayer_perceptron/classification/linear_multiple.rs"
+
 [[example]]
-name="mlp_regression_non_linear_simple_2D"
-path="examples/pmc/regression/non_linear_simple_2D.rs"
+name = "mlp_classification_linear_simple"
+path = "examples/multilayer_perceptron/classification/linear_simple.rs"
+
 [[example]]
-name="mlp_regression_non_linear_simple_3D"
-path="examples/pmc/regression/non_linear_simple_3D.rs"
+name = "mlp_classification_multi_linear_3_classes"
+path = "examples/multilayer_perceptron/classification/multi_linear_3_classes.rs"
+
+[[example]]
+name = "mlp_classification_xor"
+path = "examples/multilayer_perceptron/classification/xor.rs"
+
+# regression
+[[example]]
+name = "mlp_regression_linear_simple_2D"
+path = "examples/multilayer_perceptron/regression/linear_simple_2D.rs"
+
+[[example]]
+name = "mlp_regression_linear_simple_3D"
+path = "examples/multilayer_perceptron/regression/linear_simple_3D.rs"
+
+[[example]]
+name = "mlp_regression_linear_tricky_3D"
+path = "examples/multilayer_perceptron/regression/linear_tricky_3D.rs"
+
+[[example]]
+name = "mlp_regression_non_linear_simple_2D"
+path = "examples/multilayer_perceptron/regression/non_linear_simple_2D.rs"
+
+[[example]]
+name = "mlp_regression_non_linear_simple_3D"
+path = "examples/multilayer_perceptron/regression/non_linear_simple_3D.rs"
 
 # <-------------------------------------------------- rbf ----------------------------------------------------->
 # classification
-[[example]]
-name="rbf_classification_linear_simple"
-path="examples/rbf/classification/linear_simple.rs"
-[[example]]
-name="rbf_classification_linear_multiple"
-path="examples/rbf/classification/linear_multiple.rs"
-[[example]]
-name="rbf_classification_cross"
-path="examples/rbf/classification/cross.rs"
-[[example]]
-name="rbf_classification_multi_cross"
-path="examples/rbf/classification/multi_cross.rs"
-[[example]]
-name="rbf_classification_xor"
-path="examples/rbf/classification/xor.rs"
-[[example]]
-name="rbf_classification_multi_linear_3_classes"
-path="examples/rbf/classification/multi_linear_3_classes.rs"
 
-# resgression
 [[example]]
-name="rbf_regression_linear_simple_2D"
-path="examples/rbf/regression/linear_simple_2D.rs"
+name = "rbf_classification_cross"
+path = "examples/radial_basis_function/classification/cross.rs"
+
 [[example]]
-name="rbf_regression_linear_simple_3D"
-path="examples/rbf/regression/linear_simple_3D.rs"
+name = "rbf_classification_linear_multiple"
+path = "examples/radial_basis_function/classification/linear_multiple.rs"
+
 [[example]]
-name="rbf_regression_linear_tricky_3D"
-path="examples/rbf/regression/linear_tricky_3D.rs"
+name = "rbf_classification_linear_simple"
+path = "examples/radial_basis_function/classification/linear_simple.rs"
+
 [[example]]
-name="rbf_regression_non_linear_simple_2D"
-path="examples/rbf/regression/non_linear_simple_2D.rs"
+name = "rbf_classification_multi_cross"
+path = "examples/radial_basis_function/classification/multi_cross.rs"
+
 [[example]]
-name="rbf_regression_non_linear_simple_3D"
-path="examples/rbf/regression/non_linear_simple_3D.rs"
+name = "rbf_classification_xor"
+path = "examples/radial_basis_function/classification/xor.rs"
+
+[[example]]
+name = "rbf_classification_multi_linear_3_classes"
+path = "examples/radial_basis_function/classification/multi_linear_3_classes.rs"
+
+# regression
+[[example]]
+name = "rbf_regression_linear_simple_2D"
+path = "examples/radial_basis_function/regression/linear_simple_2D.rs"
+
+[[example]]
+name = "rbf_regression_linear_simple_3D"
+path = "examples/radial_basis_function/regression/linear_simple_3D.rs"
+
+[[example]]
+name = "rbf_regression_linear_tricky_3D"
+path = "examples/radial_basis_function/regression/linear_tricky_3D.rs"
+
+[[example]]
+name = "rbf_regression_non_linear_simple_2D"
+path = "examples/radial_basis_function/regression/non_linear_simple_2D.rs"
+
+[[example]]
+name = "rbf_regression_non_linear_simple_3D"
+path = "examples/radial_basis_function/regression/non_linear_simple_3D.rs"
 
 # <-------------------------------------------------- svm ----------------------------------------------------->
 # classification
+
 [[example]]
-name="test"
-path="src/support_vector_machine.rs"
+name = "svm_classification_cross"
+path = "examples/support_vector_machine/classification/cross.rs"
+
+[[example]]
+name = "svm_classification_linear_simple"
+path = "examples/support_vector_machine/classification/linear_simple.rs"
+
+[[example]]
+name = "svm_classification_linear_multiple"
+path = "examples/support_vector_machine/classification/linear_multiple.rs"
+
+[[example]]
+name = "svm_classification_multi_cross"
+path = "examples/support_vector_machine/classification/multi_cross.rs"
+
+[[example]]
+name = "svm_classification_multi_linear_3_classes"
+path = "examples/support_vector_machine/classification/multi_linear_3_classes.rs"
+
+[[example]]
+name = "svm_classification_xor"
+path = "examples/support_vector_machine/classification/xor.rs"
 
 # <-------------------------------------------------- model training ----------------------------------------------------->
-# rbf
+# train with datasets
+
 [[example]]
-name="rbf_training"
-path="examples/training/rbf_training.rs"
+name = "train_multilayer_perceptron"
+path = "examples/training_with_datasets/train_multilayer_perceptron.rs"
+
 [[example]]
-name="linear_model_training"
-path="examples/training/linear_model_training.rs"
+name = "train_linear_model"
+path = "examples/training_with_datasets/train_linear_model.rs"
+
+[[example]]
+name = "train_rbf"
+path = "examples/training_with_datasets/train_rbf.rs"
+
+[[example]]
+name = "train_svm"
+path = "examples/training_with_datasets/train_svm.rs"
+

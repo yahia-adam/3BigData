@@ -27,6 +27,7 @@ pub struct LinearModel {
     pub weights: Vec<f32>,
     pub weights_count: usize,
     pub is_classification: bool,
+    pub is_multiclass: bool,
     pub train_loss: Vec<f32>,
     pub test_loss: Vec<f32>,
     pub train_accuracy: Vec<f32>,
@@ -34,11 +35,12 @@ pub struct LinearModel {
 }
 
 #[no_mangle]
-pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -> *mut LinearModel {
+pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool, is_multiclass: bool) -> *mut LinearModel {
     let model: LinearModel = LinearModel {
         weights: vec![rand::thread_rng().gen_range(-1.0..1.0); (input_count + 1) as usize],
         weights_count: input_count as usize,
         is_classification,
+        is_multiclass,
         train_loss: vec![],
         test_loss: vec![],
         train_accuracy: vec![],
@@ -49,6 +51,7 @@ pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -
     let leaked_boxed_model: *mut LinearModel = Box::leak(boxed_model);
     leaked_boxed_model.into()
 }
+
 
 #[no_mangle]
 pub extern "C" fn train_linear_model(
@@ -61,6 +64,7 @@ pub extern "C" fn train_linear_model(
     test_data_size: u32,
     learning_rate: f32,
     epochs: u32,
+    log_filename: *const c_char,
 ) {
     let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
 
@@ -123,8 +127,17 @@ pub extern "C" fn train_linear_model(
 
             map.insert("loss".to_string(), train_loss);
             map.insert("validate".to_string(), validate_linear_model(model_ref, &x_test, &y_test, test_data_size));
-            writer.add_scalars("data/linear_model", &map, n_iter as usize);
 
+            let logfilename = format!("{}{}", "data/linear_model/",  {
+                let c_str = unsafe {CStr::from_ptr(log_filename)};
+                let recipient = match c_str.to_str() {
+                    Err(_) => "",
+                    Ok(string) => string,
+                };
+                recipient
+            });
+
+            writer.add_scalars(&logfilename, &map, n_iter as usize);
             pb.finish_println(&format!(
                 "Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ",
                 n_iter, epochs, train_loss, train_accuracy
@@ -132,7 +145,6 @@ pub extern "C" fn train_linear_model(
         }
 
     } else {
-        
         let mut i = 0;
         while i < data_size {
             features.insert((i * model_ref.weights_count) + i, 1.0);
@@ -196,16 +208,15 @@ pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
         sum += inputs[i - 1] * model.weights[i]
     }
     sum += model.weights[0];
-    /*if model.is_classification {
+    if model.is_classification && !model.is_multiclass {
         if sum >= 0.0 {
             sum = 1.0;
         } else {
             sum = -1.0;
         }
-    }*/
+    }
     sum
 }
-
 
 #[no_mangle]
 pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {

@@ -19,6 +19,7 @@ class MyModel:
             raise ValueError("Gamma must be non-negative")
 
         self.train_data = []
+        self.test_data = []
         self.__type = model_type
         self.__dims = size
         self.__is_classification = is_classification
@@ -37,9 +38,7 @@ class MyModel:
         else:
             # Initialise les modèles linéaires en tant que regression pour pouvoir
             # comparer les résultat de chaque One vs Rest
-            self.__is_classification = False
             self.model = [self._init_model() for _ in range(3)]
-            self.__is_classification = True
 
     def _init_model(self):
         """
@@ -47,63 +46,103 @@ class MyModel:
         :return: the address of the model
         """
         if self.__type == "ml":
-            return my_lib.init_linear_model(self.__dims, self.__is_classification)
+            return my_lib.init_linear_model(self.__dims, self.__is_classification, self.__is_3_classes)
         elif self.__type == "mlp":
             raw_size = np.ctypeslib.as_ctypes(np.array(self.__dims, dtype=ctypes.c_uint32))
             return my_lib.init_mlp(raw_size, len(self.__dims), self.__is_classification)
         elif self.__type == "rbf":
             return my_lib.init_rbf(self.__dims, self.__cluster_size, self.__gamma)
 
-    def train(self, x: np.ndarray, y: np.ndarray, learning_rate: float, epochs: int):
+    def train(self, x_train: np.ndarray, y_train: np.ndarray, x_test=None, y_test=None,
+              learning_rate=0.01, epochs=10_000, log_filename="model", model_filename="model",
+              display_loss=False, display_tensorboad=False, save_model=False):
         """
         Trains the model on the given data
-        :param x: Input data
-        :param y: Label data
+        :param model_filename:
+        :param x_train: Input data
+        :param x_test: Input data
+        :param y_test: Label data
+        :param y_train: Label data
         :param learning_rate: Learning rate
         :param epochs: Number of epochs
+        :param log_filename: nom de ficher logs
         """
-        if len(x) != len(y):
-            raise ValueError("x and y must have same length")
+        if len(x_train) != len(y_train):
+            raise ValueError("x_train and y_train must have same length")
+
+        if x_test is None or y_test is None:
+            x_test = x_train
+            y_test = y_train
+
+        if len(x_test) != len(y_test):
+            raise ValueError("x_test and y_test must have same length")
 
         print("Training the model...")
 
-        data_size = len(y)
-        sample_count = len(x)
+        train_data_size = len(y_train)
+        test_data_size = len(y_test)
 
         if self.__is_3_classes:
-            y[y == 0] = -1
+            y_train[y_train == 0] = -1
+            y_test[y_test == 0] = -1
 
-        self.train_data = list(map(list, zip(*x)))
-        self.train_data.append(y)
+        self.train_data = list(map(list, zip(*x_train)))
+        self.train_data.append(y_train)
 
-        x_flat = x.flatten().astype(ctypes.c_float)
-        x_flat_ptr = x_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+        self.test_data = list(map(list, zip(*x_test)))
+        self.test_data.append(y_test)
+
+        x_train_flat = x_train.flatten().astype(ctypes.c_float)
+        x_train_flat_ptr = x_train_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+
+        x_test_flat = x_test.flatten().astype(ctypes.c_float)
+        x_test_flat_ptr = x_test_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
         if not self.__is_3_classes or self.__type != "ml":
-            y_flat_ptr = y.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-            self._train_model(x_flat_ptr, y_flat_ptr, data_size, sample_count, learning_rate, epochs)
+            y_train_flat_ptr = y_train.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+            y_test_flat_ptr = y_test.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+            self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size, x_test_flat_ptr, y_test_flat_ptr,
+                              test_data_size, learning_rate, epochs, ctypes.c_char_p(log_filename.encode()),
+                              ctypes.c_char_p(model_filename.encode()), display_loss, display_tensorboad, save_model)
         else:
-            y = np.transpose(y)
+            y_train = np.transpose(y_train)
+            y_test = np.transpose(y_test)
             for i in range(3):
-                y_flat_ptr = y[i].flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+                y_train_flat_ptr = y_train[i].flatten().astype(ctypes.c_float).ctypes.data_as(
+                    ctypes.POINTER(ctypes.c_float))
+                y_test_flat_ptr = y_test[i].flatten().astype(ctypes.c_float).ctypes.data_as(
+                    ctypes.POINTER(ctypes.c_float))
                 if self.__type == "ml":
-                    self._train_model(x_flat_ptr, y_flat_ptr, data_size, sample_count, learning_rate, epochs, i)
+                    self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size,
+                                      x_test_flat_ptr, y_test_flat_ptr, train_data_size,
+                                      learning_rate, epochs, ctypes.c_char_p(log_filename.encode()), index=i)
 
-    def _train_model(self, x_flat_ptr: np.ndarray, y_flat_ptr: np.ndarray, data_size: int, sample_count: int,
-                     learning_rate: float, epochs: int, index=None):
+    def _train_model(self,
+                     x_train_flat_ptr: np.ndarray, y_train_flat_ptr: np.ndarray, train_data_size: int,
+                     x_test_flat_ptr: np.ndarray, y_test_flat_ptr: np.ndarray, test_data_size: int,
+                     learning_rate: float, epochs: int, log_filename, model_filename, display_loss, display_tensorboad, save_model, index=None):
         """
         Calls the lib to train the model
         """
         try:
             if self.__type == "ml":
-                my_lib.train_linear_model(self.model if index is None else self.model[index], x_flat_ptr, y_flat_ptr,
-                                          data_size, learning_rate, epochs)
+                my_lib.train_linear_model(self.model if index is None else self.model[index],
+                                          x_train_flat_ptr, y_train_flat_ptr, train_data_size,
+                                          x_test_flat_ptr, y_test_flat_ptr, test_data_size,
+                                          learning_rate, epochs, log_filename)
             elif self.__type == "mlp":
-                my_lib.train_mlp(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, epochs)
+                print("begin training the mlp")
+                my_lib.train_mlp(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size,
+                                 x_test_flat_ptr, y_test_flat_ptr, test_data_size,
+                                 learning_rate, epochs,
+                                 log_filename,
+                                 model_filename, display_loss, display_tensorboad, save_model)
+                print("finish training the mlp")
+
             elif self.__type == "rbf":
                 if self.__is_classification:
-                    my_lib.train_rbf_rosenblatt(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate,
-                                                epochs, sample_count)
+                    my_lib.train_rbf_rosenblatt(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size,
+                                                learning_rate, epochs, 3)
                 # else:
                 #     my_lib.train_rbf_regression(self.model, x_flat_ptr, y_flat_ptr, inputs_size, sample_count)
         except Exception as e:
@@ -168,7 +207,11 @@ class MyModel:
             else:
                 return [my_lib.predict_linear_model(self.model[i], point_pointer) for i in range(3)]
         elif self.__type == "mlp":
-            return my_lib.predict_mlp(self.model, point_pointer)[0]
+
+            if not self.__is_3_classes:
+                return my_lib.predict_mlp(self.model, point_pointer)[0]
+            else:
+                return np.ctypeslib.as_array(my_lib.predict_mlp(self.model, point_pointer), (3,))
         elif self.__type == "rbf":
             if self.__is_classification:
                 # var = my_lib.predict_rbf_classification(self.model, point_pointer)
