@@ -39,11 +39,6 @@ path = "examples/linear_model/classification/linear_multiple.rs"
 name = "lm_classification_xor"
 path = "examples/linear_model/classification/xor.rs"
 
-[[example]]
-name = "lm_training"
-path = "examples/training_with_datasets/train_linear_model.rs"
-
-
 # regression
 [[example]]
 name = "lm_regression_linear_simple_2D"

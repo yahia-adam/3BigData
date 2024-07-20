@@ -12,6 +12,7 @@
 use ndarray::{Array1, Array2};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use serde::{Deserialize, Serialize};
 use serde_json::{self, json};
 use std::collections::HashMap;
 use std::ffi::{c_char, c_float, CStr, CString};
@@ -19,12 +20,13 @@ use std::fs::File;
 use std::io::Write;
 use std::slice;
 use tensorboard_rs::summary_writer::SummaryWriter;
+use std::io::Read;
 
 const SEED: u64 = 42;
 const SAVE_INTERVAL: u32 = 10;
-const DISPLAY_INTERVAL: u32 = 100;
+const DISPLAY_INTERVAL: u32 = 10;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MultiLayerPerceptron {
     d: Vec<usize>,
     w: Vec<Vec<Vec<f32>>>,
@@ -32,7 +34,6 @@ pub struct MultiLayerPerceptron {
     deltas: Vec<Vec<f32>>,
     l: usize,
     is_classification: bool,
-    rng: StdRng,
 }
 
 fn tanh_activation(x: f32, derivative: bool) -> f32 {
@@ -73,6 +74,7 @@ fn init_mlp_internal(
     }
 
     let npl = unsafe { slice::from_raw_parts(npl, npl_size as usize) };
+    let mut rng = StdRng::seed_from_u64(SEED);
 
     let mut model = MultiLayerPerceptron {
         d: npl.iter().map(|&x| x as usize).collect(),
@@ -81,7 +83,6 @@ fn init_mlp_internal(
         deltas: Vec::with_capacity(npl.len()),
         l: npl.len() - 1,
         is_classification,
-        rng: StdRng::seed_from_u64(SEED),
     };
 
     model.w = vec![Vec::new(); model.l + 1];
@@ -91,7 +92,7 @@ fn init_mlp_internal(
                 let mut neuron_weights = vec![0.0];
                 neuron_weights.extend((1..=model.d[l]).map(|_| {
                     let limit = (6.0 / (model.d[l - 1] + model.d[l]) as f32).sqrt();
-                    model.rng.gen_range(-limit..limit)
+                    rng.gen_range(-limit..limit)
                 }));
                 neuron_weights
             })
@@ -280,17 +281,16 @@ pub extern "C" fn train_mlp(
     }
 
     let logfilename = format!(
-        "{}{}_epochs{}_lr={}",
+        "{}{}",
         "data/mlp/",
         {
             let c_str = unsafe { CStr::from_ptr(log_filename) };
-            let recipient = c_str.to_str().unwrap_or_else(|_| "_{}_{}_");
+            let recipient = c_str.to_str().unwrap_or_else(|_|  "no_name");
             recipient
         },
-        epochs,
-        learning_rate
     );
 
+    let mut rng = StdRng::seed_from_u64(SEED);
     let mut writer = SummaryWriter::new(&("../logs".to_string()));
     let mut map = HashMap::new();
 
@@ -299,7 +299,7 @@ pub extern "C" fn train_mlp(
         let mut train_loss: Vec<f64> = Vec::new();
 
         for _ in 1..=train_data_size {
-            let k = model.rng.gen_range(0..train_data_size) as usize;
+            let k = rng.gen_range(0..train_data_size) as usize;
             let sample_inputs = &x_train[k * input_dim..(k + 1) * input_dim];
             let sample_expected_outputs = &y_train[k * output_dim..(k + 1) * output_dim];
 
@@ -498,21 +498,19 @@ pub extern "C" fn save_mlp_model(
         }
     };
 
-    let model_str = unsafe {
-        let json_ptr = mlp_to_json(model);
-        if json_ptr.is_null() {
-            eprintln!("Failed to convert model to JSON");
+    let model_ref = unsafe { &*model };
+
+    let json_str = match serde_json::to_string_pretty(model_ref) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("JSON serialization error: {}", e);
             return false;
         }
-        let json_cstr = CStr::from_ptr(json_ptr);
-        let result = json_cstr.to_str().unwrap_or("").to_string();
-        let _ = CString::from_raw(json_ptr);
-        result
     };
 
     match File::create(path_str) {
         Ok(mut file) => {
-            if let Err(e) = write!(file, "{}", model_str) {
+            if let Err(e) = write!(file, "{}", json_str) {
                 eprintln!("Error writing to file: {}", e);
                 false
             } else {
@@ -525,4 +523,39 @@ pub extern "C" fn save_mlp_model(
             false
         }
     }
+}
+
+#[no_mangle]
+pub extern "C" fn loads_mlp_model(filepath: *const c_char) -> *mut MultiLayerPerceptron {
+    let path_str = match unsafe { CStr::from_ptr(filepath) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("Invalid filepath");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let mut file = match File::open(path_str) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Error opening file: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let mut json_str = String::new();
+    if let Err(e) = file.read_to_string(&mut json_str) {
+        eprintln!("Error reading file: {}", e);
+        return std::ptr::null_mut();
+    }
+
+    let model: MultiLayerPerceptron = match serde_json::from_str(&json_str) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("Error deserializing JSON: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    Box::into_raw(Box::new(model))
 }
