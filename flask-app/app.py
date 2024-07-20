@@ -48,23 +48,23 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/test_cases', methods=['GET', 'POST'])
-def test_cases():
-    models = ['Linear Model', 'Radial Basis Function', 'Support Vector Machine', 'Multi Layer Perceptron']
-    test_cases = ['Linear Simple', 'Linear Multiple', 'Multi Linear 3 Classes', 'XOR', 'Cross', 'Multi Cross',
-                  'Linear Simple 2D', 'Non Linear Simple 2D', 'Linear Simple 3D', 'Linear Tricky 3D',
-                  'Non Linear Simple 3D']
-    selected_model = None
-    selected_test_case = None
-
-    if request.method == 'POST':
-        selected_model = request.form.get('model')
-        selected_test_case = request.form.get('test_case')
-
-    return render_template('test_cases.html',
-                           models=models,
-                           test_cases=test_cases,
-                           selected_test_case=selected_test_case)
+# @app.route('/test_cases', methods=['GET', 'POST'])
+# def test_cases():
+#     models = ['Linear Model', 'Radial Basis Function', 'Support Vector Machine', 'Multi Layer Perceptron']
+#     test_cases = ['Linear Simple', 'Linear Multiple', 'Multi Linear 3 Classes', 'XOR', 'Cross', 'Multi Cross',
+#                   'Linear Simple 2D', 'Non Linear Simple 2D', 'Linear Simple 3D', 'Linear Tricky 3D',
+#                   'Non Linear Simple 3D']
+#     selected_model = None
+#     selected_test_case = None
+#
+#     if request.method == 'POST':
+#         selected_model = request.form.get('model')
+#         selected_test_case = request.form.get('test_case')
+#
+#     return render_template('test_cases.html',
+#                            models=models,
+#                            test_cases=test_cases,
+#                            selected_test_case=selected_test_case)
 
 
 if __name__ == '__main__':

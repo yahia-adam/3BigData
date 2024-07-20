@@ -207,13 +207,14 @@
         <div class="relative min-h-screen flex flex-col items-center justify-center selection:bg-[#FF2D20] selection:text-white">
             <div class="relative w-full max-w-2xl px-6 lg:max-w-7xl">
                 <header class="grid grid-cols-2 items-center gap-2 py-10 lg:grid-cols-3">
-                    <div class="topnav">
-                          <a class="active" href="#home">Home</a>
-                          <a href="{{ url_for('test_cases')}}">Test Cases</a>
-                    </div>
+{#                    <div class="topnav">#}
+{#                          <a class="active" href="#home">Home</a>#}
+{#                          <a href="{{ url_for('test_cases')}}">Test Cases</a>#}
+{#                    </div>#}
+                    <h4 style="text-align: center;padding-top: 40px;">Welcome to our Web App for Image Classification</h4>
                 </header>
                 <main class="mt-8">
-                    <div class="container centered-form">
+                    <div class="container centered-form" style="padding-top: 100px;">
                         <form id="uploadForm" action="{{ url_for('index') }}" method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="selectedAction" id="selectedAction" value="">
                             <div class="form-group file-input text-center pb-1">
@@ -223,14 +224,15 @@
                             <div class="button-group buttons">
                                 <div class="column">
                                     <button type="button" class="btn btn-custom" id="linearModelClassification">Linear Model Classification</button>
-                                    <button type="button" class="btn btn-custom"  id="mlpClassification">MLP Classification</button>
-                                    <button type="button" class="btn btn-custom" id="rbfClassification">RBF Classification</button>
-                                    <button type="button" class="btn btn-custom" id="svmClassification">SVM Classification</button>
+{#                                    <button type="button" class="btn btn-custom"  id="mlpClassification">MLP Classification</button>#}
+{#                                    <button type="button" class="btn btn-custom" id="rbfClassification">RBF Classification</button>#}
+{#                                    <button type="button" class="btn btn-custom" id="svmClassification">SVM Classification</button>#}
                                 </div>
                                 <div class="column">
-                                    <button type="button" class="btn btn-custom" id="linearModelRegression">Linear Model Regression</button>
-                                    <button type="button" class="btn btn-custom" id="mlpRegression">MLP Regression</button>
-                                    <button type="button" class="btn btn-custom" id="rbfRegression">RBF Regression</button>
+                                    <button type="button" class="btn btn-custom"  id="mlpClassification">MLP Classification</button>
+{#                                    <button type="button" class="btn btn-custom" id="linearModelRegression">Linear Model Regression</button>#}
+{#                                    <button type="button" class="btn btn-custom" id="mlpRegression">MLP Regression</button>#}
+{#                                    <button type="button" class="btn btn-custom" id="rbfRegression">RBF Regression</button>#}
                                 </div>
                             </div>
 
