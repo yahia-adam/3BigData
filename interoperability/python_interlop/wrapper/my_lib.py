@@ -8,7 +8,7 @@ my_lib = init_lib()
 
 class MyModel:
     def __init__(self, model_type: str, size: (int, tuple), is_classification: bool = False, is_3_classes: bool = False,
-                 cluster_size: int = 0, gamma: float = 0, kernel:int = 1):
+                 cluster_size: int = 0, gamma: float = 0, kernel:int = 1, kernel_value:float = 1.0,):
         if model_type not in ["ml", "mlp", "rbf", "svm"]:
             raise ValueError(f"Invalid model type: {model_type}")
         if not isinstance(size, (int, tuple)):
@@ -25,6 +25,7 @@ class MyModel:
         self.__cluster_size = cluster_size
         self.__gamma = gamma
         self.kernel = kernel
+        self.kernel_value = kernel_value
 
         if is_classification:
             self.__is_3_classes = is_3_classes
@@ -55,7 +56,7 @@ class MyModel:
         elif self.__type == "rbf":
             return my_lib.init_rbf(self.__dims, self.__cluster_size, self.__gamma)
         elif self.__type == "svm":
-            return my_lib.init_svm(self.__dims, self.kernel)
+            return my_lib.init_svm(self.__dims, self.kernel, self.kernel_value)
 
     def train(self, x: np.ndarray, y: np.ndarray, learning_rate: float, epochs: int = 1000):
         """

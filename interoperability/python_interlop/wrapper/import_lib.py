@@ -70,7 +70,7 @@ def init_lib():
 
     # --------------------------------------------- SVM ----------------------------------------------------------------
     # pub extern "C" fn init_svm(dimensions: u32, kernel: u32) -> *mut SVMModel
-    my_lib.init_svm.argtypes = [ctypes.c_uint32, ctypes.c_uint32]
+    my_lib.init_svm.argtypes = [ctypes.c_uint32, ctypes.c_uint32, ctypes.c_float]
     my_lib.init_svm.restype = ctypes.c_void_p
 
     # pub extern "C" fn train(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float, labels_pointer: *mut c_float,
