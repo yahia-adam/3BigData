@@ -8,12 +8,8 @@ use mylib::{
     save_linear_model,
     train_linear_model
 };
-<<<<<<< HEAD:mylib/examples/training/linear_model_training.rs
 
-use mylib::{image_resize_vec, load_dataset, predict_linear_model};
-=======
 use mylib::{image_resize_vec, load_ml_dataset, predict_linear_model};
->>>>>>> e8e0152d5ed0b77085660e0162401b0b5ea2c2ed:mylib/examples/training_with_datasets/train_linear_model.rs
 
 fn main() {
 

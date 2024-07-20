@@ -245,19 +245,12 @@ pub extern "C" fn train_mlp(
     }
     let model = unsafe { &mut *model };
 
-<<<<<<< HEAD
-    let x_test: Vec<f32> =
-        unsafe { Vec::from_raw_parts(x_test, test_data_size * input_col, test_data_size * input_col)};
-    let _y_test: Vec<f32> =
-        unsafe { Vec::from_raw_parts(y_test, test_data_size * output_col, test_data_size * output_col)};
-=======
     let input_dim = model.d[0];
     let output_dim = model.d[model.l];
     if train_data_size == 0 || test_data_size == 0 {
         eprintln!("Error: Data size cannot be zero");
         return false;
     }
->>>>>>> e8e0152d5ed0b77085660e0162401b0b5ea2c2ed
 
     let x_train = unsafe { slice::from_raw_parts(x_train, (train_data_size as usize) * input_dim) };
     let y_train =

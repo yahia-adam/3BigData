@@ -1,14 +1,8 @@
 use std::ffi::CString;
 #[allow(unused_imports)]
-<<<<<<< HEAD:mylib/examples/ml/classification/cross.rs
-use mylib::{
-    init_linear_model, load_linear_model, predict_linear_model, save_linear_model,
-    train_linear_model, LinearModel, generate_dataset
-};
-=======
-use mylib::{free_mlp, init_mlp, predict_mlp, save_mlp_model, train_mlp, MultiLayerPerceptron};
->>>>>>> e8e0152d5ed0b77085660e0162401b0b5ea2c2ed:mylib/examples/multilayer_perceptron/classification/cross.rs
 
+use mylib::{free_mlp, init_mlp, predict_mlp, save_mlp_model, train_mlp, MultiLayerPerceptron};
+use mylib::generate_dataset;
 
 fn main() {
     let (mut x, mut y) = generate_dataset();

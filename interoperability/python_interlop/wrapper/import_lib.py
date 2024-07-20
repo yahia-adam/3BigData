@@ -75,13 +75,11 @@ def init_lib():
     ]
 
     my_lib.free_linear_model.restype = None
-<<<<<<< HEAD
+
     # pub extern "C" fn load_linear_model(json_str_ptr: *const c_char) -> *mut LinearModel
     my_lib.load_linear_model.argtypes = [ctypes.POINTER(ctypes.c_char)]
     my_lib.load_linear_model.restype = ctypes.c_void_p
-=======
 
->>>>>>> e8e0152d5ed0b77085660e0162401b0b5ea2c2ed
     # -------------------------- init mlp --------------------------
     """
     init_mlp(
@@ -161,13 +159,11 @@ def init_lib():
     ]
     
     my_lib.free_mlp.restype = None
-<<<<<<< HEAD
+
     # pub extern "C" fn loads_mlp_model(filepath: *const c_char) -> *mut MultiLayerPerceptron
     my_lib.load_mlp.argtypes = [ctypes.POINTER(ctypes.c_char)]
     my_lib.load_mlp.restype = ctypes.c_void_p
-=======
 
->>>>>>> e8e0152d5ed0b77085660e0162401b0b5ea2c2ed
     # ---------------------------- init RBF --------------------------
     # pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *mut RadicalBasisFunctionNetwork
     my_lib.init_rbf.argtypes = [ctypes.c_int32, ctypes.c_int32, ctypes.c_float]

@@ -1,14 +1,10 @@
 use std::ffi::CString;
 #[allow(unused_imports)]
-<<<<<<< HEAD:mylib/examples/ml/classification/linear_multiple.rs
 use mylib::{
     init_linear_model, load_linear_model, predict_linear_model, save_linear_model,
     train_linear_model, LinearModel, generate_dataset
 };
 
-fn main() {
-    let (mut x, mut y) = generate_dataset();
-=======
 use mylib::{free_mlp, init_mlp, predict_mlp, save_mlp_model, train_mlp, MultiLayerPerceptron};
 
 fn main() {
@@ -124,7 +120,6 @@ fn main() {
         -1.0, -1.0,
     ];
 
->>>>>>> e8e0152d5ed0b77085660e0162401b0b5ea2c2ed:mylib/examples/multilayer_perceptron/classification/linear_multiple.rs
     let data_size = y.len();
 
     let x_flaten: Vec<f32> = x.clone().into_iter().flatten().collect();
