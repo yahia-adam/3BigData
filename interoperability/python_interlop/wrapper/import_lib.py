@@ -41,6 +41,7 @@ def init_lib():
     # pub extern "C" fn free_mlp(model: *mut MultiLayerPerceptron)
     my_lib.free_mlp.argtypes = [ctypes.c_void_p]
     my_lib.free_mlp.restype = None
+
     # ---------------------------- init RBF --------------------------
     # pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *mut RadicalBasisFunctionNetwork
     my_lib.init_rbf.argtypes = [ctypes.c_int32, ctypes.c_int32, ctypes.c_float]
@@ -66,5 +67,22 @@ def init_lib():
     # pub extern "C" fn free_rbf(model : *mut RadicalBasisFunctionNetwork)
     my_lib.free_rbf.argtypes = [ctypes.c_void_p]
     my_lib.free_rbf.restype = None
+
+    # --------------------------------------------- SVM ----------------------------------------------------------------
+    # pub extern "C" fn init_svm(dimensions: u32, kernel: u32) -> *mut SVMModel
+    my_lib.init_svm.argtypes = [ctypes.c_uint32, ctypes.c_uint32]
+    my_lib.init_svm.restype = ctypes.c_void_p
+
+    # pub extern "C" fn train(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float, labels_pointer: *mut c_float,
+    #   input_length: u32, c: f32)
+    my_lib.train_svm.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_uint32, ctypes.c_float]
+    my_lib.restype = None
+
+    # pub extern "C" fn predict_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float) -> f32
+    my_lib.predict_svm.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float)]
+    my_lib.predict_svm.restype = ctypes.c_float
+
+    my_lib.free_svm.argtypes = [ctypes.c_void_p]
+    my_lib.free_svm.restype = None
 
     return my_lib

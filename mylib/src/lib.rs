@@ -51,6 +51,15 @@ pub use radical_basis_function_network::{
 };
 
 #[allow(unused_imports)]
+pub use support_vector_machine::{
+    SVMModel,
+    init_svm,
+    train_svm,
+    predict_svm,
+    free_svm
+};
+
+#[allow(unused_imports)]
 pub use load_dataset::{
     load_dataset,
     image_resize_vec

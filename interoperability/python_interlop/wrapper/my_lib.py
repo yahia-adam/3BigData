@@ -8,8 +8,8 @@ my_lib = init_lib()
 
 class MyModel:
     def __init__(self, model_type: str, size: (int, tuple), is_classification: bool = False, is_3_classes: bool = False,
-                 cluster_size: int = 0, gamma: float = 0, ):
-        if model_type not in ["ml", "mlp", "rbf"]:
+                 cluster_size: int = 0, gamma: float = 0, kernel:int = 1):
+        if model_type not in ["ml", "mlp", "rbf", "svm"]:
             raise ValueError(f"Invalid model type: {model_type}")
         if not isinstance(size, (int, tuple)):
             raise ValueError("Size must be an integer or a list of integers")
@@ -24,6 +24,7 @@ class MyModel:
         self.__is_classification = is_classification
         self.__cluster_size = cluster_size
         self.__gamma = gamma
+        self.kernel = kernel
 
         if is_classification:
             self.__is_3_classes = is_3_classes
@@ -53,8 +54,10 @@ class MyModel:
             return my_lib.init_mlp(raw_size, len(self.__dims), self.__is_classification)
         elif self.__type == "rbf":
             return my_lib.init_rbf(self.__dims, self.__cluster_size, self.__gamma)
+        elif self.__type == "svm":
+            return my_lib.init_svm(self.__dims, self.kernel)
 
-    def train(self, x: np.ndarray, y: np.ndarray, learning_rate: float, epochs: int):
+    def train(self, x: np.ndarray, y: np.ndarray, learning_rate: float, epochs: int = 1000):
         """
         Trains the model on the given data
         :param x: Input data
@@ -106,6 +109,9 @@ class MyModel:
                                                 epochs, sample_count)
                 # else:
                 #     my_lib.train_rbf_regression(self.model, x_flat_ptr, y_flat_ptr, inputs_size, sample_count)
+            elif self.__type == "svm":
+                # the variable learning_rate is used for the parameter c of train_svm
+                my_lib.train_svm(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate)
         except Exception as e:
             print(f"Training failed due to {e}")
             raise
@@ -176,6 +182,8 @@ class MyModel:
                 return my_lib.predict_rbf_classification(self.model, point_pointer)
             else:
                 return my_lib.predict_rbf_regression(self.model, point_pointer)
+        elif self.__type == "svm":
+            return my_lib.predict_svm(self.model, point_pointer)
 
     def print_regression(self, start: float = 0, end: float = 3.2):
         x = [i * 0.1 for i in range(round(start * 10), round(end * 10))]
@@ -215,6 +223,8 @@ class MyModel:
                 my_lib.free_mlp(self.model)
             elif self.__type == "rbf":
                 my_lib.free_rbf(self.model)
+            elif self.__type == "svm":
+                my_lib.free_svm(self.model)
             self.model = None
 
     def __enter__(self):
