@@ -35,7 +35,7 @@ pub use linear_model::{
     predict_linear_model,
     free_linear_model,
     save_linear_model,
-    load_linear_model
+    loads_linear_model
 };
 
 #[allow(unused_imports)]
@@ -53,9 +53,11 @@ pub use radial_basis_function_network::{
 
 #[allow(unused_imports)]
 pub use load_dataset::{
-    load_ml_dataset,
-    load_mlp_dataset,
+    loads_mlp_dataset,
+    loads_ml_dataset,
+    create_serialized_mlp_dataset,
+    create_serialized_ml_dataset,
+    loads_serialized_ml_dataset,
+    loads_serialized_mlp_dataset,
     image_resize_vec,
-    create_serialized_dataset,
-    load_dataset,
 };

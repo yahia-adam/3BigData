@@ -93,16 +93,16 @@ def init_lib():
     my_lib.free_linear_model.restype = None
 
     """
-    load_linear_model(
+    loads_linear_model(
         json_str_ptr: *const c_char
     ) -> *mut LinearModel
     """
 
-    my_lib.load_linear_model.argtypes = [
+    my_lib.loads_linear_model.argtypes = [
         ctypes.POINTER(ctypes.c_char)
     ]
 
-    my_lib.load_linear_model.restype = ctypes.c_void_p
+    my_lib.loads_linear_model.restype = ctypes.c_void_p
 
     # -------------------------- mlp --------------------------
     """

@@ -303,7 +303,7 @@ pub extern "C" fn save_linear_model(model: *const LinearModel, filepath: *const 
 
 
 #[no_mangle]
-pub extern "C" fn load_linear_model(json_str_ptr: *const c_char) -> *mut LinearModel {
+pub extern "C" fn loads_linear_model(json_str_ptr: *const c_char) -> *mut LinearModel {
     let json_str_cstr = unsafe { CStr::from_ptr(json_str_ptr) };
     let json_str: &str = match json_str_cstr.to_str() {
         Ok(s) => s,

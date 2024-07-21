@@ -113,7 +113,7 @@ struct MLDataset {
     test_labels: Vec<f32>,
 }
 
-pub fn load_ml_dataset(base_dir: &str, metal_label: f32, paper_label: f32, plastic_label: f32) -> (Vec<Vec<f32>>, Vec<f32>) {
+pub fn loads_ml_dataset(base_dir: &str, metal_label: f32, paper_label: f32, plastic_label: f32) -> (Vec<Vec<f32>>, Vec<f32>) {
     let mut images = Vec::new();
     let mut labels = Vec::new();
     let classes = ["metal", "paper", "plastic"];
@@ -153,10 +153,10 @@ pub fn create_serialized_ml_dataset(base_dir: &str, output_file: &str, metal_lab
     let test_path = base_dir.join("test");
 
     println!("Loading train dataset...");
-    let (train_images, train_labels) = load_ml_dataset(train_path.to_str().unwrap(), metal_label, paper_label, plastic_label);
+    let (train_images, train_labels) = loads_ml_dataset(train_path.to_str().unwrap(), metal_label, paper_label, plastic_label);
 
     println!("Loading test dataset...");
-    let (test_images, test_labels) = load_ml_dataset(test_path.to_str().unwrap(), metal_label, paper_label, plastic_label);
+    let (test_images, test_labels) = loads_ml_dataset(test_path.to_str().unwrap(), metal_label, paper_label, plastic_label);
 
     let dataset = MLDataset {
         train_images,
@@ -177,7 +177,7 @@ pub fn create_serialized_ml_dataset(base_dir: &str, output_file: &str, metal_lab
     Ok(())
 }
 
-pub fn load_serialized_ml_dataset(input_file: &str) -> std::io::Result<(Vec<Vec<f32>>, Vec<f32>, Vec<Vec<f32>>, Vec<f32>)> {
+pub fn loads_serialized_ml_dataset(input_file: &str) -> std::io::Result<(Vec<Vec<f32>>, Vec<f32>, Vec<Vec<f32>>, Vec<f32>)> {
     println!("Loading and decompressing serialized dataset from {}", input_file);
     let file = File::open(input_file)?;
     let buf_reader = BufReader::new(file);

@@ -17,8 +17,18 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 my_lib = init_lib()
 
-MODEL_PATH = b"./best_model.json"
-mlp_model = my_lib.loads_mlp_model(MODEL_PATH)
+MLP_MODEL_PATH = b"./best_MLP_model.json"
+mlp_model = my_lib.loads_mlp_model(MLP_MODEL_PATH)
+
+# ML_PAPER_VS_OTHER_MODEL_PATH=[] b"./best_paper_vs_other_model.json"
+# ML_METAL_VS_OTHER_MODEL_PATH=[] b"./best_metal_vs_other_model.json"
+# ML_PLASTIC_VS_OTHER_MODEL_PATH=[] b"./best_plastic_vs_other_model.json"
+
+# paper_vs_other_model = my_lib.loads_linear_model(ML_PAPER_VS_OTHER_MODEL_PATH)
+# metal_vs_other_model = my_lib.loads_linear_model(ML_METAL_VS_OTHER_MODEL_PATH)
+# plastic_vs_other_model = my_lib.loads_linear_model(ML_PLASTIC_VS_OTHER_MODEL_PATH)
+
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -77,6 +87,7 @@ def index():
                 result = "Paper"
             elif max_index == 2:
                 result = "Plastic"
+        
         session['result'] = result
 
         return redirect(url_for('index'))
