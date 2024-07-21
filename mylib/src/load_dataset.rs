@@ -14,12 +14,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use rand::Rng;
 
 const IMAGE_SIZE: u32 = 32;
 
 
-pub fn shuffle_dataset(images: &mut Vec<Vec<f32>>, labels: &mut Vec<Vec<f32>>) {
+pub fn shuffle_dataset(images: &mut Vec<Vec<f32>>, labels: &mut Vec<f32>) {
     let mut rng = thread_rng();
     let mut indices: Vec<usize> = (0..images.len()).collect();
     indices.shuffle(&mut rng);
@@ -29,7 +28,7 @@ pub fn shuffle_dataset(images: &mut Vec<Vec<f32>>, labels: &mut Vec<Vec<f32>>) {
 
     for &i in &indices {
         shuffled_images.push(images[i].clone());
-        shuffled_labels.push(labels[i].clone());
+        shuffled_labels.push(labels[i]);
     }
 
     *images = shuffled_images;
@@ -40,14 +39,12 @@ pub fn image_resize_vec(filename: &str, image_size: u32) -> Vec<f32> {
     let path = PathBuf::from(filename);
     if path.is_file() {
         if let Ok(img) = image::open(&path) {
-            let mut img= img.resize_exact(image_size, image_size, image::imageops::FilterType::Lanczos3)
+            img.resize_exact(image_size, image_size, image::imageops::FilterType::Lanczos3)
                 .to_luma8()
                 .into_raw()
                 .into_iter()
                 .map(|p| p as f32 / 255.0)
-                .collect();
-            z_score_normalize(&mut img);
-            img
+                .collect()
         } else {
             eprintln!("Impossible d'ouvrir l'image: {:?}", path);
             vec![]
@@ -58,52 +55,8 @@ pub fn image_resize_vec(filename: &str, image_size: u32) -> Vec<f32> {
     }
 }
 
-fn z_score_normalize(data: &mut Vec<f32>) {
-    let mean: f32 = data.iter().sum::<f32>() / data.len() as f32;
-    let variance: f32 = data.iter().map(|&x| (x - mean).powi(2)).sum::<f32>() / data.len() as f32;
-    let std_dev = variance.sqrt();
-    for value in data.iter_mut() {
-        *value = (*value - mean) / std_dev;
-    }
-}
 
-pub fn load_mlp_dataset(base_dir: &str) -> (Vec<Vec<f32>>, Vec<Vec<f32>>) {
-    let mut images = Vec::new();
-    let mut labels = Vec::new();
-    let classes = ["metal", "paper", "plastic"];
-
-    for class in classes.iter() {
-        let class_dir = Path::new(base_dir).join(class);
-        for entry in fs::read_dir(class_dir).expect("Erreur lors de la lecture du répertoire") {
-            let path = entry.expect("Erreur lors de la lecture de l'entrée").path();
-            if path.is_file() {
-                if let Ok(img) = image::open(&path) {
-                    let img = img.resize_exact(IMAGE_SIZE, IMAGE_SIZE, image::imageops::FilterType::Lanczos3);
-                    let mut img_data = img.to_luma8().into_raw()
-                        .into_iter()
-                        .map(|p| p as f32 / 255.0)
-                        .collect();
-                    z_score_normalize(&mut img_data);
-                    images.push(img_data);
-
-                    labels.push(match *class {
-                        "metal" => vec![1f32, -1f32, -1f32],
-                        "paper" => vec![-1f32, 1f32, -1f32],
-                        "plastic" => vec![-1f32, -1f32, 1f32],
-                        _ => panic!("Classe inconnue"),
-                    });
-                } else {
-                    eprintln!("Impossible d'ouvrir l'image: {:?}", path);
-                }
-            }
-        }
-    }
-    shuffle_dataset(&mut images, &mut labels);
-    (images, labels)
-}
-
-
-pub fn load_ml_dataset(base_dir: &str, paper_label: f32, metal_label: f32, plastic_label: f32) -> (Vec<Vec<f32>>, Vec<f32>) {
+pub fn load_dataset(base_dir: &str, metal_label: f32, paper_label: f32, plastic_label: f32) -> (Vec<Vec<f32>>, Vec<f32>) {
     let mut images = Vec::new();
     let mut labels = Vec::new();
     let classes = ["metal", "paper", "plastic"];
@@ -122,9 +75,9 @@ pub fn load_ml_dataset(base_dir: &str, paper_label: f32, metal_label: f32, plast
 
                     images.push(img_data);
                     labels.push(match *class {
-                        "metal" => vec![metal_label],
-                        "paper" => vec![paper_label],
-                        "plastic" => vec![plastic_label],
+                        "metal" => metal_label,
+                        "paper" => paper_label,
+                        "plastic" => plastic_label,
                         _ => panic!("Classe inconnue"),
                     });
                 } else {
@@ -134,28 +87,5 @@ pub fn load_ml_dataset(base_dir: &str, paper_label: f32, metal_label: f32, plast
         }
     }
     shuffle_dataset(&mut images, &mut labels);
-    let labels = labels.into_iter().flatten().collect();
     (images, labels)
-}
-
-pub fn generate_dataset() -> (Vec<Vec<f32>>, Vec<f32>) {
-    let mut rng = rand::thread_rng();
-
-    let mut points1 = Vec::new();
-    for _ in 0..50 {
-        points1.push(vec![rng.gen::<f32>() * 0.9 + 1.0, rng.gen::<f32>() * 0.9 + 1.0]);
-    }
-
-    let mut points2 = Vec::new();
-    for _ in 0..50 {
-        points2.push(vec![rng.gen::<f32>() * 0.9 + 2.0, rng.gen::<f32>() * 0.9 + 2.0]);
-    }
-
-    let mut points = points1;
-    points.extend(points2);
-
-    let mut labels = vec![1.0; 50];
-    labels.extend(vec![-1.0; 50]);
-
-    (points, labels)
 }

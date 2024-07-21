@@ -49,7 +49,7 @@ class MyModel:
             return my_lib.init_linear_model(self.__dims, self.__is_classification, self.__is_3_classes)
         elif self.__type == "mlp":
             raw_size = np.ctypeslib.as_ctypes(np.array(self.__dims, dtype=ctypes.c_uint32))
-            return my_lib.init_mlp(raw_size, len(self.__dims), self.__is_classification)
+            return my_lib.init_mlp(raw_size, len(self.__dims), self.__is_classification, self.__is_3_classes)
         elif self.__type == "rbf":
             return my_lib.init_rbf(self.__dims, self.__cluster_size, self.__gamma)
 
@@ -115,7 +115,9 @@ class MyModel:
                 if self.__type == "ml":
                     self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size,
                                       x_test_flat_ptr, y_test_flat_ptr, train_data_size,
-                                      learning_rate, epochs, ctypes.c_char_p(log_filename.encode()), index=i)
+                                      learning_rate, epochs, ctypes.c_char_p(log_filename.encode()),
+                                      ctypes.c_char_p(model_filename.encode()), display_loss, display_tensorboad, save_model, index=i)
+
 
     def _train_model(self,
                      x_train_flat_ptr: np.ndarray, y_train_flat_ptr: np.ndarray, train_data_size: int,
@@ -129,7 +131,10 @@ class MyModel:
                 my_lib.train_linear_model(self.model if index is None else self.model[index],
                                           x_train_flat_ptr, y_train_flat_ptr, train_data_size,
                                           x_test_flat_ptr, y_test_flat_ptr, test_data_size,
-                                          learning_rate, epochs, log_filename)
+                                          learning_rate, epochs,
+                                          log_filename,
+                                          model_filename, display_loss, display_tensorboad, save_model
+                                          )
             elif self.__type == "mlp":
                 print("begin training the mlp")
                 my_lib.train_mlp(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size,
