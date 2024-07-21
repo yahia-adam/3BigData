@@ -17,9 +17,8 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 my_lib = init_lib()
 
-MODEL_PATH = b"../models/mlp/best_model.json"
+MODEL_PATH = b"./best_model.json"
 mlp_model = my_lib.loads_mlp_model(MODEL_PATH)
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
