@@ -280,15 +280,7 @@ pub extern "C" fn train_mlp(
         return false;
     }
 
-    let logfilename = format!(
-        "{}{}",
-        "data/mlp/",
-        {
-            let c_str = unsafe { CStr::from_ptr(log_filename) };
-            let recipient = c_str.to_str().unwrap_or_else(|_|  "no_name");
-            recipient
-        },
-    );
+    let logfilename = unsafe { CStr::from_ptr(log_filename).to_str().unwrap_or_else(|_|  "no_name") };
 
     let mut rng = StdRng::seed_from_u64(SEED);
     let mut writer = SummaryWriter::new(&("../logs".to_string()));

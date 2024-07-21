@@ -1,45 +1,36 @@
-#[allow(unused_imports)]
-use mylib::{free_mlp, init_mlp, predict_mlp, save_mlp_model, train_mlp, MultiLayerPerceptron};
-use mylib::load_mlp_dataset;
+use mylib::{free_mlp, init_mlp, train_mlp, create_serialized_dataset, load_dataset, MultiLayerPerceptron};
 use std::ffi::CString;
-use std::path::PathBuf;
 
-const LEARNING_RATE: f32 = 0.001;
+// const LEARNING_RATE: f32 = 0.001;
 const EPOCHS: u32 = 100;
-// const DIM: &[u32] = &[512, 3];
+const DIM: &[u32] = &[512, 3];
 
-// let dims = vec![
-//     // 2. Variation du nombre de couches
-//     vec![512, 3],                  // a. Une couche cachée
-//     vec![512, 256, 3],             // b. Deux couches cachées
-//     vec![512, 256, 128, 3],        // c. Trois couches cachées
 
-//     // 3. Variation du nombre de neurones
-//     vec![128, 64, 3],              // a. Peu de neurones
-//     vec![1024, 512, 3],            // b. Beaucoup de neurones
-
-//     // 4. Architecture symétrique
-//     vec![512, 256, 512, 3],
-
-//     // 5. Architecture avec goulot d'étranglement
-//     vec![512, 64, 512, 3],
-
-//     // 6. Test avec dropout (structure identique à 2b)
-//     vec![512, 256, 3]
-// ];
+// PS:  il faut cree les dossier suivant dans experimentation:
+    // - EXP_TITLE
+            // - models
+            // - logs
+const EXP_TITLE: &str = "Learning_rate";
 
 fn main() {
-    let base_dir = PathBuf::from("../dataset");
-    let train_path = base_dir.join("train");
-    let test_path = base_dir.join("test");
+    if let Err(e) = create_serialized_dataset("../dataset", "../serialized_dataset.bin") {
+        println!("Failed to create serialized dataset: {}", e);
+    }
+    let (train_images, train_labels, test_images, test_labels);
+    match load_dataset("../serialized_dataset.bin") {
+        Ok((ti, tl, tei, tel)) => {
+            println!("Dataset chargé avec succès !");
+            train_images = ti;
+            train_labels = tl;
+            test_images = tei;
+            test_labels = tel;
+        },
+        Err(e) => {
+            eprintln!("Erreur lors du chargement du dataset : {}", e);
+            std::process::exit(1);
+        }
+    }
 
-    println!("Loading train dataset...");
-    let (train_images, train_labels) = load_mlp_dataset(train_path.to_str().unwrap());
-
-    println!("Loading test dataset...");
-    let (test_images, test_labels) = load_mlp_dataset(test_path.to_str().unwrap());
-
-    println!("Finished loading dataset");
 
     let train_data_size = train_labels.len();
     let test_data_size = test_labels.len();
@@ -55,28 +46,28 @@ fn main() {
     let test_label_flatten: Vec<f32> = test_labels.into_iter().flatten().collect();
     let y_test_ptr: *const f32 = test_label_flatten.as_ptr();
 
-    let dims = vec![
-//     // 2. Variation du nombre de couches
-    vec![512, 3],                  // a. Une couche cachée
-    vec![512, 256, 3],             // b. Deux couches cachées
-    vec![512, 256, 128, 3],        // c. Trois couches cachées
+    let learning_rate = vec![
+        // Learning rate
+        0.1, 0.001, 0.0001, 0.00001,
     ];
 
-    for d in dims {
+    for lr in learning_rate {
         let mut npl: Vec<u32> = vec![input_size as u32];
-        npl.extend(d.clone());
+        npl.extend(DIM);
 
         let npl_size = npl.len();
         let model: *mut MultiLayerPerceptron = init_mlp(npl.as_ptr(), npl_size as u32, true);
 
         println!("Finished initializing model");
 
-        let model_prameter: String = format!("Variation_couches:dim={:?}epoch={}lr={}", d, EPOCHS, LEARNING_RATE);
-        let c_log_filename: CString =
-            CString::new(model_prameter.clone()).expect("CString::new failed");
-        let c_model_filename: CString =
-            CString::new(format!("../models/dataset/mlp/{}.json", model_prameter))
-                .expect("CString::new failed");
+        let model_prameter: String =
+            format!("dim={:?}epoch={}lr={}", DIM, EPOCHS, lr);
+
+        let c_model_path: CString = CString::new(format!("../experiences/{}/models/mlp/{}.json", EXP_TITLE, model_prameter))
+        .expect("CString::new failed");
+
+        let c_model_log_path: CString = CString::new(format!("../experiences/{}/logs/mlp/{}", EXP_TITLE, model_prameter))
+        .expect("CString::new failed");
 
         train_mlp(
             model,
@@ -86,10 +77,10 @@ fn main() {
             x_test_ptr,
             y_test_ptr,
             test_data_size as u32,
-            LEARNING_RATE,
+            lr,
             EPOCHS,
-            c_log_filename.as_ptr(),
-            c_model_filename.clone().as_ptr(),
+            c_model_log_path.as_ptr(),
+            c_model_path.clone().as_ptr(),
             true,
             true,
             true,

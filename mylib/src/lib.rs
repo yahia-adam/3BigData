@@ -56,4 +56,6 @@ pub use load_dataset::{
     load_ml_dataset,
     load_mlp_dataset,
     image_resize_vec,
+    create_serialized_dataset,
+    load_dataset,
 };
