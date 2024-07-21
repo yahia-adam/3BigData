@@ -10,7 +10,18 @@ use mylib::{
 use mylib::load_dataset;
 
 const LEARNING_RATE: f32 = 0.001;
-const EPOCHS: u32 = 100_000;
+const EPOCHS: u32 = 100;
+
+const MODEL:&str = "metal_vs_other"; 
+const DIM: &[f32] = &[1.0, -1.0, -1.0];
+
+// const MODEL:&str = "paper_vs_other";
+// const DIM: &[f32] = &[-1.0, 1.0, -1.0];
+
+// const MODEL:&str = "plastic_vs_other";
+// const DIM: &[f32] = &[-1.0, -1.0, 1.0];
+
+
 fn main() {
 
     let base_dir = PathBuf::from("../dataset");
@@ -19,15 +30,15 @@ fn main() {
 
     let (train_images, train_labels)  = load_dataset(
         train_path.to_str().unwrap(),
-        -1f32,
-        1f32,
-        -1f32
+        DIM[0],
+        DIM[1],
+        DIM[2]
     );
     let (test_images, test_labels) = load_dataset(
         test_path.to_str().unwrap(),
-        -1f32,
-        1f32,
-        -1f32
+        DIM[0],
+        DIM[1],
+        DIM[2]
     );
 
     let train_data_size = train_labels.len();
@@ -42,12 +53,12 @@ fn main() {
     let x_test_ptr: *const f32 = Vec::leak(test_images_flaten.clone()).as_ptr();
     let y_test_ptr: *const f32 = Vec::leak(test_labels.clone()).as_ptr();
 
-    let c_log_filename =  CString::new(format!("../logs/ml/metale_vs_other:lr={}epochs={}", LEARNING_RATE, EPOCHS)).expect("CString::new failed");
-    let c_model_filename = CString::new(format!("../models/ml/classification/metale_vs_other:lr={}epochs{}.json", LEARNING_RATE, EPOCHS)).expect("CString::new failed");
+    let c_log_filename =  CString::new(format!("../logs/ml/{}:lr={}epochs={}", MODEL, LEARNING_RATE, EPOCHS)).expect("CString::new failed");
+    let c_model_filename = CString::new(format!("../models/ml/classification/{}:lr={}epochs{}.json", MODEL, LEARNING_RATE, EPOCHS)).expect("CString::new failed");
 
-    let metal_vs_other: *mut LinearModel = init_linear_model(input_count as u32, true, false);
+    let model: *mut LinearModel = init_linear_model(input_count as u32, true, false);
     train_linear_model(
-        metal_vs_other,
+        model,
         x_train_ptr,
         y_train_ptr,
         train_data_size as u32,

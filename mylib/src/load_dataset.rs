@@ -56,7 +56,7 @@ pub fn image_resize_vec(filename: &str, image_size: u32) -> Vec<f32> {
 }
 
 
-pub fn load_dataset(base_dir: &str, paper_label: f32, metal_label: f32, plastic_label: f32) -> (Vec<Vec<f32>>, Vec<f32>) {
+pub fn load_dataset(base_dir: &str, metal_label: f32, paper_label: f32, plastic_label: f32) -> (Vec<Vec<f32>>, Vec<f32>) {
     let mut images = Vec::new();
     let mut labels = Vec::new();
     let classes = ["metal", "paper", "plastic"];
