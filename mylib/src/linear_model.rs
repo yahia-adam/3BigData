@@ -24,9 +24,8 @@ use tensorboard_rs::summary_writer::SummaryWriter;
 use rand::prelude::StdRng;
 
 const SEED: u64 = 42;
-const SAVE_INTERVAL: u32 = 500;
-const DISPLAY_INTERVAL: u32 = 1000;
-
+const SAVE_INTERVAL: u32 = 25;
+const DISPLAY_INTERVAL: u32 = 10;
 
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
@@ -146,6 +145,8 @@ pub extern "C" fn train_linear_model(
                         if display_tensorboad {
                             map.insert("train_loss".to_string(), train_loss as f32);
                             map.insert("test_loss".to_string(), test_loss as f32);
+                            map.insert("train_accuracy".to_string(), train_accuracy as f32);
+                            map.insert("test_accuracy".to_string(), test_accuracy as f32);
                         }
                         if epoch % DISPLAY_INTERVAL == 0 {
                             if display_loss {
@@ -175,6 +176,9 @@ pub extern "C" fn train_linear_model(
         }
         if display_tensorboad {
             writer.flush();
+        }
+        if save_model {
+            save_linear_model(model, model_filename);
         }
     } else {
         let mut i = 0;
