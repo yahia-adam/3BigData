@@ -4,7 +4,8 @@ import sys
 
 def init_lib():
     if sys.platform == 'win32':
-        lib_path = "../../mylib/target/release/mylib.dll"
+        lib_path = (r"C:/Users/csalhab/OneDrive/Online Sessions/3iabd1/projet "
+                    r"annuel/3BigData/mylib/target/release/mylib.dll")
     else:
         lib_path = "../../mylib/target/release/libmylib.so"
 

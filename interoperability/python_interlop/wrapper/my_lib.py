@@ -27,6 +27,7 @@ class MyModel:
         self.__gamma = gamma
 
         if is_classification:
+            # print(model_type)
             self.__is_3_classes = is_3_classes
         else:
             self.__is_3_classes = False
@@ -34,6 +35,7 @@ class MyModel:
         print("Initializing the model...")
 
         if not self.__is_3_classes or self.__type != "ml":
+            print(model_type)
             self.model = self._init_model()
         else:
             # Initialise les modèles linéaires en tant que regression pour pouvoir
@@ -55,9 +57,13 @@ class MyModel:
 
     def train(self, x_train: np.ndarray, y_train: np.ndarray, x_test=None, y_test=None,
               learning_rate=0.01, epochs=10_000, log_filename="model", model_filename="model",
-              display_loss=False, display_tensorboad=False, save_model=False):
+              display_loss=False, display_tensorboad=False, save_model=False, sample_count=3):
         """
         Trains the model on the given data
+        :param save_model:
+        :param display_tensorboad:
+        :param display_loss:
+        :param sample_count:
         :param model_filename:
         :param x_train: Input data
         :param x_test: Input data
@@ -102,7 +108,7 @@ class MyModel:
             y_train_flat_ptr = y_train.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             y_test_flat_ptr = y_test.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size, x_test_flat_ptr, y_test_flat_ptr,
-                              test_data_size, learning_rate, epochs, ctypes.c_char_p(log_filename.encode()),
+                              test_data_size, sample_count, learning_rate, epochs, ctypes.c_char_p(log_filename.encode()),
                               ctypes.c_char_p(model_filename.encode()), display_loss, display_tensorboad, save_model)
         else:
             y_train = np.transpose(y_train)
@@ -121,7 +127,7 @@ class MyModel:
 
     def _train_model(self,
                      x_train_flat_ptr: np.ndarray, y_train_flat_ptr: np.ndarray, train_data_size: int,
-                     x_test_flat_ptr: np.ndarray, y_test_flat_ptr: np.ndarray, test_data_size: int,
+                     x_test_flat_ptr: np.ndarray, y_test_flat_ptr: np.ndarray, test_data_size: int, sample_count: int,
                      learning_rate: float, epochs: int, log_filename, model_filename, display_loss, display_tensorboad, save_model, index=None):
         """
         Calls the lib to train the model
@@ -147,7 +153,7 @@ class MyModel:
             elif self.__type == "rbf":
                 if self.__is_classification:
                     my_lib.train_rbf_rosenblatt(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size,
-                                                learning_rate, epochs, 3)
+                                                learning_rate, epochs, sample_count)
                 # else:
                 #     my_lib.train_rbf_regression(self.model, x_flat_ptr, y_flat_ptr, inputs_size, sample_count)
         except Exception as e:

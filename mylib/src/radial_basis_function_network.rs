@@ -26,6 +26,8 @@ use pbr::ProgressBar;
 // use tensorboard_rs::summary_writer::SummaryWriter;
 // use std::collections::HashMap;
 
+const DISPLAY_INTERVAL: u32 = 10;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RadialBasisFunctionNetwork {
     weights : Vec<f32>,
@@ -153,11 +155,11 @@ pub extern "C" fn train_rbf_regression(model: *mut RadialBasisFunctionNetwork, s
     };
     let cluster_points = lloyd(sample_inputs_flat, cluster_num, 10, sample_count, inputs_size);
 
-    let mut pb = ProgressBar::new(sample_count as u64);
-    pb.show_tick = false;
-    pb.show_speed = false;
-    pb.show_percent = false;
-    pb.show_counter = false;
+    // let mut pb = ProgressBar::new(sample_count as u64);
+    // pb.show_tick = false;
+    // pb.show_speed = false;
+    // pb.show_percent = false;
+    // pb.show_counter = false;
 
     let mut phi = Array::default((sample_count as usize, cluster_num as usize));
 
@@ -189,7 +191,7 @@ pub extern "C" fn train_rbf_regression(model: *mut RadialBasisFunctionNetwork, s
     let final_loss = mse_epoch(expected_outputs, &y_pred);
     model.train_loss.push(final_loss);
 
-    pb.finish_println(&format!("Training completed - Final loss: {:.4}\n", final_loss));
+    // pb.finish_println(&format!("Training completed - Final loss: {:.4}\n", final_loss));
 }
 
 fn predict_rbf_regression_slice(model : &RadialBasisFunctionNetwork, inputs : &[f32])-> f32{
@@ -260,14 +262,6 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, s
 
     for epoch in 0..iterations_count as usize {
 
-        let mut pb = ProgressBar::new(sample_count as u64);
-        pb.format("[=>-]");
-        pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", epoch + 1, iterations_count, 0.0, 0.0).as_str());
-        pb.show_tick = true;
-        pb.show_speed = false;
-        pb.show_percent = false;
-        pb.show_counter = false;
-
         let mut y_true: Vec<f32> = Vec::with_capacity(sample_count as usize);
         let mut y_pred: Vec<f32> = Vec::with_capacity(sample_count as usize);
 
@@ -285,34 +279,39 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, s
                 model.weights[i] += alpha * (yk - gk) * rbf_value;
             }
 
-            let current_loss = mse_epoch(&y_true, &y_pred);
-            let current_accuracy = accuracy(&y_true, &y_pred);
-            pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", epoch + 1, iterations_count, current_loss, current_accuracy).as_str());
-            pb.inc();
         }
 
         // let current_loss = mse_epoch(&y_true, &y_pred);
         // let current_accuracy = accuracy(&y_true, &y_pred);
         // println!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2}", epoch + 1, iterations_count, current_loss, current_accuracy);
+
         let epoch_loss = mse_epoch(&y_true, &y_pred);
         let epoch_accuracy = accuracy(&y_true, &y_pred);
+
+        if epoch as u32 % DISPLAY_INTERVAL == 0 {
+            println!(
+                "Epoch {}/{}: Loss = {:.4}, Accuracy = {:.4}%",
+                epoch,
+                iterations_count,
+                epoch_loss,
+                epoch_accuracy * 100.0,
+            );
+        }
+
         model.train_loss.push(epoch_loss);
         model.train_accuracy.push(epoch_accuracy);
+
 
         // println!("epoch loss : {:?}, epoch accuracy : {:?}", epoch_loss, epoch_accuracy);
 
         // map.insert("loss".to_string(), epoch_loss);
         // writer.add_scalars("data/rbf", &map, epoch);
 
-        pb.finish_println(&format!(
-            "Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ",
-            epoch + 1, iterations_count, epoch_loss, epoch_accuracy
-        ));
-
+        }
         // println!("y_pred : {:?}, y_true : {:?}", y_pred, y_true);
 
-    }
 }
+
 
 #[no_mangle]
 pub extern "C" fn predict_rbf_classification(model : *mut RadialBasisFunctionNetwork, inputs : *mut f32)-> f32{
