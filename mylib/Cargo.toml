@@ -3,8 +3,8 @@ name = "mylib"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-crate-type = ["cdylib"]
+# [lib]
+# crate-type = ["cdylib"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -204,3 +204,7 @@ path = "examples/training_with_datasets/train_rbf.rs"
 [[example]]
 name = "train_svm"
 path = "examples/training_with_datasets/train_svm.rs"
+
+[[example]]
+name = "create_ml_dataset"
+path = "examples/training_with_datasets/create_ml_dataset.rs"

@@ -32,3 +32,4 @@ venv
 /flask-app/static/uploads
 /interoperability/__pycache__/
 serialized_dataset.bin
+serialized_datasets/
