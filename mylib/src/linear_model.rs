@@ -25,7 +25,7 @@ use rand::prelude::StdRng;
 
 const SEED: u64 = 42;
 const SAVE_INTERVAL: u32 = 25;
-const DISPLAY_INTERVAL: u32 = 10;
+const DISPLAY_INTERVAL: u32 = 25;
 
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
