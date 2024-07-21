@@ -24,6 +24,7 @@ pub use multilayer_perceptron::{
     predict_mlp,
     free_mlp,
     save_mlp_model,
+    loads_mlp_model
 };
 
 #[allow(unused_imports)]

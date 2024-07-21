@@ -161,8 +161,8 @@ def init_lib():
     my_lib.free_mlp.restype = None
 
     # pub extern "C" fn loads_mlp_model(filepath: *const c_char) -> *mut MultiLayerPerceptron
-    my_lib.load_mlp.argtypes = [ctypes.POINTER(ctypes.c_char)]
-    my_lib.load_mlp.restype = ctypes.c_void_p
+    my_lib.loads_mlp_model.argtypes = [ctypes.POINTER(ctypes.c_char)]
+    my_lib.loads_mlp_model.restype = ctypes.c_void_p
 
     # ---------------------------- init RBF --------------------------
     # pub extern "C" fn init_rbf(input_dim : i32, cluster_num : i32, gamma : f32) -> *mut RadicalBasisFunctionNetwork
