@@ -263,14 +263,17 @@ pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
 }
 
 #[no_mangle]
-pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {
+pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {    
     let model: &LinearModel = unsafe { model.as_ref().unwrap() };
     let json_obj: serde_json::Value = json!({
         "weights": model.weights,
         "weights_count": model.weights_count,
         "is_classification": model.is_classification,
+        "is_multiclass" : model.is_multiclass,
         "train_loss": model.train_loss,
         "test_loss": model.test_loss,
+        "train_accuracy": model.train_accuracy,
+        "test_accuracy": model.test_accuracy,
     });
     let json_str: String =
         serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
@@ -326,7 +329,6 @@ pub extern "C" fn loads_linear_model(json_str_ptr: *const c_char) -> *mut Linear
     let boxed_model: Box<LinearModel> = Box::new(model);
     Box::into_raw(boxed_model)
 }
-
 
 #[no_mangle]
 pub extern "C" fn free_linear_model(model: *mut LinearModel) {

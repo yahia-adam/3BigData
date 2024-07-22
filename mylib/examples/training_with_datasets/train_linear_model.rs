@@ -14,8 +14,8 @@ fn load_model_dataset(model: &str) -> std::io::Result<(Vec<Vec<f32>>, Vec<f32>, 
     loads_serialized_ml_dataset(&file_path)
 }
 
-const LEARNING_RATES: &[f32] = &[0.1, 0.01, 0.001, 0.0001];
-const EPOCHS: &[u32] = &[50, 100, 150, 200];
+const LEARNING_RATES: &[f32] = &[10e-8];
+const EPOCHS: &[u32] = &[1000];
  
 const OUTPUT_DIR: &str = "../serialized_datasets";
 
@@ -80,7 +80,7 @@ fn main() {
     let plastic_vs_other_x_test_ptr: *const f32 = Vec::leak(plastic_vs_other_test_images_flaten.clone()).as_ptr();
     let plastic_vs_other_y_test_ptr: *const f32 = Vec::leak(plastic_vs_other_test_labels.clone()).as_ptr();
 
-    let total_iterations = LEARNING_RATES.len() * EPOCHS.len() * 3; // 3 for the three models
+    let total_iterations = LEARNING_RATES.len() * EPOCHS.len() * 3;
     let mut current_iteration = 0;
 
     for lr in LEARNING_RATES {
@@ -91,7 +91,7 @@ fn main() {
             println!("Training metal_vs_other model: lr={}, epochs={}", lr, epoch);
             let c_log_filename =  CString::new(format!("../logs/ml/{}:lr={}epochs={}", "metal_vs_other", lr, epoch)).expect("CString::new failed");
             let c_model_filename = CString::new(format!("../models/ml/classification/{}:lr={}epochs{}.json", "metal_vs_other", lr, epoch)).expect("CString::new failed");
-            let model: *mut LinearModel = init_linear_model(metal_vs_other_input_count as u32, true, false);
+            let model: *mut LinearModel = init_linear_model(metal_vs_other_input_count as u32, true, true);
             train_linear_model(
                 model,
                 metal_vs_other_x_train_ptr,
@@ -117,7 +117,7 @@ fn main() {
             println!("Training paper_vs_other model: lr={}, epochs={}", lr, epoch);
             let c_log_filename =  CString::new(format!("../logs/ml/{}:lr={}epochs={}", "paper_vs_other", lr, epoch)).expect("CString::new failed");
             let c_model_filename = CString::new(format!("../models/ml/classification/{}:lr={}epochs{}.json", "paper_vs_other", lr, epoch)).expect("CString::new failed");
-            let model: *mut LinearModel = init_linear_model(paper_vs_other_input_count as u32, true, false);
+            let model: *mut LinearModel = init_linear_model(paper_vs_other_input_count as u32, true, true);
             train_linear_model(
                 model,
                 paper_vs_other_x_train_ptr,
@@ -143,7 +143,7 @@ fn main() {
             println!("Training plastic_vs_other model: lr={}, epochs={}", lr, epoch);
             let c_log_filename =  CString::new(format!("../logs/ml/{}:lr={}epochs={}", "plastic_vs_other", lr, epoch)).expect("CString::new failed");
             let c_model_filename = CString::new(format!("../models/ml/classification/{}:lr={}epochs{}.json", "plastic_vs_other", lr, epoch)).expect("CString::new failed");
-            let model: *mut LinearModel = init_linear_model(plastic_vs_other_input_count as u32, true, false);
+            let model: *mut LinearModel = init_linear_model(plastic_vs_other_input_count as u32, true, true);
             train_linear_model(
                 model,
                 plastic_vs_other_x_train_ptr,

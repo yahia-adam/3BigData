@@ -1,14 +1,7 @@
 use std::{fs, path::PathBuf};
 
-use mylib::{
-    loads_mlp_dataset,
-    loads_ml_dataset,
-    create_serialized_mlp_dataset,
-    create_serialized_ml_dataset,
-    loads_serialized_ml_dataset,
-    loads_serialized_mlp_dataset,
-    image_resize_vec,
-};
+use mylib::create_serialized_ml_dataset;
+
 const BASE_DIR: &str = "../dataset";
 const OUTPUT_DIR: &str = "../serialized_datasets";
 

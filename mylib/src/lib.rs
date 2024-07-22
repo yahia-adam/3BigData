@@ -14,7 +14,7 @@ pub mod linear_model;
 pub mod multilayer_perceptron;
 pub mod radial_basis_function_network;
 pub mod support_vector_machine;
-mod load_dataset;
+pub mod load_dataset;
 
 #[allow(unused_imports)]
 pub use multilayer_perceptron::{

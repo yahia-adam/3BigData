@@ -17,18 +17,16 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 my_lib = init_lib()
 
-MLP_MODEL_PATH = b"./best_MLP_model.json"
+ML_PAPER_VS_OTHER_MODEL_PATH= b"./models/best_paper_vs_other.json"
+ML_METAL_VS_OTHER_MODEL_PATH= b"./models/best_metal_vs_other.json"
+ML_PLASTIC_VS_OTHER_MODEL_PATH= b"./models/best_plastic_vs_other.json"
+
+paper_vs_other_model = my_lib.loads_linear_model(ML_PAPER_VS_OTHER_MODEL_PATH)
+metal_vs_other_model = my_lib.loads_linear_model(ML_METAL_VS_OTHER_MODEL_PATH)
+plastic_vs_other_model = my_lib.loads_linear_model(ML_PLASTIC_VS_OTHER_MODEL_PATH)
+
+MLP_MODEL_PATH = b"./models/best_mlp_model.json"
 mlp_model = my_lib.loads_mlp_model(MLP_MODEL_PATH)
-
-# ML_PAPER_VS_OTHER_MODEL_PATH=[] b"./best_paper_vs_other_model.json"
-# ML_METAL_VS_OTHER_MODEL_PATH=[] b"./best_metal_vs_other_model.json"
-# ML_PLASTIC_VS_OTHER_MODEL_PATH=[] b"./best_plastic_vs_other_model.json"
-
-# paper_vs_other_model = my_lib.loads_linear_model(ML_PAPER_VS_OTHER_MODEL_PATH)
-# metal_vs_other_model = my_lib.loads_linear_model(ML_METAL_VS_OTHER_MODEL_PATH)
-# plastic_vs_other_model = my_lib.loads_linear_model(ML_PLASTIC_VS_OTHER_MODEL_PATH)
-
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -74,20 +72,35 @@ def index():
             session['image'] = new_filename
 
         selected_action = request.form.get('selectedAction')
+    
+        image_vec = process_image(new_file_path, 32)
+        image_vec_p = np.ctypeslib.as_ctypes(np.array(image_vec, dtype=ctypes.c_float))
+            
         if selected_action == "mlp":
-            image_vec = process_image(new_file_path, 32)
-            image_vec_p = np.ctypeslib.as_ctypes(np.array(image_vec, dtype=ctypes.c_float))
             res_arr = my_lib.predict_mlp(mlp_model, image_vec_p)
             tab = [res_arr[0], res_arr[1], res_arr[2]]
             max_value = max(tab)
             max_index = tab.index(max_value)
+
             if max_index == 0:
                 result = "Metal"
             elif max_index == 1:
                 result = "Paper"
             elif max_index == 2:
                 result = "Plastic"
-        
+
+        if selected_action == "lm":
+            metal_predict = my_lib.predict_linear_model(metal_vs_other_model, image_vec_p)
+            paper_predict = my_lib.predict_linear_model(paper_vs_other_model, image_vec_p)
+            plastic_predict = my_lib.predict_linear_model(plastic_vs_other_model, image_vec_p)
+
+            if (metal_predict > paper_predict and metal_predict > plastic_predict ):
+                result = "Metal"
+            elif (paper_predict > metal_predict and paper_predict > plastic_predict ):
+              result = "Paper"
+            elif (plastic_predict > metal_predict and plastic_predict > paper_predict):
+              result = "Plastic"
+
         session['result'] = result
 
         return redirect(url_for('index'))
