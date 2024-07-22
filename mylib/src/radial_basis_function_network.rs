@@ -22,8 +22,8 @@ use libm::*;
 use std::fs::File;
 use std::io::{Write, BufReader};
 use std::os::raw::c_char;
-use tensorboard_rs::summary_writer::SummaryWriter;
-use std::collections::HashMap;
+// use tensorboard_rs::summary_writer::SummaryWriter;
+// use std::collections::HashMap;
 
 const DISPLAY_INTERVAL: u32 = 10;
 
@@ -301,8 +301,8 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, s
         model.centers.truncate(actual_cluster_num);
     }
 
-    let mut writer = SummaryWriter::new(&("../logs".to_string()));
-    let mut map = HashMap::new();
+    // let mut writer = SummaryWriter::new(&("../logs".to_string()));
+    // let mut map = HashMap::new();
 
     for epoch in 0..(iterations_count + 1) as usize {
 
@@ -360,8 +360,8 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, s
 
         // println!("epoch loss : {:?}, epoch accuracy : {:?}", epoch_loss, epoch_accuracy);
 
-        map.insert("loss".to_string(), epoch_loss);
-        writer.add_scalars("data/rbf", &map, epoch);
+        // map.insert("loss".to_string(), epoch_loss);
+        // writer.add_scalars("data/rbf", &map, epoch);
 
     }
     // println!("y_pred : {:?}, y_true : {:?}", y_pred, y_true);

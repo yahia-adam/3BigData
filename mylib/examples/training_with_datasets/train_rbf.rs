@@ -34,18 +34,18 @@ fn interpret_prediction(pred: f32) -> &'static str {
 fn main(){
     let base_dir = PathBuf::from("../dataset");
     let train_path = base_dir.join("train");
-    // let test_path = base_dir.join("test");
+    let test_path = base_dir.join("test");
 
     println!("Loading train dataset...");
     let (train_images, train_labels) = load_mlp_dataset(train_path.to_str().unwrap());
 
-    // println!("Loading test dataset...");
-    // let (test_images, test_labels) = load_mlp_dataset(test_path.to_str().unwrap());
+    println!("Loading test dataset...");
+    let (test_images, test_labels) = load_mlp_dataset(test_path.to_str().unwrap());
 
     println!("Finished loading dataset");
 
     let train_data_size = train_labels.len();
-    // let test_data_size = test_labels.len();
+    //let test_data_size = test_labels.len();
     let input_size = train_images[0].len();
 
     let train_images_flatten: Vec<f32> = train_images.into_iter().flatten().collect();
@@ -53,18 +53,14 @@ fn main(){
     let train_labels_flatten: Vec<f32> = train_labels.into_iter().flatten().collect();
     let y_train_ptr: *const f32 = train_labels_flatten.as_ptr();
 
-    // let test_images_flatten: Vec<f32> = test_images.into_iter().flatten().collect();
-    // let x_test_ptr: *const f32 = test_images_flatten.as_ptr();
-    // let test_label_flatten: Vec<f32> = test_labels.into_iter().flatten().collect();
-    // let y_test_ptr: *const f32 = test_label_flatten.as_ptr();
+    //let test_images_flatten: Vec<f32> = test_images.into_iter().flatten().collect();
+    //let test_label_flatten: Vec<f32> = test_labels.into_iter().flatten().collect();
 
     let model: *mut RadialBasisFunctionNetwork = init_rbf(input_size as i32, CLUSTER_NUM as i32, GAMMA);
 
     println!("Finished initializing model");
 
     let model_parameter: String = format!("Variation_couches:dim={:?}epoch={}lr={}", GAMMA, EPOCHS, LEARNING_RATE);
-    // let c_log_filename: CString =
-    //     CString::new(model_parameter.clone()).expect("CString::new failed");
     let c_model_filename: CString =
         CString::new(format!("../models/dataset/rbf/{}.json", model_parameter))
             .expect("CString::new failed");
