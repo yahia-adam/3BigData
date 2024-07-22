@@ -11,6 +11,7 @@
 /* ********************************************************************************************************* */
 
 use std::ffi::c_float;
+use std::slice;
 
 use itertools::Itertools;
 use libm::expf;
@@ -58,21 +59,6 @@ fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
     } else { 0.0 }
 }
 
-// fn normalize_data(data: &mut Vec<Vec<f32>>) {
-//     let features = data[0].len();
-//     for feature in 0..features {
-//         let mut min = f32::MAX;
-//         let mut max = f32::MIN;
-//         for sample in data.iter() {
-//             min = min.min(sample[feature]);
-//             max = max.max(sample[feature]);
-//         }
-//         for sample in data.iter_mut() {
-//             sample[feature] = (sample[feature] - min) / (max - min);
-//         }
-//     }
-// }
-
 #[no_mangle]
 #[allow(dead_code)]
 pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float, labels_pointer: *mut c_float, input_length: u32, c: f32) {
@@ -81,13 +67,13 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     let dimensions: usize = model.dimensions as usize;
     let input_length: usize = input_length as usize;
 
-    let flat_input = unsafe { Vec::from_raw_parts(inputs_pointer, dimensions * input_length, dimensions * input_length) };
+    let flat_input = unsafe { slice::from_raw_parts(inputs_pointer, dimensions * input_length) };
     let inputs: Vec<Vec<f32>> = flat_input.chunks(dimensions).map(|c| c.to_vec()).collect();
 
-    let labels: Vec<c_float> = unsafe { Vec::from_raw_parts(labels_pointer, input_length, input_length) };
+    let labels: Vec<c_float> = unsafe { slice::from_raw_parts(labels_pointer, input_length) }.to_vec();
 
 
-    let big_matrix: Vec<Vec<f64>> =
+    let mut big_matrix: Vec<Vec<f64>> =
     if model.kernel == 1 {
         let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
         for i in 0..dimensions {
@@ -104,12 +90,13 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
             }
         }
 
-        for i in 0..input_length + 1 {
-            big_matrix[i][i] += 1e-6;
-        }
-
         big_matrix
     };
+
+    for i in 0..big_matrix.len() {
+        big_matrix[i][i] += 1e-6;
+    }
+
 
 
     println!("P: {:?}", big_matrix);
@@ -122,9 +109,9 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     if model.kernel == 1 {
         let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
         for row in 0..input_length {
-            for col in 0..input_length {
-                let kernel_value = get_kernel(model, &inputs[row], &inputs[col]);
-                a_matrix[row][col] = (labels[row] * labels[col] * kernel_value) as f64
+            for col in 0..dimensions {
+
+                a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64
             }
             a_matrix[row][dimensions] = labels[row] as f64;
             a_matrix[row][row + dimensions + 1] = -1f64;
@@ -242,6 +229,8 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     model.support_vectors = support_vectors;
     model.support_labels = support_labels;
     model.alphas = alphas;
+
+    println!("Alphas saved, {}", input_length);
 }
 
 pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f32 {
@@ -254,8 +243,9 @@ pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f32 {
 #[no_mangle]
 #[allow(dead_code)]
 pub extern "C" fn predict_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float) -> c_float {
-    let model: &mut SVMModel = unsafe { model_pointer.as_mut().unwrap() };
-    let inputs: Vec<c_float> = unsafe { std::slice::from_raw_parts(inputs_pointer, model.dimensions as usize).to_vec() };
+    let model: &mut SVMModel = unsafe { &mut *model_pointer };
+    let inputs_slice: &[f32] = unsafe { std::slice::from_raw_parts(inputs_pointer, model.dimensions as usize) };
+    let inputs:Vec<f32> = inputs_slice.to_vec();
 
     //let result: f32 = inputs.iter().zip(&model.weight).map(|(i, w)| i * w).sum::<f32>() + model.biais;
 
@@ -278,5 +268,6 @@ pub extern "C" fn free_svm(model_pointer: *mut SVMModel) {
         unsafe {
             let _ = Box::from_raw(model_pointer);
         }
+        println!("Free")
     }
 }

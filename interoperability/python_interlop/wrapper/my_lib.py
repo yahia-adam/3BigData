@@ -124,7 +124,9 @@ class MyModel:
             self.print_regression(start=start_x, end=end_x)
 
     def print_classification(self, end_x, end_y, step, start_x=0, start_y=0):
+        print("Printing the classification results...")
         background_points = np.mgrid[start_x:end_x:step, start_y:end_y:step].reshape(2, -1).T
+        background_points = np.round(background_points, decimals=3)
         background_colors = np.array(list(map(self._get_prediction_color, background_points)))
         # np.apply_along_axis(self._get_prediction_color, 1, background_points)
 
