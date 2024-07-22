@@ -1,11 +1,5 @@
 use std::ffi::CString;
-#[allow(unused_imports)]
-use mylib::{
-    init_linear_model, load_linear_model, predict_linear_model, save_linear_model,
-    train_linear_model, LinearModel, generate_dataset
-};
-
-use mylib::{free_mlp, init_mlp, predict_mlp, save_mlp_model, train_mlp, MultiLayerPerceptron};
+use mylib::{free_mlp, init_mlp, predict_mlp, train_mlp, MultiLayerPerceptron};
 
 fn main() {
     let x: Vec<Vec<f32>> = vec![

@@ -22,7 +22,7 @@ use libm::*;
 use std::fs::File;
 use std::io::{Write, BufReader};
 use std::os::raw::c_char;
-use pbr::ProgressBar;
+// use pbr::ProgressBar;
 // use tensorboard_rs::summary_writer::SummaryWriter;
 // use std::collections::HashMap;
 

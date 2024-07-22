@@ -1,7 +1,6 @@
 use std::ffi::CString;
-#[allow(unused_imports)]
 use mylib::{
-    init_linear_model, load_linear_model, predict_linear_model, save_linear_model,
+    init_linear_model,
     train_linear_model, LinearModel,
 };
 const LEARNING_RATE: f32 = 0.001;
