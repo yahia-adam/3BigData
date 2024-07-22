@@ -35,13 +35,11 @@ class MyModel:
         print("Initializing the model...")
         # print(f"Initializing RBF with dims={self.__dims}, cluster_size={self.__cluster_size}, gamma={self.__gamma}")
 
-        if not self.__is_3_classes or self.__type != "ml":
+        if not self.__is_3_classes or self.__type not in ["ml", "rbf"]:
             # print(model_type)
             self.model = self._init_model()
         else:
-            # Initialise les modèles linéaires en tant que regression pour pouvoir
-            # comparer les résultat de chaque One vs Rest
-            # print(model_type)
+            # Initialise 3 modèles pour comparer les résultats de chaque One vs Rest
             self.model = [self._init_model() for _ in range(3)]
 
     def _init_model(self):
@@ -110,7 +108,7 @@ class MyModel:
         x_test_flat = x_test.flatten().astype(ctypes.c_float)
         x_test_flat_ptr = x_test_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
-        if not self.__is_3_classes or self.__type != "ml":
+        if not self.__is_3_classes or self.__type not in ["ml", "rbf"]:
             y_train_flat_ptr = y_train.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             y_test_flat_ptr = y_test.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size, x_test_flat_ptr, y_test_flat_ptr,
@@ -125,13 +123,13 @@ class MyModel:
                     ctypes.POINTER(ctypes.c_float))
                 y_test_flat_ptr = y_test[i].flatten().astype(ctypes.c_float).ctypes.data_as(
                     ctypes.POINTER(ctypes.c_float))
-                if self.__type == "ml":
-                    # print("je rentre ici ?")
-                    self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size,
-                                      x_test_flat_ptr, y_test_flat_ptr, train_data_size,
-                                      learning_rate, epochs, ctypes.c_char_p(log_filename.encode()),
-                                      ctypes.c_char_p(model_filename.encode()), display_loss, display_tensorboard,
-                                      save_model, index=i)
+
+                self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size, x_test_flat_ptr,
+                                  y_test_flat_ptr,
+                                  test_data_size, sample_count, learning_rate, epochs,
+                                  ctypes.c_char_p(log_filename.encode()),
+                                  ctypes.c_char_p(model_filename.encode()), display_loss, display_tensorboard,
+                                  save_model, index=i)
 
     def _train_model(self,
                      x_train_flat_ptr: np.ndarray, y_train_flat_ptr: np.ndarray, train_data_size: int,
@@ -163,10 +161,12 @@ class MyModel:
                 # print("je rentre ici ?")
                 if self.__is_classification:
                     # print(sample_count)
-                    my_lib.train_rbf_rosenblatt(self.model, x_train_flat_ptr, y_train_flat_ptr,
-                                                epochs, learning_rate, self.__dims, sample_count)
+                    my_lib.train_rbf_rosenblatt(self.model if index is None else self.model[index]
+                                                , x_train_flat_ptr, y_train_flat_ptr, epochs, learning_rate,
+                                                self.__dims, sample_count)
                 else:
-                    my_lib.train_rbf_regression(self.model, x_train_flat_ptr, y_train_flat_ptr,self.__dims, sample_count)
+                    my_lib.train_rbf_regression(self.model, x_train_flat_ptr, y_train_flat_ptr, self.__dims,
+                                                sample_count)
         except Exception as e:
             print(f"Training failed due to {e}")
             raise
@@ -230,7 +230,6 @@ class MyModel:
             else:
                 return [my_lib.predict_linear_model(self.model[i], point_pointer) for i in range(3)]
         elif self.__type == "mlp":
-
             if not self.__is_3_classes:
                 return my_lib.predict_mlp(self.model, point_pointer)[0]
             else:
@@ -240,9 +239,12 @@ class MyModel:
                 # var = my_lib.predict_rbf_classification(self.model, point_pointer)
                 # print(var)
                 # print(point_pointer)
-                prediction = my_lib.predict_rbf_classification(self.model, point_pointer)
+                # prediction = my_lib.predict_rbf_classification(self.model, point_pointer)
                 # print(f"Predicting for point {point}, result: {prediction}")
-                return my_lib.predict_rbf_classification(self.model, point_pointer)
+                if not self.__is_3_classes:
+                    return my_lib.predict_rbf_classification(self.model, point_pointer)
+                else:
+                    return [my_lib.predict_rbf_regression(self.model[i], point_pointer) for i in range(3)]
             else:
                 return my_lib.predict_rbf_regression(self.model, point_pointer)
 
@@ -283,7 +285,12 @@ class MyModel:
             elif self.__type == "mlp":
                 my_lib.free_mlp(self.model)
             elif self.__type == "rbf":
-                my_lib.free_rbf(self.model)
+                if not self.__is_3_classes:
+                    my_lib.free_rbf(self.model)
+                else:
+                    for i in range(3):
+                        my_lib.free_rbf(self.model[i])
+
             self.model = None
 
     def __enter__(self):
