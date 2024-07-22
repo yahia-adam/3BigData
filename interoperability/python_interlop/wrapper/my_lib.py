@@ -165,8 +165,8 @@ class MyModel:
                     # print(sample_count)
                     my_lib.train_rbf_rosenblatt(self.model, x_train_flat_ptr, y_train_flat_ptr,
                                                 epochs, learning_rate, self.__dims, sample_count)
-                # else:
-                #     my_lib.train_rbf_regression(self.model, x_flat_ptr, y_flat_ptr, inputs_size, sample_count)
+                else:
+                    my_lib.train_rbf_regression(self.model, x_train_flat_ptr, y_train_flat_ptr,self.__dims, sample_count)
         except Exception as e:
             print(f"Training failed due to {e}")
             raise
