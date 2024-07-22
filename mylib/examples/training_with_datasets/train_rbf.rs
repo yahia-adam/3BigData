@@ -7,6 +7,8 @@ const LEARNING_RATE: f32 = 0.001;
 const EPOCHS: u32 = 100;
 const CLUSTER_NUM: u32 = 100;
 
+const GAMMA: f32 = 1.0;
+
 fn preprocess_image(path: &str) -> Vec<f32> {
 
     let img = image::open(path).expect("Failed to open image");
@@ -17,6 +19,16 @@ fn preprocess_image(path: &str) -> Vec<f32> {
     let flat_img: Vec<f32> = img_resized.into_vec().iter().map(|&p| p as f32 / 255.0).collect();
 
     flat_img
+}
+
+fn interpret_prediction(pred: f32) -> &'static str {
+    if pred > 0.0 {
+        "metal"
+    } else if pred < -0.5 {
+        "plastic"
+    } else {
+        "paper"
+    }
 }
 
 fn main(){
@@ -46,69 +58,65 @@ fn main(){
     // let test_label_flatten: Vec<f32> = test_labels.into_iter().flatten().collect();
     // let y_test_ptr: *const f32 = test_label_flatten.as_ptr();
 
+    let model: *mut RadialBasisFunctionNetwork = init_rbf(input_size as i32, CLUSTER_NUM as i32, GAMMA);
 
-    let gamma = vec![
-        0.001, 0.01, 0.1, 1.0
-    ];
+    println!("Finished initializing model");
 
-    for g in gamma {
-        let model: *mut RadialBasisFunctionNetwork = init_rbf(input_size as i32, CLUSTER_NUM as i32, g);
+    let model_parameter: String = format!("Variation_couches:dim={:?}epoch={}lr={}", GAMMA, EPOCHS, LEARNING_RATE);
+    // let c_log_filename: CString =
+    //     CString::new(model_parameter.clone()).expect("CString::new failed");
+    let c_model_filename: CString =
+        CString::new(format!("../models/dataset/rbf/{}.json", model_parameter))
+            .expect("CString::new failed");
 
-        println!("Finished initializing model");
+    train_rbf_rosenblatt(
+        model,
+        x_train_ptr as *mut f32,
+        y_train_ptr as *mut f32,
+        EPOCHS as i32,
+        LEARNING_RATE,
+        input_size as i32,
+        train_data_size as i32,
+    );
 
-        let model_parameter: String = format!("Variation_couches:dim={:?}epoch={}lr={}", g, EPOCHS, LEARNING_RATE);
-        // let c_log_filename: CString =
-        //     CString::new(model_parameter.clone()).expect("CString::new failed");
-        let c_model_filename: CString =
-            CString::new(format!("../models/dataset/rbf/{}.json", model_parameter))
-                .expect("CString::new failed");
+    save_rbf_model(model, c_model_filename.as_ptr());
 
-        train_rbf_rosenblatt(
-            model,
-            x_train_ptr as *mut f32,
-            y_train_ptr as *mut f32,
-            EPOCHS as i32,
-            LEARNING_RATE,
-            input_size as i32,
-            train_data_size as i32,
-        );
+    println!("metal");
+    let metal_paths = vec!["../dataset/test/metal/metal_10.png",
+                           "../dataset/test/metal/metal_1281.jpg",
+                           "../dataset/test/metal/metal_1444.jpg"];
 
-        save_rbf_model(model, c_model_filename.as_ptr());
-
-        println!("metal");
-        let metal_paths = vec!["../dataset/test/metal/metal_10.png",
-                               "../dataset/test/metal/metal_1281.jpg",
-                               "../dataset/test/metal/metal_1444.jpg"];
-
-        for path in metal_paths {
-            let preprocessed_image = preprocess_image(path);
-            let test = predict_rbf_classification(model, preprocessed_image.as_ptr() as *mut f32);
-            println!("{} - prediction = {}", path, test);
-        }
-
-        println!("paper");
-        let paper_paths = vec!["../dataset/test/paper/paper_10.jpg",
-                               "../dataset/test/paper/paper_1087.jpg",
-                               "../dataset/test/paper/paper_1305.jpg"];
-
-        for path in paper_paths {
-            let preprocessed_image = preprocess_image(path);
-            let test = predict_rbf_classification(model, preprocessed_image.as_ptr() as *mut f32);
-            println!("{} - prediction = {}", path, test);
-        }
-
-        println!("plastic");
-        let plastic_paths = vec!["../dataset/test/plastic/plastic_10.jpg",
-                                 "../dataset/test/plastic/plastic_1354.jpg",
-                                 "../dataset/test/plastic/plastic_1638.jpg"];
-
-        for path in plastic_paths {
-            let preprocessed_image = preprocess_image(path);
-            let test = predict_rbf_classification(model, preprocessed_image.as_ptr() as *mut f32);
-            println!("{} - prediction = {}", path, test);
-        }
-
-        free_rbf(model);
+    for path in metal_paths {
+        let preprocessed_image = preprocess_image(path);
+        let test = predict_rbf_classification(model, preprocessed_image.as_ptr() as *mut f32);
+        let class = interpret_prediction(test);
+        println!("{} - prediction = {}", path, class);
     }
 
+    println!("paper");
+    let paper_paths = vec!["../dataset/test/paper/paper_10.jpg",
+                           "../dataset/test/paper/paper_1087.jpg",
+                           "../dataset/test/paper/paper_1305.jpg"];
+
+    for path in paper_paths {
+        let preprocessed_image = preprocess_image(path);
+        let test = predict_rbf_classification(model, preprocessed_image.as_ptr() as *mut f32);
+        let class = interpret_prediction(test);
+        println!("{} - prediction = {}", path, class);
+    }
+
+    println!("plastic");
+    let plastic_paths = vec!["../dataset/test/plastic/plastic_10.jpg",
+                             "../dataset/test/plastic/plastic_1354.jpg",
+                             "../dataset/test/plastic/plastic_1638.jpg"];
+
+    for path in plastic_paths {
+        let preprocessed_image = preprocess_image(path);
+        let test = predict_rbf_classification(model, preprocessed_image.as_ptr() as *mut f32);
+        let class = interpret_prediction(test);
+        println!("{} - prediction = {}", path, class);
+    }
+
+    free_rbf(model);
 }
+
