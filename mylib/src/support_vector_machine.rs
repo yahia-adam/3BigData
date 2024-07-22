@@ -25,7 +25,7 @@ pub struct SVMModel {
     kernel_value: f32,
     support_vectors: Vec<Vec<f32>>,
     support_labels: Vec<f32>,
-    alphas: Vec<f32>
+    alphas: Vec<f32>,
 }
 
 #[no_mangle]
@@ -87,53 +87,100 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     let labels: Vec<c_float> = unsafe { Vec::from_raw_parts(labels_pointer, input_length, input_length) };
 
 
-    let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
-    for i in 0..dimensions {
-        big_matrix[i][i] = 1f64;
-    }
+    let big_matrix: Vec<Vec<f64>> =
+    if model.kernel == 1 {
+        let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
+        for i in 0..dimensions {
+            big_matrix[i][i] = 1f64;
+        }
+
+        big_matrix
+    } else {
+        let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; input_length + 1];
+        for i in 0..input_length {
+            for j in 0..input_length {
+                let kernel_value = get_kernel(model, &inputs[i], &inputs[j]);
+                big_matrix[i][j] = (labels[i] * labels[j] * kernel_value) as f64;
+            }
+        }
+
+        for i in 0..input_length + 1 {
+            big_matrix[i][i] += 1e-6;
+        }
+
+        big_matrix
+    };
+
 
     println!("P: {:?}", big_matrix);
 
     let big_csc_matrix = CscMatrix::from(&big_matrix).into_upper_tri();
     println!("P csc: {:?}", big_csc_matrix);
 
-    let mut q: Vec<f64> = vec![0f64; dimensions + 1 + input_length];
-    for i in 0..input_length {
-        q[dimensions + 1 + i] = 1f64;
-    }
-    println!("q :{:?}", q);
 
-    let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
-    for row in 0..input_length {
-        for col in 0..input_length {
-            let kernel_value = get_kernel(model, &inputs[row], &inputs[col]);
-            a_matrix[row][col] = (labels[row] * labels[col] * kernel_value) as f64
+    let a_matrix: Vec<Vec<f64>> =
+    if model.kernel == 1 {
+        let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
+        for row in 0..input_length {
+            for col in 0..input_length {
+                let kernel_value = get_kernel(model, &inputs[row], &inputs[col]);
+                a_matrix[row][col] = (labels[row] * labels[col] * kernel_value) as f64
+            }
+            a_matrix[row][dimensions] = labels[row] as f64;
+            a_matrix[row][row + dimensions + 1] = -1f64;
+            a_matrix[row + input_length][row + dimensions + 1] = 1f64;
         }
-        a_matrix[row][dimensions] = labels[row] as f64;
-        a_matrix[row][row + dimensions + 1] = -1f64;
-        a_matrix[row + input_length][row + dimensions + 1] = 1f64;
-    }
-    let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
-    for row in 0..input_length {
-        for col in 0..dimensions {
-            a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64;
-        }
-        a_matrix[row][dimensions] = labels[row] as f64;
-        a_matrix[row][row + dimensions + 1] = -1f64;
-        a_matrix[row + input_length][row + dimensions + 1] = 1f64;
-    }
 
+        a_matrix
+    } else {
+        let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; 2 * input_length];
+        for row in 0..input_length {
+            a_matrix[row][row] = labels[row] as f64;
+            a_matrix[row][input_length] = labels[row] as f64;
+            a_matrix[row + input_length][row] = 1f64;
+        }
+
+        a_matrix
+    };
 
     println!("a :{:?}", a_matrix);
     let a_csc_matrix = CscMatrix::from(&a_matrix);
     //println!("a_csc :{:?}", a_csc_matrix);
 
-    let mut l: Vec<f64> = Vec::new();
-    l.extend(vec![1f64; input_length]);
-    l.extend(vec![0f64; input_length]);
-    println!("l: {:?}", l);
+    let (q, l, u) = if model.kernel == 1 {
+        let mut q = vec![0f64; dimensions + 1 + input_length];
+        for i in 0..input_length {
+            q[dimensions + 1 + i] = 1f64;
+        }
 
-    let mut u: Vec<f64> = vec![f64::INFINITY; 2 * input_length];
+        let mut l: Vec<f64> = Vec::new();
+        l.extend(vec![1f64; input_length]);
+        l.extend(vec![0f64; input_length]);
+
+        let mut u: Vec<f64> = vec![f64::INFINITY; 2 * input_length];
+
+        (q, l, u)
+    }
+    else {
+        let mut q = vec![0f64; input_length + 1];
+        for i in 0..input_length {
+            q[i] = -1f64;
+        }
+
+        let l: Vec<f64> = vec![0f64; 2 * input_length];
+
+        let mut u: Vec<f64> = vec![0f64; 2 * input_length];
+        for i in 0..input_length {
+            u[i] = c as f64;
+        }
+        for i in input_length..(2 * input_length) {
+            u[i] = f64::INFINITY;
+        }
+        (q, l, u)
+    };
+
+    println!("q :{:?}", q);
+    println!("l: {:?}", l);
     println!("u: {:?}", u);
 
     let settings = Settings::default().verbose(true);
@@ -141,7 +188,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
 
     // Solve problem
     let result = problem.solve();
-    let alphas:Vec<f32> = result.x().expect("failed to solve problem").iter().map(|x| *x as f32 ).collect();
+    let alphas: Vec<f32> = result.x().expect("failed to solve problem").iter().map(|x| *x as f32).collect();
 
     // Print the solution
     println!("alphas {:?}", alphas);
@@ -180,8 +227,8 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     model.biais = bias;
     model.weight = w;
 
-    let mut support_vectors:Vec<Vec<f32>> = Vec::new();
-    let mut support_labels:Vec<f32> = Vec::new();
+    let mut support_vectors: Vec<Vec<f32>> = Vec::new();
+    let mut support_labels: Vec<f32> = Vec::new();
     //let mut alphas:Vec<f32> = Vec::new();
 
     for i in 0..input_length {
