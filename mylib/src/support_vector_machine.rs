@@ -10,7 +10,7 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-use std::ffi::c_float;
+use std::ffi::{c_char, c_float, CString};
 use std::slice;
 
 use itertools::Itertools;
@@ -61,7 +61,7 @@ fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
 
 #[no_mangle]
 #[allow(dead_code)]
-pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float, labels_pointer: *mut c_float, input_length: u32, c: f32) {
+pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float, labels_pointer: *mut c_float, input_length: u32, c: f32, epsilon: f32) {
     let model: &mut SVMModel = unsafe { model_pointer.as_mut().unwrap() };
 
     let dimensions: usize = model.dimensions as usize;
@@ -199,7 +199,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     let mut bias = 0f32;
     let mut sv_count = 0;
     for i in 0..input_length {
-        if alphas[i].abs() > 1e-3 && alphas[i].abs() < c {
+        if alphas[i].abs() > epsilon && alphas[i].abs() < c - epsilon {
             bias += labels[i] - inputs[i].iter().zip(&w).map(|(x, w)| x * w).sum::<f32>();
             sv_count += 1;
         }
@@ -230,7 +230,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     model.support_labels = support_labels;
     model.alphas = alphas;
 
-    println!("Alphas saved, {}", input_length);
+    println!("Alphas saved, {:?}", model.support_labels);
 }
 
 pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f32 {
@@ -270,4 +270,10 @@ pub extern "C" fn free_svm(model_pointer: *mut SVMModel) {
         }
         println!("Free")
     }
+}
+
+pub extern "C" fn get_svm_state(model: *mut SVMModel) -> *mut c_char {
+    let model = unsafe { &*model };
+    let state = format!("SVs: {}, bias: {}", model.support_vectors.len(), model.biais);
+    CString::new(state).unwrap().into_raw()
 }

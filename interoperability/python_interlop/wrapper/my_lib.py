@@ -26,6 +26,7 @@ class MyModel:
         self.__gamma = gamma
         self.kernel = kernel
         self.kernel_value = kernel_value
+        self.epsilon = 0
 
         if is_classification:
             self.__is_3_classes = is_3_classes
@@ -58,9 +59,10 @@ class MyModel:
         elif self.__type == "svm":
             return my_lib.init_svm(self.__dims, self.kernel, self.kernel_value)
 
-    def train(self, x: np.ndarray, y: np.ndarray, learning_rate: float, epochs: int = 1000):
+    def train(self, x: np.ndarray, y: np.ndarray, learning_rate: float, epochs: int = 1000, epsilon:float = 1e-3):
         """
         Trains the model on the given data
+        :param epsilon:
         :param x: Input data
         :param y: Label data
         :param learning_rate: Learning rate
@@ -73,6 +75,7 @@ class MyModel:
 
         data_size = len(y)
         sample_count = len(x)
+        self.epsilon = epsilon
 
         if self.__is_3_classes:
             y[y == 0] = -1
@@ -112,7 +115,7 @@ class MyModel:
                 #     my_lib.train_rbf_regression(self.model, x_flat_ptr, y_flat_ptr, inputs_size, sample_count)
             elif self.__type == "svm":
                 # the variable learning_rate is used for the parameter c of train_svm
-                my_lib.train_svm(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate)
+                my_lib.train_svm(self.model, x_flat_ptr, y_flat_ptr, data_size, learning_rate, self.epsilon)
         except Exception as e:
             print(f"Training failed due to {e}")
             raise
