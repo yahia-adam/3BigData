@@ -133,7 +133,7 @@ fn main() {
     println!("");
     for i in 0..sample_count as usize {
         let input_ptr: *mut f32 = x[i].as_mut_ptr();
-        let output = predict_rbf_classification(rbf_model, input_ptr);
+        let output = predict_rbf_classification(rbf_model, input_ptr, );
         println!("X: {:?}, Y: {:?} ---> RBF model: {:?}", x[i], y[i], output);
     }
     println!("");

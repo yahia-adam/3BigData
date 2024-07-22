@@ -363,8 +363,8 @@ pub extern "C" fn train_rbf_rosenblatt(model: *mut RadialBasisFunctionNetwork, s
         map.insert("loss".to_string(), epoch_loss);
         writer.add_scalars("data/rbf", &map, epoch);
 
-        }
-        // println!("y_pred : {:?}, y_true : {:?}", y_pred, y_true);
+    }
+    // println!("y_pred : {:?}, y_true : {:?}", y_pred, y_true);
 
 }
 
