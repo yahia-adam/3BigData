@@ -12,7 +12,7 @@
 
 pub mod linear_model;
 pub mod multilayer_perceptron;
-pub mod radical_basis_function_network;
+pub mod radial_basis_function_network;
 pub mod support_vector_machine;
 mod load_dataset;
 
@@ -23,7 +23,8 @@ pub use multilayer_perceptron::{
     train_mlp,
     predict_mlp,
     free_mlp,
-    save_mlp_model
+    save_mlp_model,
+    loads_mlp_model
 };
 
 #[allow(unused_imports)]
@@ -38,8 +39,8 @@ pub use linear_model::{
 };
 
 #[allow(unused_imports)]
-pub use radical_basis_function_network::{
-    RadicalBasisFunctionNetwork,
+pub use radial_basis_function_network::{
+    RadialBasisFunctionNetwork,
     init_rbf,
     train_rbf_regression,
     train_rbf_rosenblatt,
@@ -61,6 +62,7 @@ pub use support_vector_machine::{
 
 #[allow(unused_imports)]
 pub use load_dataset::{
-    load_dataset,
-    image_resize_vec
+    load_ml_dataset,
+    load_mlp_dataset,
+    image_resize_vec,
 };

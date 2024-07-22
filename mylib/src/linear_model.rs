@@ -19,26 +19,36 @@ use std::ffi::{c_char, c_float, CStr};
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+use ndarray_rand::rand::SeedableRng;
 use tensorboard_rs::summary_writer::SummaryWriter;
-use pbr::ProgressBar;
+use rand::prelude::StdRng;
+
+const SEED: u64 = 42;
+const SAVE_INTERVAL: u32 = 500;
+const DISPLAY_INTERVAL: u32 = 1000;
+
 
 #[derive(Serialize, Deserialize)]
 pub struct LinearModel {
     pub weights: Vec<f32>,
     pub weights_count: usize,
     pub is_classification: bool,
-    pub train_loss: Vec<f32>,
-    pub test_loss: Vec<f32>,
+    pub is_multiclass: bool,
+    pub train_loss: Vec<f64>,
+    pub test_loss: Vec<f64>,
     pub train_accuracy: Vec<f32>,
     pub test_accuracy: Vec<f32>
 }
 
 #[no_mangle]
-pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -> *mut LinearModel {
+pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool, is_multiclass: bool) -> *mut LinearModel {
+    let mut rng = StdRng::seed_from_u64(SEED);
+
     let model: LinearModel = LinearModel {
-        weights: vec![rand::thread_rng().gen_range(-1.0..1.0); (input_count + 1) as usize],
+        weights: vec![rng.gen_range(-1.0..1.0); (input_count + 1) as usize],
         weights_count: input_count as usize,
         is_classification,
+        is_multiclass,
         train_loss: vec![],
         test_loss: vec![],
         train_accuracy: vec![],
@@ -49,6 +59,7 @@ pub extern "C" fn init_linear_model(input_count: u32, is_classification: bool) -
     let leaked_boxed_model: *mut LinearModel = Box::leak(boxed_model);
     leaked_boxed_model.into()
 }
+
 
 #[no_mangle]
 pub extern "C" fn train_linear_model(
@@ -61,6 +72,11 @@ pub extern "C" fn train_linear_model(
     test_data_size: u32,
     learning_rate: f32,
     epochs: u32,
+    log_filename: *const c_char,
+    model_filename: *const c_char,
+    display_loss: bool,
+    display_tensorboad: bool,
+    save_model: bool,
 ) {
     let model_ref: &mut LinearModel = unsafe { model.as_mut().unwrap() };
 
@@ -78,21 +94,25 @@ pub extern "C" fn train_linear_model(
 
     let mut writer = SummaryWriter::new(&("../logs".to_string()));
     let mut map = HashMap::new();
+    let mut rng = StdRng::seed_from_u64(SEED);
+
+    let logfilename =  {
+        let c_str = unsafe {CStr::from_ptr(log_filename)};
+        let recipient = c_str.to_str().unwrap_or_else(|_| "no_logfilename");
+        recipient
+    };
 
     if model_ref.is_classification {
         let mut input: Vec<f32> = vec![0.0; model_ref.weights_count];
         let mut y_true:Vec<f32> = vec![];
         let mut y_pred:Vec<f32> = vec![];
-        for n_iter in 1..epochs + 1 {
-            let mut pb = ProgressBar::new(data_size as u64);
-            pb.format("[=>-]");
-            pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", n_iter, epochs, 0.0, 0.0).as_str());
-            pb.show_tick = true;
-            pb.show_speed = false;
-            pb.show_percent = false;
-            pb.show_counter = false;
 
-            for i in 0..(data_size - 1) {
+        for epoch in 1..epochs + 1 {
+
+            for _ in 0..(data_size - 1) {
+
+                let i = rng.gen_range(0..train_data_size) as usize;
+
                 let desired_output = labels[i];
 
                 let mut m = 0;
@@ -112,27 +132,51 @@ pub extern "C" fn train_linear_model(
                 }
                 model_ref.weights[0] += learning_rate * error;
 
-                pb.message(format!("Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ", n_iter + 1, epochs, mse_epoch(&y_true, &y_pred), accuracy(&y_true, &y_pred)).as_str());
-                pb.inc();
-
             }
-            let train_loss = mse_epoch(&y_true, &y_pred);
-            let train_accuracy = accuracy(&y_true, &y_pred);
-            model_ref.train_loss.push(train_loss);
-            model_ref.train_accuracy.push(train_accuracy);
 
-            map.insert("loss".to_string(), train_loss);
-            map.insert("validate".to_string(), validate_linear_model(model_ref, &x_test, &y_test, test_data_size));
-            writer.add_scalars("data/linear_model", &map, n_iter as usize);
 
-            pb.finish_println(&format!(
-                "Epoch {}/{} - loss: {:.4} - accuracy: {:.2} ",
-                n_iter, epochs, train_loss, train_accuracy
-            ));
+            if display_loss || display_tensorboad {
+                let train_loss = mse_epoch(&y_true, &y_pred);
+                let train_accuracy = accuracy(&y_true, &y_pred);
+                model_ref.train_loss.push(train_loss);
+                model_ref.train_accuracy.push(train_accuracy);
+
+                match evaluate(model_ref, &x_test, &y_test, test_data_size) {
+                    Ok((test_accuracy, test_loss)) => {
+                        if display_tensorboad {
+                            map.insert("train_loss".to_string(), train_loss as f32);
+                            map.insert("test_loss".to_string(), test_loss as f32);
+                        }
+                        if epoch % DISPLAY_INTERVAL == 0 {
+                            if display_loss {
+                                println!(
+                                    "Epoch {}/{}: Loss = {:.4}, Accuracy = {:.4}%, Test_Loss = {:.4}, Test_Accuracy = {:.4}%",
+                                    epoch,
+                                    epochs,
+                                    train_loss,
+                                    train_accuracy * 100.0,
+                                    test_loss,
+                                    test_accuracy * 100.0,
+                                );
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Evaluation error: {}", e);
+                        return;
+                    }
+                }
+            }
+
+            if save_model && epoch % SAVE_INTERVAL == 0 {
+                save_linear_model(model, model_filename);
+            }
+            writer.add_scalars(&logfilename, &map, epoch as usize);
         }
-
+        if display_tensorboad {
+            writer.flush();
+        }
     } else {
-        
         let mut i = 0;
         while i < data_size {
             features.insert((i * model_ref.weights_count) + i, 1.0);
@@ -155,7 +199,12 @@ pub extern "C" fn train_linear_model(
     }
 }
 
-fn validate_linear_model(model: &mut LinearModel, x_test: &[f32], y_test: &[f32], test_data_size: usize) -> f32 {
+fn evaluate(
+    model: &mut LinearModel,
+    x_test: &[f32],
+    y_test: &[f32],
+    test_data_size: usize,
+) -> Result<(f32, f64), String> {
     let mut y_true:Vec<f32> = vec![];
     let mut y_pred:Vec<f32> = vec![];
 
@@ -177,9 +226,12 @@ fn validate_linear_model(model: &mut LinearModel, x_test: &[f32], y_test: &[f32]
     }
     let loss =  mse_epoch(&y_true, &y_pred);
     model.test_loss.push(loss);
+
     let accuracy = accuracy(&y_true, &y_pred);
     model.test_accuracy.push(accuracy);
-    loss
+
+    Ok((accuracy, loss))
+
 }
 
 #[no_mangle]
@@ -196,16 +248,15 @@ pub fn guess(model: &mut LinearModel, inputs: Vec<f32>) -> f32 {
         sum += inputs[i - 1] * model.weights[i]
     }
     sum += model.weights[0];
-    /*if model.is_classification {
+    if model.is_classification && !model.is_multiclass {
         if sum >= 0.0 {
             sum = 1.0;
         } else {
             sum = -1.0;
         }
-    }*/
+    }
     sum
 }
-
 
 #[no_mangle]
 pub extern "C" fn to_json(model: *const LinearModel) -> *const c_char {
@@ -280,21 +331,22 @@ pub extern "C" fn free_linear_model(model: *mut LinearModel) {
     }
 }
 
-fn mse(y: f32, y_hat: f32) -> f32 {
-    (y - y_hat).powi(2)
+fn mse(y: f32, y_hat: f32) -> f64 {
+    (y - y_hat).powi(2) as f64
 }
 
-fn mse_epoch(y_true: &[f32], y_pred: &[f32]) -> f32 {
+fn mse_epoch(y_true: &[f32], y_pred: &[f32]) -> f64 {
     let n = y_true.len();
-    let total_mse: f32 = y_true.iter()
+    let total_mse: f64 = y_true.iter()
         .zip(y_pred.iter())
         .map(|(&y, &y_hat)| mse(y, y_hat))
         .sum();
-    total_mse / n as f32
+
+    total_mse / n as f64
 }
 
 fn accuracy(y_true: &[f32], y_pred: &[f32]) -> f32 {
-    let mut predicted_true:i32 = 0;
+    let mut predicted_true = 0;
     for (y, y_hat) in y_true.iter().zip(y_pred.iter()) {
         if *y as i32 == *y_hat as i32 {
             predicted_true += 1;
@@ -302,3 +354,4 @@ fn accuracy(y_true: &[f32], y_pred: &[f32]) -> f32 {
     }
     predicted_true as f32 / y_true.len() as f32
 }
+

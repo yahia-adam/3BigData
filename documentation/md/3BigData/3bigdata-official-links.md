@@ -20,5 +20,5 @@ Ce projet vise à implémenter des algorithmes d'apprentissage automatique à pa
 1. Cloner le dépôt :
 
    ```bash
-   git clone https://github.com/your_username/3bigData.git
+   git clone https://github.com/yahia-adam/3BigData.git
    ```

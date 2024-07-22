@@ -12,6 +12,10 @@
             margin: 0;
             overflow: hidden;
         }
+
+        main{
+            padding-top: 40px;
+        }
         body {
             display: flex;
             flex-direction: column;
@@ -39,9 +43,9 @@
         }
         .button-group button.clicked,
         .btn-custom.clicked {
-            background-color: red;
+            background-color: dodgerblue;
             color: white;
-            border-color: red;
+            border-color: dodgerblue;
         }
         .file-input {
             margin-bottom: 20px;
@@ -105,7 +109,7 @@
 
         .image-section {
             position: absolute;
-            top: 50%;
+            top: 55%;
             right: 60px;
             transform: translateY(-50%);
             display: flex;
@@ -166,20 +170,51 @@
             object-fit: cover;
             z-index: -1;
         }
+
+        body {
+          margin: 0;
+          font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .topnav {
+          overflow: hidden;
+          background-color: #f4f4f8;
+        }
+
+        .topnav a {
+          float: left;
+          color: dodgerblue;
+          text-align: center;
+          padding: 14px 16px;
+          text-decoration: none;
+          font-size: 17px;
+        }
+
+        .topnav a:hover {
+          background-color: #ddd;
+          color: black;
+        }
+
+        .topnav a.active {
+          background-color: dodgerblue;
+          color: white;
+        }
     </style>
 </head>
 <body class="font-sans antialiased dark:bg-black dark:text-white/50" id="body">
     <div class="bg-gray-50 text-black/50 dark:bg-black dark:text-white/50">
-        <img id="background" class="absolute -left-20 top-0 max-w-[877px]" src="https://laravel.com/assets/img/welcome/background.svg" />
+<!--        <img id="background" class="absolute -left-20 top-0 max-w-[877px]" src="https://laravel.com/assets/img/welcome/background.svg" />-->
         <div class="relative min-h-screen flex flex-col items-center justify-center selection:bg-[#FF2D20] selection:text-white">
             <div class="relative w-full max-w-2xl px-6 lg:max-w-7xl">
                 <header class="grid grid-cols-2 items-center gap-2 py-10 lg:grid-cols-3">
-                    <div class="flex lg:justify-center lg:col-start-2">
-                        <p class="text-center text-red-600 font-bold text-xl">Welcome To Our Web App Of Image Identification</p>
-                    </div>
+{#                    <div class="topnav">#}
+{#                          <a class="active" href="#home">Home</a>#}
+{#                          <a href="{{ url_for('test_cases')}}">Test Cases</a>#}
+{#                    </div>#}
+                    <h4 style="text-align: center;padding-top: 40px;">Welcome to our Web App for Image Classification</h4>
                 </header>
-                <main class="mt-6">
-                    <div class="container centered-form">
+                <main class="mt-8">
+                    <div class="container centered-form" style="padding-top: 100px;">
                         <form id="uploadForm" action="{{ url_for('index') }}" method="POST" enctype="multipart/form-data">
                             <input type="hidden" name="selectedAction" id="selectedAction" value="">
                             <div class="form-group file-input text-center pb-1">
@@ -188,15 +223,16 @@
 
                             <div class="button-group buttons">
                                 <div class="column">
-                                    <button type="button" class="btn btn-custom" id="linearModelClassification">Linear Model Classification</button>
-                                    <button type="button" class="btn btn-custom"  id="mlpClassification">MLP Classification</button>
-                                    <button type="button" class="btn btn-custom" id="rbfClassification">RBF Classification</button>
-                                    <button type="button" class="btn btn-custom" id="svmClassification">SVM Classification</button>
+                                    <button type="button" class="btn btn-custom" id="lm">Linear Model Classification</button>
+{#                                    <button type="button" class="btn btn-custom"  id="mlpClassification">MLP Classification</button>#}
+{#                                    <button type="button" class="btn btn-custom" id="rbfClassification">RBF Classification</button>#}
+{#                                    <button type="button" class="btn btn-custom" id="svmClassification">SVM Classification</button>#}
                                 </div>
                                 <div class="column">
-                                    <button type="button" class="btn btn-custom" id="linearModelRegression">Linear Model Regression</button>
-                                    <button type="button" class="btn btn-custom" id="mlpRegression">MLP Regression</button>
-                                    <button type="button" class="btn btn-custom" id="rbfRegression">RBF Regression</button>
+                                    <button type="button" class="btn btn-custom"  id="mlp">MLP Classification</button>
+{#                                    <button type="button" class="btn btn-custom" id="linearModelRegression">Linear Model Regression</button>#}
+{#                                    <button type="button" class="btn btn-custom" id="mlpRegression">MLP Regression</button>#}
+{#                                    <button type="button" class="btn btn-custom" id="rbfRegression">RBF Regression</button>#}
                                 </div>
                             </div>
 
@@ -210,18 +246,18 @@
                         </div>
 
                         <div class="image-section">
-                            <img src="{{ url_for('static', filename='images/red-container.png') }}" alt="Red Container" id="red-box">
-                            <img src="{{ url_for('static', filename='images/yellow-container.png') }}" alt="Yellow Container" id="yellow-box">
-                            <img src="{{ url_for('static', filename='images/green-container.png') }}" alt="Green Container" id="green-box">
+                            <img src="{{ url_for('static', filename='images/metal.png') }}" alt="metal" id="red-box">
+                            <img src="{{ url_for('static', filename='images/plastic.png') }}" alt="plastic" id="yellow-box">
+                            <img src="{{ url_for('static', filename='images/paper.png') }}" alt="paper" id="green-box">
                         </div>
 
-                        <div class="image-section-1">
-                            {% if session.get('image') %}
+                       {% if 'image' in session %}
+                            <div class="image-section-1">
                                 <div>
                                     <img src="{{ url_for('static', filename='uploads/' + session['image']) }}" alt="Uploaded Image">
                                 </div>
-                            {% endif %}
-                        </div>
+                            </div>
+                       {% endif %}
 
                     </div>
                 </main>
@@ -236,15 +272,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
         <script>
-            function displayImage(event) {
-                event.preventDefault();
-                const fileInput = document.getElementById('upload-image');
-                const file = fileInput.files[0];
-                if (!file) {
-                    alert("No file selected");
-                }
-            }
-
             document.querySelectorAll('.button-group .btn').forEach(button => {
                 button.addEventListener('click', function() {
                     document.querySelectorAll('.button-group .btn').forEach(btn => btn.classList.remove('clicked'));

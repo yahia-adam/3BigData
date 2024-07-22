@@ -1,6 +1,6 @@
 # Application Web de Classification des Déchets
 
-Cette application web développée en Laravel permet d'uploader une image d'un déchet et de retourner le résultat de la classification indiquant si le déchet doit être mis dans la poubelle rouge, verte ou jaune.
+Cette application web développée en Flask permet d'uploader une image d'un déchet et de retourner le résultat de la classification indiquant si le déchet doit être du métal, papier ou plastique.
 
 ## Fonctionnalités
 
@@ -10,10 +10,9 @@ Cette application web développée en Laravel permet d'uploader une image d'un d
 
 ## Prérequis
 
-- PHP >= 7.4
-- Composer
-- Serveur Web (Apache, Nginx, etc.)
-- Base de données (MySQL, PostgreSQL, etc.)
+- Python 3.7+
+- pip (gestionnaire de paquets Python)
+- Virtualenv (recommandé)
 
 ## Installation
 
@@ -23,42 +22,48 @@ Cette application web développée en Laravel permet d'uploader une image d'un d
 git clone https://github.com/yahia-adam/3BigData.git
 cd 3BigData/web-app
 ```
-2. Installez les dépendances
 
-   [composer install](https://getcomposer.org/)
-
-
-3. Mettez à jour votre fichier .env avec les informations de votre base de données
-
-```
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=nom_de_votre_base_de_donnees
-DB_USERNAME=votre_nom_d_utilisateur
-DB_PASSWORD=votre_mot_de_passe
+2. Créez un environnement virtuel et activez-le
+```bash
+python -m venv venv
+source venv/bin/activate  # sur windows, utilisez `venv\Scripts\activate`
 ```
 
-4. Migrate la base de données
-
+3. Installez les dépendances
+```bash
+pip install -r requirements.txt
 ```
-php artisan migrate:fresh --seed
-```
 
+4. Configurez les variables d'environnement
+
+Créez un fichier ```.env``` à la racine du projet et ajoutez les variables nécessaires :
+```bash
+FLASK_APP=app.py
+FLASK_ENV=development
+SECRET_KEY=your_secret_key
+```
 5. Exécution de l'Application
-
 Pour démarrer le serveur de développement, utilisez la commande suivante :
-
+```bash 
+flask run
 ```
-php artisan serve
-```
+Par défaut, l'application sera accessible à l'adresse http://127.0.0.1:5000.
 
-Par défaut, l'application sera accessible à l'adresse http://127.0.0.1:8000.
 
 6. Utilisation
+   - Accédez à l'application via votre navigateur web.
+   - Uploadez une image du déchet en utilisant le formulaire prévu à cet effet.
+   - Recevez le résultat de la classification indiquant la catégorie du déchet (métal, papier ou plastique).
 
-    a. Accédez à l'application via votre navigateur web.
-    
-    b. Uploadez une image du déchet en utilisant le formulaire prévu à cet effet.
-    
-    c. Recevez le résultat de la classification indiquant la couleur de la poubelle appropriée (rouge, verte ou jaune).
+
+7. Développement
+Pour ajouter de nouvelles fonctionnalités ou modifier l'existant, vous pouvez éditer les fichiers suivants :
+   - ```app.py``` : Point d'entrée principal de l'application
+   - ```templates/``` : Dossier contenant les templates HTML
+   - ```static/``` : Dossier pour les fichiers statiques (CSS, JS, images)
+
+
+8. N'oubliez pas de mettre à jour le fichier requirements.txt si vous ajoutez de nouvelles dépendances :
+```bash
+pip freeze > requirements.txt
+```

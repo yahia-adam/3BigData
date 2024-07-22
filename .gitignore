@@ -7,6 +7,7 @@ mylib/.idea
 flask-app/.idea
 documentation/.idea
 .vscode
+venv/
 datasets/ 
 dataset/
 dataset.zip
@@ -28,3 +29,6 @@ mylib/target
 /interoperability/python_interlop/wrapper/__pycache__/
 /interoperability/python_interlop/.venv/
 /interoperability/python_interlop/.ipynb_checkpoints/
+venv
+/flask-app/static/uploads
+/interoperability/__pycache__/

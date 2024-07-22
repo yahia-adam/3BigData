@@ -23,8 +23,8 @@ La Lib en Rust sera le cœur du projet, fournissant des algorithmes de Machine L
 
 L'application web servira de plateforme utilisateur, permettant une interaction facile avec le système de classification des déchets.
 
-- **Développement avec Laravel :**
-  - Utilisation du framework Laravel pour construire une application web robuste et évolutive.
+- **Développement avec Flask :**
+  - Utilisation du framework Flask pour construire une application web robuste et évolutive.
   
 - **Interface Utilisateur :**
   - Conception d'une interface intuitive pour permettre aux utilisateurs de classer les déchets de manière efficace.
