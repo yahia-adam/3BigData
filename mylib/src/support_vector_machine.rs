@@ -180,53 +180,80 @@ fn set_constraints(c: f32, model: &SVMModel, dimensions: usize, input_length: us
 
 fn set_a_matrix(model: &SVMModel, dimensions: usize, input_length: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>) -> Vec<Vec<f64>> {
     println!("Setting up matrix A");
-    let a_matrix: Vec<Vec<f64>> =
+
+    let matrix_width = if model.kernel == 1 { dimensions + input_length + 1 } else { input_length + 1 };
+    let mut a_matrix = vec![vec![0f64; matrix_width]; 2 * input_length];
+    // let a_matrix: Vec<Vec<f64>> =
         if model.kernel == 1 {
-            let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
+            // let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
+            // for row in 0..input_length {
+            //     for col in 0..dimensions {
+            //         a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64
+            //     }
+            //     a_matrix[row][dimensions] = labels[row] as f64;
+            //     a_matrix[row][row + dimensions + 1] = -1f64;
+            //     a_matrix[row + input_length][row + dimensions + 1] = 1f64;
+            // }
+
+            // a_matrix
+
             for row in 0..input_length {
+                let label = labels[row] as f64;
                 for col in 0..dimensions {
-                    a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64
+                    a_matrix[row][col] = label * inputs[row][col] as f64;
                 }
-                a_matrix[row][dimensions] = labels[row] as f64;
+                a_matrix[row][dimensions] = label;
                 a_matrix[row][row + dimensions + 1] = -1f64;
                 a_matrix[row + input_length][row + dimensions + 1] = 1f64;
             }
-
-            a_matrix
         } else {
-            let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; 2 * input_length];
+            // let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; 2 * input_length];
             for row in 0..input_length {
                 a_matrix[row][row] = labels[row] as f64;
                 a_matrix[row][input_length] = labels[row] as f64;
                 a_matrix[row + input_length][row] = 1f64;
             }
 
-            a_matrix
+            // a_matrix
         };
     a_matrix
 }
 
 fn set_p_matrix<'a>(model: &'a SVMModel, dimensions: usize, input_length: usize, inputs: &'a Vec<Vec<f32>>, labels: &'a Vec<c_float>) -> CscMatrix<'a> {
     println!("Setting up matrix P");
-    let mut big_matrix: Vec<Vec<f64>> =
+    let matrix_size = if model.kernel == 1 { dimensions + input_length + 1 } else { input_length + 1 };
+    let mut big_matrix = vec![vec![0f64; matrix_size]; matrix_size];
+
+    // let mut big_matrix: Vec<Vec<f64>> =
         if model.kernel == 1 {
-            let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
+            // let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
             for i in 0..dimensions {
                 big_matrix[i][i] = 1f64;
             }
 
-            big_matrix
+            // big_matrix
         } else {
-            let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; input_length + 1];
+            // let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; input_length + 1];
+            // for i in 0..input_length {
+            //     for j in 0..input_length {
+            //         let kernel_value = get_kernel(model, &inputs[i], &inputs[j]);
+            //         big_matrix[i][j] = (labels[i] * labels[j] * kernel_value) as f64;
+            //     }
+            // }
+
+            // big_matrix
+
             for i in 0..input_length {
-                for j in 0..input_length {
-                    let kernel_value = get_kernel(model, &inputs[i], &inputs[j]);
-                    big_matrix[i][j] = (labels[i] * labels[j] * kernel_value) as f64;
+                let label_i = labels[i] as f64;
+                let input_i = &inputs[i];
+                for j in i..input_length {
+                    let kernel_value = get_kernel(model, input_i, &inputs[j]) as f64;
+                    let value = label_i * labels[j] as f64 * kernel_value;
+                    big_matrix[i][j] = value;
+                    big_matrix[j][i] = value; // Symmetric matrix
                 }
             }
-
-            big_matrix
-        };
+        }
 
     for i in 0..big_matrix.len() {
         big_matrix[i][i] += 1e-6;
