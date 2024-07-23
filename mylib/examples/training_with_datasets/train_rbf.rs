@@ -4,10 +4,10 @@ use std::ffi::CString;
 use mylib::loads_serialized_ml_dataset;
 use std::slice;
 
-const LEARNING_RATE: f32 = 0.001;
-const EPOCHS: u32 = 1000;
+const LEARNING_RATE: f32 = 0.01;
+const EPOCHS: u32 = 350;
 const CLUSTER_NUM: u32 = 100;
-const GAMMA: f32 = 0.1;
+const GAMMA: f32 = 0.01;
 
 const OUTPUT_DIR: &str = "../serialized_datasets";
 
