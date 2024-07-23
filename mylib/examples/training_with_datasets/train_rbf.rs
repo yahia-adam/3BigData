@@ -2,6 +2,7 @@
 use mylib::{RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt, predict_rbf_classification, free_rbf, save_rbf_model};
 use std::ffi::CString;
 use mylib::loads_serialized_ml_dataset;
+use std::slice;
 
 const LEARNING_RATE: f32 = 0.001;
 const EPOCHS: u32 = 1000;
@@ -10,22 +11,19 @@ const GAMMA: f32 = 0.1;
 
 const OUTPUT_DIR: &str = "../serialized_datasets";
 
-fn load_model_dataset(model: &str) -> std::io::Result<(Vec<Vec<f32>>, Vec<f32>, Vec<Vec<f32>>, Vec<f32>)> {
-    let file_path = format!("{}/{}.bin", OUTPUT_DIR, model);
-    println!("Loading dataset: {}", file_path);
-    loads_serialized_ml_dataset(&file_path)
-}
-
 fn test_model(model: *mut RadialBasisFunctionNetwork, x_test: &*const f32, y_test: &*const f32, input_count: usize) -> f32 {
     let mut correct_predictions = 0;
-    let total_predictions = y_test.len();
+    let total_predictions = input_count;
+
+    let x_test_slice = unsafe { slice::from_raw_parts(*x_test, total_predictions * input_count) };
+    let y_test_slice = unsafe { slice::from_raw_parts(*y_test, total_predictions) };
 
     for i in 0..total_predictions {
         let start = i * input_count;
         let end = start + input_count;
-        let input = &x_test[start..end];
+        let input = &x_test_slice[start..end];
         let prediction = predict_rbf_classification(model, input.as_ptr() as *mut f32);
-        let true_label = y_test[i];
+        let true_label = y_test_slice[i];
 
         if (prediction > 0.0 && true_label > 0.0) || (prediction <= 0.0 && true_label <= 0.0) {
             correct_predictions += 1;
@@ -33,6 +31,11 @@ fn test_model(model: *mut RadialBasisFunctionNetwork, x_test: &*const f32, y_tes
     }
 
     (correct_predictions as f32) / (total_predictions as f32)
+}
+fn load_model_dataset(model: &str) -> std::io::Result<(Vec<Vec<f32>>, Vec<f32>, Vec<Vec<f32>>, Vec<f32>)> {
+    let file_path = format!("{}/{}.bin", OUTPUT_DIR, model);
+    println!("Loading dataset: {}", file_path);
+    loads_serialized_ml_dataset(&file_path)
 }
 
 fn main() {
