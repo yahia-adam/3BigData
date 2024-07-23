@@ -37,4 +37,5 @@ serialized_dataset.bin
 serialized_datasets/
 serialized_dataset_mlp.bin
 datasets.zip
-models
+models/*
+experiences/*

@@ -24,7 +24,7 @@ use std::io::Read;
 
 const SEED: u64 = 42;
 const SAVE_INTERVAL: u32 = 10;
-const DISPLAY_INTERVAL: u32 = 10;
+const DISPLAY_INTERVAL: u32 = 1;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MultiLayerPerceptron {
@@ -280,12 +280,18 @@ pub extern "C" fn train_mlp(
         return false;
     }
 
-    let logfilename = unsafe { CStr::from_ptr(log_filename).to_str().unwrap_or_else(|_|  "no_name") };
-
+    
     let mut rng = StdRng::seed_from_u64(SEED);
-    let mut writer = SummaryWriter::new(&("../logs".to_string()));
+    let mut writer = SummaryWriter::new(&("../logs/mlp".to_string()));
     let mut map = HashMap::new();
 
+    let logfilename =  {
+        let c_str = unsafe {CStr::from_ptr(log_filename)};
+        let recipient = c_str.to_str().unwrap_or_else(|_| "no_logfilename");
+        recipient
+    };
+    
+    println!("start training model...");
     for epoch in 1..=epochs {
         let mut train_accuracy: Vec<f64> = Vec::new();
         let mut train_loss: Vec<f64> = Vec::new();
@@ -327,6 +333,8 @@ pub extern "C" fn train_mlp(
                     if display_tensorboad {
                         map.insert("train_loss".to_string(), train_loss as f32);
                         map.insert("test_loss".to_string(), test_loss as f32);
+                        map.insert("train_accuracy".to_string(), train_accuracy as f32);
+                        map.insert("test_accuracy".to_string(), test_accuracy as f32);
                     }
                     if epoch % DISPLAY_INTERVAL == 0 {
                         if display_loss {

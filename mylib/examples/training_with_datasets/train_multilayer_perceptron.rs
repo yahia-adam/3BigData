@@ -1,20 +1,20 @@
-use mylib::{free_mlp, init_mlp, train_mlp, create_serialized_mlp_dataset, load_dataset, MultiLayerPerceptron};
+use mylib::{free_mlp, init_mlp,loads_serialized_mlp_dataset, train_mlp, MultiLayerPerceptron};
 use std::ffi::CString;
 
-const EPOCHS: u32 = 100;
-const DIM: &[u32] = &[512, 3];
-const DIM: &str = "learning_rate";
+const EPOCHS: u32 = 250;
+const DIM: &[u32] = &[256,3];
 
 fn main() {
-    
-    let (train_images, train_labels, test_images, test_labels) match loads_mlp_dataset("../serialized_dataset_mlp.bin") {
+    let (train_images, test_images, train_labels, test_labels);
+
+    match loads_serialized_mlp_dataset("../serialized_datasets/serialized_dataset_mlp.bin") {
         Ok((ti, tl, tei, tel)) => {
             println!("Dataset chargé avec succès !");
             train_images = ti;
             train_labels = tl;
             test_images = tei;
             test_labels = tel;
-        },
+        }
         Err(e) => {
             eprintln!("Erreur lors du chargement du dataset : {}", e);
             std::process::exit(1);
@@ -36,7 +36,7 @@ fn main() {
     let y_test_ptr: *const f32 = test_label_flatten.as_ptr();
 
     let learning_rate = vec![
-        0.0001, 0.00001,
+        0.01
     ];
 
     for lr in learning_rate {
@@ -48,15 +48,9 @@ fn main() {
 
         println!("Finished initializing model");
 
-        let model_prameter: String =
-            format!("dim={:?}epoch={}lr={}", DIM, EPOCHS, lr);
-
-        let c_model_path: CString = CString::new(format!("../models/ml/mlp/classification/{}.json" model_prameter))
-        .expect("CString::new failed");
-
-        let c_model_log_path: CString = CString::new(format!("../logs/mlp/{}", model_prameter))
-        .expect("CString::new failed");
-
+        let c_log_filename =  CString::new(format!("{:?}lr={}epochs={}", DIM, lr, EPOCHS)).expect("CString::new failed");
+        let c_model_filename = CString::new(format!("../models/mlp/{:?}lr={}epochs{}.json", DIM, lr, EPOCHS)).expect("CString::new failed");
+        
         train_mlp(
             model,
             x_train_ptr,
@@ -67,8 +61,8 @@ fn main() {
             test_data_size as u32,
             lr,
             EPOCHS,
-            c_model_log_path.as_ptr(),
-            c_model_path.clone().as_ptr(),
+            c_log_filename.as_ptr(),
+            c_model_filename.clone().as_ptr(),
             true,
             true,
             true,
