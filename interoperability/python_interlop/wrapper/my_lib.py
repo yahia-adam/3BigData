@@ -170,7 +170,9 @@ class MyModel:
                                                 sample_count)
             elif self.__type == "svm":
                 # the variable learning_rate is used for the parameter c of train_svm
-                my_lib.train_svm(self.model if index is None else self.model[index], x_train_flat_ptr, y_train_flat_ptr, train_data_size, learning_rate, self.epsilon)
+                my_lib.train_svm(self.model if index is None else self.model[index], x_train_flat_ptr, y_train_flat_ptr,
+                                 train_data_size, learning_rate, self.epsilon, x_train_flat_ptr, y_train_flat_ptr,
+                                 train_data_size,)
         except Exception as e:
             print(f"Training failed due to {e}")
             raise

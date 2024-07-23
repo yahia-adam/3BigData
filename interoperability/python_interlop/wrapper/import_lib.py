@@ -301,7 +301,7 @@ def init_lib():
 
     # pub extern "C" fn train(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float, labels_pointer: *mut c_float,
     #   input_length: u32, c: f32)
-    my_lib.train_svm.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_uint32, ctypes.c_float, ctypes.c_float]
+    my_lib.train_svm.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_uint32]
     my_lib.restype = None
 
     # pub extern "C" fn predict_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float) -> f32
