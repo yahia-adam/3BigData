@@ -53,7 +53,6 @@ pub use radial_basis_function_network::{
 
 #[allow(unused_imports)]
 pub use load_dataset::{
-    load_ml_dataset,
-    load_mlp_dataset,
+    loads_serialized_ml_dataset,
     image_resize_vec,
 };

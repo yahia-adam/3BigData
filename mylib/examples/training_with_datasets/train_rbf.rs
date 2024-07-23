@@ -1,14 +1,22 @@
 #[allow(unused_imports)]
-use mylib::{RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt, predict_rbf_classification, free_rbf, save_rbf_model, load_ml_dataset};
+use mylib::{RadialBasisFunctionNetwork, init_rbf, train_rbf_rosenblatt, predict_rbf_classification, free_rbf, save_rbf_model};
 use std::ffi::CString;
-use std::path::PathBuf;
+use mylib::loads_serialized_ml_dataset;
 
 const LEARNING_RATE: f32 = 0.001;
-const EPOCHS: u32 = 100;
-const CLUSTER_NUM: u32 = 10;
+const EPOCHS: u32 = 1000;
+const CLUSTER_NUM: u32 = 100;
 const GAMMA: f32 = 0.1;
 
-fn test_model(model: *mut RadialBasisFunctionNetwork, x_test: &[f32], y_test: &[f32], input_count: usize) -> f32 {
+const OUTPUT_DIR: &str = "../serialized_datasets";
+
+fn load_model_dataset(model: &str) -> std::io::Result<(Vec<Vec<f32>>, Vec<f32>, Vec<Vec<f32>>, Vec<f32>)> {
+    let file_path = format!("{}/{}.bin", OUTPUT_DIR, model);
+    println!("Loading dataset: {}", file_path);
+    loads_serialized_ml_dataset(&file_path)
+}
+
+fn test_model(model: *mut RadialBasisFunctionNetwork, x_test: &*const f32, y_test: &*const f32, input_count: usize) -> f32 {
     let mut correct_predictions = 0;
     let total_predictions = y_test.len();
 
@@ -28,147 +36,129 @@ fn test_model(model: *mut RadialBasisFunctionNetwork, x_test: &[f32], y_test: &[
 }
 
 fn main() {
-    let base_dir = PathBuf::from("../dataset");
-    let train_path = base_dir.join("train");
-    let test_path = base_dir.join("test");
 
-    // train and test paper vs metal
+    println!("Starting the training process...");
 
-    let (train_images, train_labels) = load_ml_dataset(
-        train_path.to_str().unwrap(),
-        1.0,
-        -1.0,
-        -1.0
-    );
-    let (test_images, test_labels) = load_ml_dataset(
-        test_path.to_str().unwrap(),
-        1.0,
-        -1.0,
-        -1.0
-    );
+    println!("Loading metal_vs_other dataset...");
+    let (metal_vs_other_train_images, metal_vs_other_train_labels, metal_vs_other_test_images, metal_vs_other_test_labels) = match load_model_dataset("metal_vs_other") {
+        Ok(data) => data,
+        Err(e) => {
+            eprintln!("Serialization error for metal_vs_other: {}", e);
+            return;
+        }
+    };
 
-    let train_data_size = train_labels.len();
-    let input_count = train_images[0].len();
+    println!("metal_vs_other dataset loaded successfully.");
+    let metal_vs_other_train_data_size = metal_vs_other_train_labels.len();
+    let metal_vs_other_test_data_size = metal_vs_other_test_labels.len();
+    let metal_vs_other_input_count = metal_vs_other_train_images[0].len();
+    let metal_vs_other_train_images_flaten: Vec<f32> = metal_vs_other_train_images.clone().into_iter().flatten().collect::<Vec<f32>>();
+    let metal_vs_other_x_train_ptr: *const f32 = Vec::leak(metal_vs_other_train_images_flaten.clone()).as_ptr();
+    let metal_vs_other_y_train_ptr: *const f32 = Vec::leak(metal_vs_other_train_labels.clone()).as_ptr();
+    let metal_vs_other_test_images_flaten: Vec<f32> = metal_vs_other_test_images.clone().into_iter().flatten().collect::<Vec<f32>>();
+    let metal_vs_other_x_test_ptr: *const f32 = Vec::leak(metal_vs_other_test_images_flaten.clone()).as_ptr();
+    let metal_vs_other_y_test_ptr: *const f32 = Vec::leak(metal_vs_other_test_labels.clone()).as_ptr();
 
-    let train_images_flatten: Vec<f32> = train_images.into_iter().flatten().collect();
-    let x_train_ptr: *mut f32 = Vec::leak(train_images_flatten).as_mut_ptr();
-    let y_train_ptr: *mut f32 = Vec::leak(train_labels).as_mut_ptr();
+    println!("Loading paper_vs_other dataset...");
+    let (paper_vs_other_train_images, paper_vs_other_train_labels, paper_vs_other_test_images, paper_vs_other_test_labels) = match load_model_dataset("paper_vs_other") {
+        Ok(data) => data,
+        Err(e) => {
+            eprintln!("Serialization error for paper_vs_other: {}", e);
+            return;
+        }
+    };
 
-    let test_images_flatten: Vec<f32> = test_images.into_iter().flatten().collect();
-    let test_labels_flatten: Vec<f32> = test_labels;
+    println!("paper_vs_other dataset loaded successfully.");
+    let paper_vs_other_train_data_size = paper_vs_other_train_labels.len();
+    let paper_vs_other_test_data_size = paper_vs_other_test_labels.len();
+    let paper_vs_other_input_count = paper_vs_other_train_images[0].len();
+    let paper_vs_other_train_images_flaten: Vec<f32> = paper_vs_other_train_images.clone().into_iter().flatten().collect::<Vec<f32>>();
+    let paper_vs_other_x_train_ptr: *const f32 = Vec::leak(paper_vs_other_train_images_flaten.clone()).as_ptr();
+    let paper_vs_other_y_train_ptr: *const f32 = Vec::leak(paper_vs_other_train_labels.clone()).as_ptr();
+    let paper_vs_other_test_images_flaten: Vec<f32> = paper_vs_other_test_images.clone().into_iter().flatten().collect::<Vec<f32>>();
+    let paper_vs_other_x_test_ptr: *const f32 = Vec::leak(paper_vs_other_test_images_flaten.clone()).as_ptr();
+    let paper_vs_other_y_test_ptr: *const f32 = Vec::leak(paper_vs_other_test_labels.clone()).as_ptr();
 
-    let c_model_filename = CString::new(format!("../models/rbf/paper_vs_metal_lr={}_epochs={}.json", LEARNING_RATE, EPOCHS)).expect("CString::new failed");
+    println!("Loading plastic_vs_other dataset...");
+    let (plastic_vs_other_train_images, plastic_vs_other_train_labels, plastic_vs_other_test_images, plastic_vs_other_test_labels) = match load_model_dataset("plastic_vs_other") {
+        Ok(data) => data,
+        Err(e) => {
+            eprintln!("Serialization error for plastic_vs_other: {}", e);
+            return;
+        }
+    };
 
-    let model: *mut RadialBasisFunctionNetwork = init_rbf(input_count as i32, CLUSTER_NUM as i32, GAMMA);
+    println!("plastic_vs_other dataset loaded successfully.");
+    let plastic_vs_other_train_data_size = plastic_vs_other_train_labels.len();
+    let plastic_vs_other_test_data_size = plastic_vs_other_test_labels.len();
+    let plastic_vs_other_input_count = plastic_vs_other_train_images[0].len();
+    let plastic_vs_other_train_images_flaten: Vec<f32> = plastic_vs_other_train_images.clone().into_iter().flatten().collect::<Vec<f32>>();
+    let plastic_vs_other_x_train_ptr: *const f32 = Vec::leak(plastic_vs_other_train_images_flaten.clone()).as_ptr();
+    let plastic_vs_other_y_train_ptr: *const f32 = Vec::leak(plastic_vs_other_train_labels.clone()).as_ptr();
+    let plastic_vs_other_test_images_flaten: Vec<f32> = plastic_vs_other_test_images.clone().into_iter().flatten().collect::<Vec<f32>>();
+    let plastic_vs_other_x_test_ptr: *const f32 = Vec::leak(plastic_vs_other_test_images_flaten.clone()).as_ptr();
+    let plastic_vs_other_y_test_ptr: *const f32 = Vec::leak(plastic_vs_other_test_labels.clone()).as_ptr();
+
+    let c_model_filename = CString::new(format!("../models/rbf/paper_vs_others_lr={}_epochs={}.json", LEARNING_RATE, EPOCHS)).expect("CString::new failed");
+
+    let model: *mut RadialBasisFunctionNetwork = init_rbf(paper_vs_other_input_count as i32, CLUSTER_NUM as i32, GAMMA);
 
     train_rbf_rosenblatt(
         model,
-        x_train_ptr,
-        y_train_ptr,
+        paper_vs_other_x_train_ptr as *mut f32,
+        paper_vs_other_y_train_ptr as *mut f32,
         EPOCHS as i32,
         LEARNING_RATE,
-        input_count as i32,
-        train_data_size as i32,
+        paper_vs_other_input_count as i32,
+        paper_vs_other_train_data_size as i32,
     );
 
     save_rbf_model(model, c_model_filename.as_ptr());
 
-    let accuracy = test_model(model, &test_images_flatten, &test_labels_flatten, input_count);
-    println!("Paper vs Metal model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
+    let accuracy = test_model(model, &paper_vs_other_x_test_ptr, &paper_vs_other_y_test_ptr, paper_vs_other_test_data_size);
+    println!("Paper vs Others model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
 
     free_rbf(model);
 
+    let c_model_filename = CString::new(format!("../models/rbf/metal_vs_others_lr={}_epochs={}.json", LEARNING_RATE, EPOCHS)).expect("CString::new failed");
 
-    // train and test plastic vs paper
-
-    let (train_images, train_labels) = load_ml_dataset(
-        train_path.to_str().unwrap(),
-        -1.0,
-        1.0,
-        -1.0
-    );
-    let (test_images, test_labels) = load_ml_dataset(
-        test_path.to_str().unwrap(),
-        -1.0,
-        1.0,
-        -1.0
-    );
-
-    let train_data_size = train_labels.len();
-    let input_count = train_images[0].len();
-
-    let train_images_flatten: Vec<f32> = train_images.into_iter().flatten().collect();
-    let x_train_ptr: *mut f32 = Vec::leak(train_images_flatten).as_mut_ptr();
-    let y_train_ptr: *mut f32 = Vec::leak(train_labels).as_mut_ptr();
-
-    let test_images_flatten: Vec<f32> = test_images.into_iter().flatten().collect();
-    let test_labels_flatten: Vec<f32> = test_labels;
-
-    let c_model_filename = CString::new(format!("../models/rbf/plastic_vs_paper_lr={}_epochs={}.json", LEARNING_RATE, EPOCHS)).expect("CString::new failed");
-
-    let model: *mut RadialBasisFunctionNetwork = init_rbf(input_count as i32, CLUSTER_NUM as i32, GAMMA);
+    let model: *mut RadialBasisFunctionNetwork = init_rbf(metal_vs_other_input_count as i32, CLUSTER_NUM as i32, GAMMA);
 
     train_rbf_rosenblatt(
         model,
-        x_train_ptr,
-        y_train_ptr,
+        metal_vs_other_x_train_ptr as *mut f32,
+        metal_vs_other_y_train_ptr as *mut f32,
         EPOCHS as i32,
         LEARNING_RATE,
-        input_count as i32,
-        train_data_size as i32,
+        metal_vs_other_input_count as i32,
+        metal_vs_other_train_data_size as i32,
     );
 
     save_rbf_model(model, c_model_filename.as_ptr());
 
-    let accuracy = test_model(model, &test_images_flatten, &test_labels_flatten, input_count);
-    println!("Plastic vs Paper model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
+    let accuracy = test_model(model, &metal_vs_other_x_test_ptr, &metal_vs_other_y_test_ptr, metal_vs_other_test_data_size);
+    println!("Metal vs Others model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
 
     free_rbf(model);
 
+    let c_model_filename = CString::new(format!("../models/rbf/plastic_vs_others_lr={}_epochs={}.json", LEARNING_RATE, EPOCHS)).expect("CString::new failed");
 
-    // train and test plastic vs metal
-
-    let (train_images, train_labels) = load_ml_dataset(
-        train_path.to_str().unwrap(),
-        -1.0, // plastic
-        1.0,  // metal
-        -1.0
-    );
-    let (test_images, test_labels) = load_ml_dataset(
-        test_path.to_str().unwrap(),
-        -1.0,
-        1.0,
-        -1.0
-    );
-
-    let train_data_size = train_labels.len();
-    let input_count = train_images[0].len();
-
-    let train_images_flatten: Vec<f32> = train_images.into_iter().flatten().collect();
-    let x_train_ptr: *mut f32 = Vec::leak(train_images_flatten).as_mut_ptr();
-    let y_train_ptr: *mut f32 = Vec::leak(train_labels).as_mut_ptr();
-
-    let test_images_flatten: Vec<f32> = test_images.into_iter().flatten().collect();
-    let test_labels_flatten: Vec<f32> = test_labels;
-
-    let c_model_filename = CString::new(format!("../models/rbf/plastic_vs_metal_lr={}_epochs={}.json", LEARNING_RATE, EPOCHS)).expect("CString::new failed");
-
-    let model: *mut RadialBasisFunctionNetwork = init_rbf(input_count as i32, CLUSTER_NUM as i32, GAMMA);
+    let model: *mut RadialBasisFunctionNetwork = init_rbf(plastic_vs_other_input_count as i32, CLUSTER_NUM as i32, GAMMA);
 
     train_rbf_rosenblatt(
         model,
-        x_train_ptr,
-        y_train_ptr,
+        plastic_vs_other_x_train_ptr as *mut f32,
+        plastic_vs_other_y_train_ptr as *mut f32,
         EPOCHS as i32,
         LEARNING_RATE,
-        input_count as i32,
-        train_data_size as i32,
+        plastic_vs_other_input_count as i32,
+        plastic_vs_other_train_data_size as i32,
     );
 
     save_rbf_model(model, c_model_filename.as_ptr());
 
-    let accuracy = test_model(model, &test_images_flatten, &test_labels_flatten, input_count);
-    println!("Plastic vs Metal model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
+    let accuracy = test_model(model, &plastic_vs_other_x_test_ptr, &plastic_vs_other_y_test_ptr, plastic_vs_other_test_data_size);
+    println!("Plastic vs Others model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
 
     free_rbf(model);
 
