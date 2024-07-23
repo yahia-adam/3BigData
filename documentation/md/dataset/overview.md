@@ -7,13 +7,16 @@ Notre Dataset Finale est utilisé pour entraîner et tester le modèle de classi
 ### Structure du Dataset
 
 
-Le dataset est constitué d'une combinaison d'images téléchargées depuis Bing et de divers ensembles de données récupérés sur Kaggle.
+Le dataset est constitué d'une combinaison d'images téléchargées depuis Bing et de divers ensembles de données récupérés sur Kaggle 
+ainsi quelques photos prises avec nos propres moyens.
 
-1. **Paper :** (10 161 images)
+Totalité : 39 046 images
 
-2. **Metal :** (10 190 images)
+1. **Paper :** -> Train : 10154 images, Test : 2159 images
 
-3. **Plastic :** (10 140 images)
+2. **Metal :** -> Train : 11 877 images, Test : 2833 images
+
+3. **Plastic :** -> Train : 10 114 images, Test : 1858 images 
 
 ### Nomenclature des Fichiers
 
