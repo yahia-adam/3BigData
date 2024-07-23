@@ -10,6 +10,7 @@ documentation/.idea
 venv/
 datasets/ 
 dataset/
+serialized_datasets/
 dataset.zip
 mini_dataset/
 mini_dataset.zip
@@ -32,3 +33,4 @@ mylib/target
 venv
 /flask-app/static/uploads
 /interoperability/__pycache__/
+/models/

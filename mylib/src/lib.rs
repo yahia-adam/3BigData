@@ -62,7 +62,6 @@ pub use support_vector_machine::{
 
 #[allow(unused_imports)]
 pub use load_dataset::{
-    load_ml_dataset,
-    load_mlp_dataset,
     image_resize_vec,
+    loads_serialized_ml_dataset,
 };

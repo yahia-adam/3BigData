@@ -14,7 +14,7 @@ use std::ffi::{c_char, c_float, CStr, CString};
 use std::fs::File;
 use std::io::Read;
 use std::slice;
-
+use std::io::Write;
 use itertools::Itertools;
 use libm::expf;
 use osqp::{CscMatrix, Problem, Settings};
@@ -65,7 +65,7 @@ fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
 
 #[no_mangle]
 #[allow(dead_code)]
-pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float, labels_pointer: *mut c_float, input_length: u32, c: f32, epsilon: f32) {
+pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const f32, labels_pointer: *const c_float, input_length: u32, c: f32, epsilon: f32) {
     let model: &mut SVMModel = unsafe { model_pointer.as_mut().unwrap() };
 
     let dimensions: usize = model.dimensions as usize;
@@ -174,6 +174,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
   //  println!("l: {:?}", l);
     //println!("u: {:?}", u);
 
+    println!("Starting to solve...");
     let settings = Settings::default().verbose(true);
     let mut problem = Problem::new(&big_csc_matrix, &*q, &a_matrix, &*l, &*u, &settings).expect("OSQP Setup Error");
 
@@ -326,14 +327,14 @@ pub extern "C" fn svm_to_json(model: *const SVMModel) -> *mut c_char {
     let model_ref = unsafe { &*model };
 
     let json_obj = json!({
-        "dim":dimensions,
-        "w":weight,
-        "b":biais,
-        "k":kernel,
-        "kv":kernel_value,
-        "sv":support_vectors,
-        "sl":support_labels,
-        "a":alphas,
+        "dim":model_ref.dimensions,
+        "w":model_ref.weight,
+        "b":model_ref.biais,
+        "k":model_ref.kernel,
+        "kv":model_ref.kernel_value,
+        "sv":model_ref.support_vectors,
+        "sl":model_ref.support_labels,
+        "a":model_ref.alphas,
     });
 
     let json_str = match serde_json::to_string_pretty(&json_obj) {
