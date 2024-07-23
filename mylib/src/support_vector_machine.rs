@@ -10,14 +10,18 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-use std::ffi::{c_char, c_float, CString};
+use std::ffi::{c_char, c_float, CStr, CString};
+use std::fs::File;
+use std::io::Read;
 use std::slice;
 
 use itertools::Itertools;
 use libm::expf;
 use osqp::{CscMatrix, Problem, Settings};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 
-
+#[derive(Debug, Serialize, Deserialize)]
 pub struct SVMModel {
     dimensions: u32,
     weight: Vec<f32>,
@@ -275,4 +279,111 @@ pub extern "C" fn get_svm_state(model: *mut SVMModel) -> *mut c_char {
     let model = unsafe { &*model };
     let state = format!("SVs: {}, bias: {}", model.support_vectors.len(), model.biais);
     CString::new(state).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn save_svm(
+    model: *const SVMModel,
+    filepath: *const c_char,
+) -> bool {
+    let path_str = match unsafe { CStr::from_ptr(filepath) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("Invalid filepath");
+            return false;
+        }
+    };
+
+    let model_ref = unsafe { &*model };
+
+    let json_str = match serde_json::to_string_pretty(model_ref) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("JSON serialization error: {}", e);
+            return false;
+        }
+    };
+
+    match File::create(path_str) {
+        Ok(mut file) => {
+            if let Err(e) = write!(file, "{}", json_str) {
+                eprintln!("Error writing to file: {}", e);
+                false
+            } else {
+                println!("Model saved successfully to: {}", path_str);
+                true
+            }
+        }
+        Err(e) => {
+            eprintln!("Error creating file: {}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn svm_to_json(model: *const SVMModel) -> *mut c_char {
+    let model_ref = unsafe { &*model };
+
+    let json_obj = json!({
+        "dim":dimensions,
+        "w":weight,
+        "b":biais,
+        "k":kernel,
+        "kv":kernel_value,
+        "sv":support_vectors,
+        "sl":support_labels,
+        "a":alphas,
+    });
+
+    let json_str = match serde_json::to_string_pretty(&json_obj) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("JSON serialization error: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    match CString::new(json_str) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(e) => {
+            eprintln!("CString conversion error: {}", e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn loads_svm_model(filepath: *const c_char) -> *mut SVMModel {
+    let path_str = match unsafe { CStr::from_ptr(filepath) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("Invalid filepath");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let mut file = match File::open(path_str) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Error opening file: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let mut json_str = String::new();
+    if let Err(e) = file.read_to_string(&mut json_str) {
+        eprintln!("Error reading file: {}", e);
+        return std::ptr::null_mut();
+    }
+
+    let model: SVMModel = match serde_json::from_str(&json_str) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("Error deserializing JSON: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    Box::into_raw(Box::new(model))
 }
