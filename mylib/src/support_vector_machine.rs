@@ -76,68 +76,75 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const
 
     let labels: Vec<c_float> = unsafe { slice::from_raw_parts(labels_pointer, input_length) }.to_vec();
 
+    let p_matrix = set_p_matrix(&model, dimensions, input_length, &inputs, &labels);
 
-    let mut big_matrix: Vec<Vec<f64>> =
-    if model.kernel == 1 {
-        let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
-        for i in 0..dimensions {
-            big_matrix[i][i] = 1f64;
+    let a_matrix = set_a_matrix(&model, dimensions, input_length, &inputs, &labels);
+
+    let (q, l, u) = set_constraints(c, model, dimensions, input_length);
+
+    println!("Setting up problem...");
+    let settings = Settings::default()
+        .verbose(true);
+    let mut problem = Problem::new(&p_matrix, &*q, &a_matrix, &*l, &*u, &settings).expect("OSQP Setup Error");
+
+    println!("Solving problem...");
+    let result = problem.solve();
+    model.alphas = result.x().expect("failed to solve problem").iter().map(|x| *x as f32).collect();
+
+    model.weight = get_weights(dimensions, &inputs, &labels, &model.alphas);
+    model.biais = get_bias(c, epsilon, input_length, &inputs, &labels, &model.alphas, &model.weight);
+
+    let mut support_vectors: Vec<Vec<f32>> = Vec::new();
+    let mut support_labels: Vec<f32> = Vec::new();
+    //let mut alphas:Vec<f32> = Vec::new();
+
+    for i in 0..input_length {
+        if model.alphas[i].abs() > 1e-3 {
+            support_vectors.push(inputs[i].clone());
+            support_labels.push(labels[i]);
         }
-
-        big_matrix
-    } else {
-        let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; input_length + 1];
-        for i in 0..input_length {
-            for j in 0..input_length {
-                let kernel_value = get_kernel(model, &inputs[i], &inputs[j]);
-                big_matrix[i][j] = (labels[i] * labels[j] * kernel_value) as f64;
-            }
-        }
-
-        big_matrix
-    };
-
-    for i in 0..big_matrix.len() {
-        big_matrix[i][i] += 1e-6;
     }
 
+    model.support_vectors = support_vectors;
+    model.support_labels = support_labels;
+}
 
-
-    //println!("P: {:?}", big_matrix);
-
-    let big_csc_matrix = CscMatrix::from(&big_matrix).into_upper_tri();
-   // println!("P csc: {:?}", big_csc_matrix);
-
-
-    let a_matrix: Vec<Vec<f64>> =
-    if model.kernel == 1 {
-        let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
-        for row in 0..input_length {
-            for col in 0..dimensions {
-
-                a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64
-            }
-            a_matrix[row][dimensions] = labels[row] as f64;
-            a_matrix[row][row + dimensions + 1] = -1f64;
-            a_matrix[row + input_length][row + dimensions + 1] = 1f64;
+fn get_bias(c: f32, epsilon: f32, input_length: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>, alphas: &Vec<f32>, w: &Vec<f32>) -> f32 {
+    println!("Calculating Bias");
+    let mut bias = 0f32;
+    let mut sv_count = 0;
+    for i in 0..input_length {
+        if alphas[i].abs() > epsilon && alphas[i].abs() < c - epsilon {
+            bias += labels[i] - inputs[i].iter().zip(w).map(|(x, w)| x * w).sum::<f32>();
+            sv_count += 1;
         }
-
-        a_matrix
+    }
+    if sv_count > 0 {
+        bias /= sv_count as f32;
     } else {
-        let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; 2 * input_length];
-        for row in 0..input_length {
-            a_matrix[row][row] = labels[row] as f64;
-            a_matrix[row][input_length] = labels[row] as f64;
-            a_matrix[row + input_length][row] = 1f64;
-        }
+        println!("Warning: No support vectors found. The model may not be well-fitted.");
+    }
+    bias
+}
 
-        a_matrix
-    };
+fn get_weights(dimensions: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>, alphas: &Vec<f32>) -> Vec<f32> {
+    println!("Calculating weights");
+    let w: Vec<f32> = (0..dimensions)
+        .map(
+            |dim|
+            alphas.iter()
+                .zip(labels)
+                .zip(inputs)
+                .map(
+                    |((alpha, label), input)|
+                    *alpha  * label * input[dim])
+                .sum::<f32>())
+        .collect();
+    w
+}
 
-   // println!("a :{:?}", a_matrix);
-    let a_csc_matrix = CscMatrix::from(&a_matrix);
-    //println!("a_csc :{:?}", a_csc_matrix);
-
+fn set_constraints(c: f32, model: &SVMModel, dimensions: usize, input_length: usize) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
+    println!("Setting up constraints");
     let (q, l, u) = if model.kernel == 1 {
         let mut q = vec![0f64; dimensions + 1 + input_length];
         for i in 0..input_length {
@@ -151,8 +158,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const
         let mut u: Vec<f64> = vec![f64::INFINITY; 2 * input_length];
 
         (q, l, u)
-    }
-    else {
+    } else {
         let mut q = vec![0f64; input_length + 1];
         for i in 0..input_length {
             q[i] = -1f64;
@@ -169,73 +175,64 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const
         }
         (q, l, u)
     };
+    (q, l, u)
+}
 
-//    println!("q :{:?}", q);
-  //  println!("l: {:?}", l);
-    //println!("u: {:?}", u);
+fn set_a_matrix(model: &SVMModel, dimensions: usize, input_length: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>) -> Vec<Vec<f64>> {
+    println!("Setting up matrix A");
+    let a_matrix: Vec<Vec<f64>> =
+        if model.kernel == 1 {
+            let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
+            for row in 0..input_length {
+                for col in 0..dimensions {
+                    a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64
+                }
+                a_matrix[row][dimensions] = labels[row] as f64;
+                a_matrix[row][row + dimensions + 1] = -1f64;
+                a_matrix[row + input_length][row + dimensions + 1] = 1f64;
+            }
 
-    println!("Starting to solve...");
-    let settings = Settings::default().verbose(true);
-    let mut problem = Problem::new(&big_csc_matrix, &*q, &a_matrix, &*l, &*u, &settings).expect("OSQP Setup Error");
+            a_matrix
+        } else {
+            let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; 2 * input_length];
+            for row in 0..input_length {
+                a_matrix[row][row] = labels[row] as f64;
+                a_matrix[row][input_length] = labels[row] as f64;
+                a_matrix[row + input_length][row] = 1f64;
+            }
 
-    // Solve problem
-    let result = problem.solve();
-    let alphas: Vec<f32> = result.x().expect("failed to solve problem").iter().map(|x| *x as f32).collect();
+            a_matrix
+        };
+    a_matrix
+}
 
-    // Print the solution
-    //println!("alphas {:?}", alphas);
+fn set_p_matrix<'a>(model: &'a SVMModel, dimensions: usize, input_length: usize, inputs: &'a Vec<Vec<f32>>, labels: &'a Vec<c_float>) -> CscMatrix<'a> {
+    println!("Setting up matrix P");
+    let mut big_matrix: Vec<Vec<f64>> =
+        if model.kernel == 1 {
+            let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
+            for i in 0..dimensions {
+                big_matrix[i][i] = 1f64;
+            }
 
+            big_matrix
+        } else {
+            let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; input_length + 1];
+            for i in 0..input_length {
+                for j in 0..input_length {
+                    let kernel_value = get_kernel(model, &inputs[i], &inputs[j]);
+                    big_matrix[i][j] = (labels[i] * labels[j] * kernel_value) as f64;
+                }
+            }
 
-    let w: Vec<f32> = (0..dimensions)
-        .map(
-            |dim|
-            alphas.iter()
-                .zip(&labels)
-                .zip(&inputs)
-                .map(
-                    |((alpha, label), input)|
-                    *alpha as f32 * label * input[dim])
-                .sum::<f32>())
-        .collect();
+            big_matrix
+        };
 
-    //println!("weights: {:?}", w);
-
-
-    let mut bias = 0f32;
-    let mut sv_count = 0;
-    for i in 0..input_length {
-        if alphas[i].abs() > epsilon && alphas[i].abs() < c - epsilon {
-            bias += labels[i] - inputs[i].iter().zip(&w).map(|(x, w)| x * w).sum::<f32>();
-            sv_count += 1;
-        }
-    }
-    if sv_count > 0 {
-        bias /= sv_count as f32;
-    } else {
-        println!("Warning: No support vectors found. The model may not be well-fitted.");
-    }
-
-    //println!("bias: {} with {} sv", bias, sv_count);
-    model.biais = bias;
-    model.weight = w;
-
-    let mut support_vectors: Vec<Vec<f32>> = Vec::new();
-    let mut support_labels: Vec<f32> = Vec::new();
-    //let mut alphas:Vec<f32> = Vec::new();
-
-    for i in 0..input_length {
-        if alphas[i].abs() > 1e-3 {
-            support_vectors.push(inputs[i].clone());
-            support_labels.push(labels[i]);
-            //alphas.push(alphas[i] as f32);
-        }
+    for i in 0..big_matrix.len() {
+        big_matrix[i][i] += 1e-6;
     }
 
-    model.support_vectors = support_vectors;
-    model.support_labels = support_labels;
-    model.alphas = alphas;
-
-    //println!("Alphas saved, {:?}", model.support_labels);
+    CscMatrix::from(&big_matrix).into_upper_tri()
 }
 
 pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f32 {
@@ -249,8 +246,8 @@ pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f32 {
 #[allow(dead_code)]
 pub extern "C" fn predict_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float) -> c_float {
     let model: &mut SVMModel = unsafe { &mut *model_pointer };
-    let inputs_slice: &[f32] = unsafe { std::slice::from_raw_parts(inputs_pointer, model.dimensions as usize) };
-    let inputs:Vec<f32> = inputs_slice.to_vec();
+    let inputs_slice: &[f32] = unsafe { slice::from_raw_parts(inputs_pointer, model.dimensions as usize) };
+    let inputs: Vec<f32> = inputs_slice.to_vec();
 
     //let result: f32 = inputs.iter().zip(&model.weight).map(|(i, w)| i * w).sum::<f32>() + model.biais;
 
