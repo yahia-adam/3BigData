@@ -99,10 +99,10 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
 
 
 
-    println!("P: {:?}", big_matrix);
+    //println!("P: {:?}", big_matrix);
 
     let big_csc_matrix = CscMatrix::from(&big_matrix).into_upper_tri();
-    println!("P csc: {:?}", big_csc_matrix);
+   // println!("P csc: {:?}", big_csc_matrix);
 
 
     let a_matrix: Vec<Vec<f64>> =
@@ -130,7 +130,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
         a_matrix
     };
 
-    println!("a :{:?}", a_matrix);
+   // println!("a :{:?}", a_matrix);
     let a_csc_matrix = CscMatrix::from(&a_matrix);
     //println!("a_csc :{:?}", a_csc_matrix);
 
@@ -166,9 +166,9 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
         (q, l, u)
     };
 
-    println!("q :{:?}", q);
-    println!("l: {:?}", l);
-    println!("u: {:?}", u);
+//    println!("q :{:?}", q);
+  //  println!("l: {:?}", l);
+    //println!("u: {:?}", u);
 
     let settings = Settings::default().verbose(true);
     let mut problem = Problem::new(&big_csc_matrix, &*q, &a_matrix, &*l, &*u, &settings).expect("OSQP Setup Error");
@@ -178,7 +178,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     let alphas: Vec<f32> = result.x().expect("failed to solve problem").iter().map(|x| *x as f32).collect();
 
     // Print the solution
-    println!("alphas {:?}", alphas);
+    //println!("alphas {:?}", alphas);
 
 
     let w: Vec<f32> = (0..dimensions)
@@ -193,7 +193,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
                 .sum::<f32>())
         .collect();
 
-    println!("weights: {:?}", w);
+    //println!("weights: {:?}", w);
 
 
     let mut bias = 0f32;
@@ -210,7 +210,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
         println!("Warning: No support vectors found. The model may not be well-fitted.");
     }
 
-    println!("bias: {} with {} sv", bias, sv_count);
+    //println!("bias: {} with {} sv", bias, sv_count);
     model.biais = bias;
     model.weight = w;
 
@@ -230,7 +230,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c
     model.support_labels = support_labels;
     model.alphas = alphas;
 
-    println!("Alphas saved, {:?}", model.support_labels);
+    //println!("Alphas saved, {:?}", model.support_labels);
 }
 
 pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f32 {
@@ -268,7 +268,6 @@ pub extern "C" fn free_svm(model_pointer: *mut SVMModel) {
         unsafe {
             let _ = Box::from_raw(model_pointer);
         }
-        println!("Free")
     }
 }
 

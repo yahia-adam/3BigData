@@ -36,7 +36,7 @@ class MyModel:
 
         print("Initializing the model...")
 
-        if not self.__is_3_classes or self.__type not in ["ml", "rbf"]:
+        if not self.__is_3_classes or self.__type not in ["ml", "rbf", "svm"]:
             self.model = self._init_model()
         else:
             # Initialise 3 modèles pour comparer les résultats de chaque One vs Rest
@@ -111,7 +111,7 @@ class MyModel:
         x_test_flat = x_test.flatten().astype(ctypes.c_float)
         x_test_flat_ptr = x_test_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
-        if not self.__is_3_classes or self.__type not in ["ml", "rbf"]:
+        if not self.__is_3_classes or self.__type not in ["ml", "rbf", "svm"]:
             y_train_flat_ptr = y_train.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             y_test_flat_ptr = y_test.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size, x_test_flat_ptr, y_test_flat_ptr,
@@ -170,7 +170,7 @@ class MyModel:
                                                 sample_count)
             elif self.__type == "svm":
                 # the variable learning_rate is used for the parameter c of train_svm
-                my_lib.train_svm(self.model, x_train_flat_ptr, y_train_flat_ptr, train_data_size, learning_rate, self.epsilon)
+                my_lib.train_svm(self.model if index is None else self.model[index], x_train_flat_ptr, y_train_flat_ptr, train_data_size, learning_rate, self.epsilon)
         except Exception as e:
             print(f"Training failed due to {e}")
             raise
@@ -248,7 +248,10 @@ class MyModel:
             else:
                 return my_lib.predict_rbf_regression(self.model, point_pointer)
         elif self.__type == "svm":
-            return my_lib.predict_svm(self.model, point_pointer)
+            if not self.__is_3_classes:
+                return my_lib.predict_svm(self.model, point_pointer)
+            else:
+                return [my_lib.predict_svm(self.model[i], point_pointer) for i in range(3)]
 
     def print_regression(self, start: float = 0, end: float = 3.2):
         x = [i * 0.1 for i in range(round(start * 10), round(end * 10))]
@@ -293,7 +296,11 @@ class MyModel:
                     for i in range(3):
                         my_lib.free_rbf(self.model[i])
             elif self.__type == "svm":
-                my_lib.free_svm(self.model)
+                if not self.__is_3_classes:
+                    my_lib.free_svm(self.model)
+                else:
+                    for i in range(3):
+                        my_lib.free_svm(self.model[i])
             self.model = None
 
     def __enter__(self):
