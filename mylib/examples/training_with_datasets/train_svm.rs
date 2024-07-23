@@ -15,10 +15,10 @@ const EPOCHS: &[u32] = &[1000];
 
 const OUTPUT_DIR: &str = "../serialized_datasets";
 
-const KERNEL:u32 = 3;
+const KERNEL:u32 = 1;
 const KERNEL_VALUE:f32 = 10.0;
 const C:f32 = 1.0;
-const EPSILON:f32 =1e-64;
+const EPSILON:f32 =1e-4;
 
 fn main() {
     println!("Starting the training process...");
@@ -92,7 +92,7 @@ fn main() {
             //let c_log_filename =  CString::new(format!("../logs/ml/{}:lr={}epochs={}", "metal_vs_other", lr, epoch)).expect("CString::new failed");
             let c_model_filename = CString::new(format!("../models/svm/{}=kernel={}kernel_value={}c={}epsilon={}.json", "metal_vs_other",KERNEL, KERNEL_VALUE, C, EPSILON)).expect("CString::new failed");
             let model: *mut SVMModel = init_svm(metal_vs_other_input_count as u32, KERNEL, KERNEL_VALUE);
-            train_svm(model, metal_vs_other_x_train_ptr, metal_vs_other_y_train_ptr, metal_vs_other_train_data_size as u32, C, EPSILON);
+            train_svm(model, metal_vs_other_x_train_ptr, metal_vs_other_y_train_ptr, metal_vs_other_train_data_size as u32, C, EPSILON, metal_vs_other_x_test_ptr, metal_vs_other_y_test_ptr, metal_vs_other_test_data_size as u32);
             save_svm(model, c_model_filename.as_ptr());
             println!("metal_vs_other model trained and saved.");
 
@@ -103,7 +103,7 @@ fn main() {
             //let c_log_filename =  CString::new(format!("../logs/ml/{}:lr={}epochs={}", "paper_vs_other", lr, epoch)).expect("CString::new failed");
             let c_model_filename = CString::new(format!("../models/svm/{}=kernel={}kernel_value={}c={}epsilon={}.json", "paper_vs_other",KERNEL, KERNEL_VALUE, C, EPSILON)).expect("CString::new failed");
             let model: *mut SVMModel = init_svm(paper_vs_other_input_count as u32, KERNEL, KERNEL_VALUE);
-            train_svm(model, paper_vs_other_x_train_ptr, paper_vs_other_y_train_ptr, paper_vs_other_train_data_size as u32, C, EPSILON);
+            train_svm(model, paper_vs_other_x_train_ptr, paper_vs_other_y_train_ptr, paper_vs_other_train_data_size as u32, C, EPSILON, metal_vs_other_x_test_ptr, metal_vs_other_y_test_ptr, metal_vs_other_test_data_size as u32);
 
             save_svm(model, c_model_filename.as_ptr());
             println!("paper_vs_other model trained and saved.");
@@ -111,7 +111,7 @@ fn main() {
             println!("Training plastic_vs_other model");
             let c_model_filename = CString::new(format!("../models/svm/{}=kernel={}kernel_value={}c={}epsilon={}.json", "plastic_vs_other",KERNEL, KERNEL_VALUE, C, EPSILON)).expect("CString::new failed");
             let model: *mut SVMModel = init_svm(plastic_vs_other_input_count as u32, KERNEL, KERNEL_VALUE);
-            train_svm(model, plastic_vs_other_x_train_ptr, plastic_vs_other_y_train_ptr, plastic_vs_other_train_data_size as u32, C, EPSILON);
+            train_svm(model, plastic_vs_other_x_train_ptr, plastic_vs_other_y_train_ptr, plastic_vs_other_train_data_size as u32, C, EPSILON, metal_vs_other_x_test_ptr, metal_vs_other_y_test_ptr, metal_vs_other_test_data_size as u32);
 
             save_svm(model, c_model_filename.as_ptr());
             println!("plastic_vs_other model trained and saved.");

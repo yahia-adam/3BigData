@@ -65,16 +65,22 @@ fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
 
 #[no_mangle]
 #[allow(dead_code)]
-pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const f32, labels_pointer: *const c_float, input_length: u32, c: f32, epsilon: f32) {
+pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const f32, labels_pointer: *const c_float, input_length: u32, c: f32, epsilon: f32, test_input: *const f32, test_label: *const f32, test_length: u32) {
     let model: &mut SVMModel = unsafe { model_pointer.as_mut().unwrap() };
 
     let dimensions: usize = model.dimensions as usize;
     let input_length: usize = input_length as usize;
+    let test_length: usize = test_length as usize;
 
     let flat_input = unsafe { slice::from_raw_parts(inputs_pointer, dimensions * input_length) };
     let inputs: Vec<Vec<f32>> = flat_input.chunks(dimensions).map(|c| c.to_vec()).collect();
 
     let labels: Vec<c_float> = unsafe { slice::from_raw_parts(labels_pointer, input_length) }.to_vec();
+
+    let flat_test_input = unsafe { slice::from_raw_parts(test_input, dimensions * test_length) };
+    let test_inputs: Vec<Vec<f32>> = flat_test_input.chunks(dimensions).map(|c| c.to_vec()).collect();
+
+    let test_labels: Vec<c_float> = unsafe { slice::from_raw_parts(test_label, test_length) }.to_vec();
 
     let p_matrix = set_p_matrix(&model, dimensions, input_length, &inputs, &labels);
 
@@ -98,6 +104,7 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const
     let mut support_labels: Vec<f32> = Vec::new();
     //let mut alphas:Vec<f32> = Vec::new();
 
+
     for i in 0..input_length {
         if model.alphas[i].abs() > 1e-3 {
             support_vectors.push(inputs[i].clone());
@@ -107,6 +114,31 @@ pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const
 
     model.support_vectors = support_vectors;
     model.support_labels = support_labels;
+
+
+    println!("Getting prediction for train dataset");
+    let train_predictions: Vec<f32> = inputs
+        .iter()
+        .map(|input| predict_svm_intern(model, input))
+        .collect();
+    println!("Train  loss:{}, accuracy:{}", mse_svm(&labels, &train_predictions), get_accuracy(&labels, &train_predictions));
+
+    println!("Getting predictions for test dataset");
+    let test_predictions: Vec<f32> = test_inputs
+        .iter()
+        .map(|input| predict_svm_intern(model, input))
+        .collect();
+    println!("Test  loss:{}, accuracy:{}", mse_svm(&test_labels, &test_predictions), get_accuracy(&test_labels, &test_predictions) )
+}
+
+fn get_accuracy(prediction: &Vec<f32>, expected: &Vec<f32>) -> f32 {
+    let correct = expected
+        .iter()
+        .zip(prediction)
+        .filter(|(expected, prediction)| expected.signum() == prediction.signum())
+        .count();
+
+    correct as f32 / expected.len() as f32
 }
 
 fn get_bias(c: f32, epsilon: f32, input_length: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>, alphas: &Vec<f32>, w: &Vec<f32>) -> f32 {
@@ -137,7 +169,7 @@ fn get_weights(dimensions: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>,
                 .zip(inputs)
                 .map(
                     |((alpha, label), input)|
-                    *alpha  * label * input[dim])
+                    *alpha * label * input[dim])
                 .sum::<f32>())
         .collect();
     w
@@ -184,38 +216,38 @@ fn set_a_matrix(model: &SVMModel, dimensions: usize, input_length: usize, inputs
     let matrix_width = if model.kernel == 1 { dimensions + input_length + 1 } else { input_length + 1 };
     let mut a_matrix = vec![vec![0f64; matrix_width]; 2 * input_length];
     // let a_matrix: Vec<Vec<f64>> =
-        if model.kernel == 1 {
-            // let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
-            // for row in 0..input_length {
-            //     for col in 0..dimensions {
-            //         a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64
-            //     }
-            //     a_matrix[row][dimensions] = labels[row] as f64;
-            //     a_matrix[row][row + dimensions + 1] = -1f64;
-            //     a_matrix[row + input_length][row + dimensions + 1] = 1f64;
-            // }
+    if model.kernel == 1 {
+        // let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
+        // for row in 0..input_length {
+        //     for col in 0..dimensions {
+        //         a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64
+        //     }
+        //     a_matrix[row][dimensions] = labels[row] as f64;
+        //     a_matrix[row][row + dimensions + 1] = -1f64;
+        //     a_matrix[row + input_length][row + dimensions + 1] = 1f64;
+        // }
 
-            // a_matrix
+        // a_matrix
 
-            for row in 0..input_length {
-                let label = labels[row] as f64;
-                for col in 0..dimensions {
-                    a_matrix[row][col] = label * inputs[row][col] as f64;
-                }
-                a_matrix[row][dimensions] = label;
-                a_matrix[row][row + dimensions + 1] = -1f64;
-                a_matrix[row + input_length][row + dimensions + 1] = 1f64;
+        for row in 0..input_length {
+            let label = labels[row] as f64;
+            for col in 0..dimensions {
+                a_matrix[row][col] = label * inputs[row][col] as f64;
             }
-        } else {
-            // let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; 2 * input_length];
-            for row in 0..input_length {
-                a_matrix[row][row] = labels[row] as f64;
-                a_matrix[row][input_length] = labels[row] as f64;
-                a_matrix[row + input_length][row] = 1f64;
-            }
+            a_matrix[row][dimensions] = label;
+            a_matrix[row][row + dimensions + 1] = -1f64;
+            a_matrix[row + input_length][row + dimensions + 1] = 1f64;
+        }
+    } else {
+        // let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; 2 * input_length];
+        for row in 0..input_length {
+            a_matrix[row][row] = labels[row] as f64;
+            a_matrix[row][input_length] = labels[row] as f64;
+            a_matrix[row + input_length][row] = 1f64;
+        }
 
-            // a_matrix
-        };
+        // a_matrix
+    };
     a_matrix
 }
 
@@ -225,35 +257,35 @@ fn set_p_matrix<'a>(model: &'a SVMModel, dimensions: usize, input_length: usize,
     let mut big_matrix = vec![vec![0f64; matrix_size]; matrix_size];
 
     // let mut big_matrix: Vec<Vec<f64>> =
-        if model.kernel == 1 {
-            // let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
-            for i in 0..dimensions {
-                big_matrix[i][i] = 1f64;
-            }
+    if model.kernel == 1 {
+        // let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
+        for i in 0..dimensions {
+            big_matrix[i][i] = 1f64;
+        }
 
-            // big_matrix
-        } else {
-            // let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; input_length + 1];
-            // for i in 0..input_length {
-            //     for j in 0..input_length {
-            //         let kernel_value = get_kernel(model, &inputs[i], &inputs[j]);
-            //         big_matrix[i][j] = (labels[i] * labels[j] * kernel_value) as f64;
-            //     }
-            // }
+        // big_matrix
+    } else {
+        // let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; input_length + 1];
+        // for i in 0..input_length {
+        //     for j in 0..input_length {
+        //         let kernel_value = get_kernel(model, &inputs[i], &inputs[j]);
+        //         big_matrix[i][j] = (labels[i] * labels[j] * kernel_value) as f64;
+        //     }
+        // }
 
-            // big_matrix
+        // big_matrix
 
-            for i in 0..input_length {
-                let label_i = labels[i] as f64;
-                let input_i = &inputs[i];
-                for j in i..input_length {
-                    let kernel_value = get_kernel(model, input_i, &inputs[j]) as f64;
-                    let value = label_i * labels[j] as f64 * kernel_value;
-                    big_matrix[i][j] = value;
-                    big_matrix[j][i] = value; // Symmetric matrix
-                }
+        for i in 0..input_length {
+            let label_i = labels[i] as f64;
+            let input_i = &inputs[i];
+            for j in i..input_length {
+                let kernel_value = get_kernel(model, input_i, &inputs[j]) as f64;
+                let value = label_i * labels[j] as f64 * kernel_value;
+                big_matrix[i][j] = value;
+                big_matrix[j][i] = value; // Symmetric matrix
             }
         }
+    }
 
     for i in 0..big_matrix.len() {
         big_matrix[i][i] += 1e-6;
@@ -262,9 +294,9 @@ fn set_p_matrix<'a>(model: &'a SVMModel, dimensions: usize, input_length: usize,
     CscMatrix::from(&big_matrix).into_upper_tri()
 }
 
-pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f32 {
-    let error: f32 = expected.iter().zip(prediction).map(|(exp, pred)| (exp - pred).powi(2)).sum::<f32>();
-    let result: f32 = error / expected.len() as f32;
+pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f64 {
+    let error: f64 = expected.iter().zip(prediction).map(|(exp, pred)| (*exp as f64 - *pred as f64).powi(2)).sum::<f64>();
+    let result: f64 = error / expected.len() as f64;
 
     result
 }
@@ -278,6 +310,10 @@ pub extern "C" fn predict_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut
 
     //let result: f32 = inputs.iter().zip(&model.weight).map(|(i, w)| i * w).sum::<f32>() + model.biais;
 
+    predict_svm_intern(model, &inputs)
+}
+
+fn predict_svm_intern(model: &mut SVMModel, inputs: &Vec<f32>) -> f32 {
     let result: f32 = model.support_vectors.iter()
         .zip(&model.alphas)
         .zip(&model.support_labels)
