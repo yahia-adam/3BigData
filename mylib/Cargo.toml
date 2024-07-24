@@ -83,7 +83,6 @@ name = "mlp_classification_linear_simple"
 path = "examples/multilayer_perceptron/classification/linear_simple.rs"
 
 [[example]]
-<<<<<<< HEAD
 name = "mlp_classification_multi_linear_3_classes"
 path = "examples/multilayer_perceptron/classification/multi_linear_3_classes.rs"
 
@@ -209,12 +208,9 @@ path = "examples/training_with_datasets/train_svm.rs"
 [[example]]
 name = "create_ml_dataset"
 path = "examples/training_with_datasets/create_ml_dataset.rs"
-=======
-name="mlp_resgression_non_linear_simple_3D"
-path="examples/pmc/regression/non_linear_simple_3D.rs"
 
 # <-------------------------------------------------- svc ----------------------------------------------------->
 [[example]]
 name="svc_linear_simple"
 path="examples/svc/linear_simple.rs"
->>>>>>> d1b2aa022c8381ff76f94d45571c96fd31112854
+

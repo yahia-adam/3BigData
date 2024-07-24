@@ -99,11 +99,11 @@ def init_lib():
     ) -> *mut LinearModel
     """
 
-    my_lib.load_linear_model.argtypes = [
-        ctypes.POINTER(ctypes.c_char)
-    ]
-
-    my_lib.load_linear_model.restype = ctypes.c_void_p
+    # my_lib.load_linear_model.argtypes = [
+    #     ctypes.POINTER(ctypes.c_char)
+    # ]
+    #
+    # my_lib.load_linear_model.restype = ctypes.c_void_p
 
     # -------------------------- mlp --------------------------
     """
