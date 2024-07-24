@@ -15,9 +15,9 @@ const EPOCHS: &[u32] = &[1000];
 
 const OUTPUT_DIR: &str = "../serialized_datasets";
 
-const KERNEL:u32 = 1;
-const KERNEL_VALUE:f32 = 10.0;
-const C:f32 = 1.0;
+const KERNEL:u32 = 3;
+const KERNEL_VALUE:f32 = 30.0;
+const C:f32 = 0.5;
 const EPSILON:f32 =1e-4;
 
 fn main() {

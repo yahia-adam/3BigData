@@ -87,17 +87,10 @@ def index():
             session['image'] = new_filename
 
         selected_action = request.form.get('selectedAction')
-<<<<<<< HEAD
-    
-        image_vec = process_image(new_file_path, 32)
-        image_vec_p = np.ctypeslib.as_ctypes(np.array(image_vec, dtype=ctypes.c_float))
-            
-=======
 
         image_vec = process_image(new_file_path, 32)
         image_vec_p = np.ctypeslib.as_ctypes(np.array(image_vec, dtype=ctypes.c_float))
 
->>>>>>> 1caf009cf6cae5235db2a39205b439a5ebaa2cba
         if selected_action == "mlp":
             res_arr = my_lib.predict_mlp(mlp_model, image_vec_p)
             tab = [res_arr[0], res_arr[1], res_arr[2]]
@@ -116,19 +109,11 @@ def index():
             paper_predict = my_lib.predict_linear_model(paper_vs_other_model, image_vec_p)
             plastic_predict = my_lib.predict_linear_model(plastic_vs_other_model, image_vec_p)
 
-<<<<<<< HEAD
-            if (metal_predict > paper_predict and metal_predict > plastic_predict ):
+            if (metal_predict >= paper_predict and metal_predict >= plastic_predict):
                 result = "Metal"
-            elif (paper_predict > metal_predict and paper_predict > plastic_predict ):
-              result = "Paper"
-            elif (plastic_predict > metal_predict and plastic_predict > paper_predict):
-              result = "Plastic"
-=======
-            if (metal_predict > paper_predict and metal_predict > plastic_predict):
-                result = "Metal"
-            elif (paper_predict > metal_predict and paper_predict > plastic_predict):
+            elif (paper_predict >= metal_predict and paper_predict >= plastic_predict):
                 result = "Paper"
-            elif (plastic_predict > metal_predict and plastic_predict > paper_predict):
+            elif (plastic_predict >= metal_predict and plastic_predict >= paper_predict):
                 result = "Plastic"
         if selected_action == "rbf":
             metal_predict = my_lib.predict_rbf_classification(metal_vs_other_model, image_vec_p)
@@ -141,7 +126,7 @@ def index():
                 result = "Paper"
             elif (plastic_predict > metal_predict and plastic_predict > paper_predict):
                 result = "Plastic"
->>>>>>> 1caf009cf6cae5235db2a39205b439a5ebaa2cba
+
 
         session['result'] = result
 
