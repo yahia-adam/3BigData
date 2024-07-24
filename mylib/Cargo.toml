@@ -162,9 +162,9 @@ path = "examples/radial_basis_function/regression/non_linear_simple_3D.rs"
 # <-------------------------------------------------- svm ----------------------------------------------------->
 # classification
 
-[[example]]
-name = "svm_classification_cross"
-path = "examples/support_vector_machine/classification/cross.rs"
+#[[example]]
+#name = "svm_classification_cross"
+#path = "examples/support_vector_machine/classification/cross.rs"
 
 [[example]]
 name = "svm_classification_linear_simple"
