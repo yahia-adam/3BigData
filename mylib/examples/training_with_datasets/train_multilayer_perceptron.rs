@@ -3,7 +3,6 @@ use std::ffi::CString;
 
 const EPOCHS: u32 = 100;
 const DIMENSIONS: &[&[u32]] = &[
-    &[32, 32, 3],
     &[128, 64, 32, 3],
     &[256, 128, 64, 3],
     &[64, 64, 32, 3],
@@ -60,7 +59,7 @@ fn main() {
 
             println!("Initialisation du modèle terminée pour la dimension {:?}", dim);
 
-            let c_log_filename = CString::new(format!("3new_data{:?}lr={}epochs={}", dim, lr, EPOCHS)).expect("CString::new failed");
+            let c_log_filename = CString::new(format!("ancien_data{:?}lr={}epochs={}", dim, lr, EPOCHS)).expect("CString::new failed");
             let c_model_filename = CString::new(format!("../models/mlp/{:?}lr={}epochs{}.json", dim, lr, EPOCHS)).expect("CString::new failed");
 
             train_mlp(
