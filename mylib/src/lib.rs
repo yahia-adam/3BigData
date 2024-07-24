@@ -61,3 +61,6 @@ pub use load_dataset::{
     loads_serialized_mlp_dataset,
     image_resize_vec,
 };
+
+#[allow(unused_imports)]
+pub use support_vector_machine::{SupportVectorClassifier, init_svc, train_svc, predict_svc,free_svc, save_svc, load_svc};
