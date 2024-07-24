@@ -23,46 +23,6 @@ image = "0.25.1"
 bincode = "1.3.3"
 zstd = "0.13.2"
 
-# <-------------------------------------------------- lm ----------------------------------------------------->
-# classification
-
-[[example]]
-name = "lm_classification_cross"
-path = "examples/linear_model/classification/cross.rs"
-
-[[example]]
-name = "lm_classification_linear_simple"
-path = "examples/linear_model/classification/linear_simple.rs"
-
-[[example]]
-name = "lm_classification_linear_multiple"
-path = "examples/linear_model/classification/linear_multiple.rs"
-
-[[example]]
-name = "lm_classification_xor"
-path = "examples/linear_model/classification/xor.rs"
-
-# regression
-[[example]]
-name = "lm_regression_linear_simple_2D"
-path = "examples/linear_model/regression/linear_simple_2D.rs"
-
-[[example]]
-name = "lm_regression_linear_simple_3D"
-path = "examples/linear_model/regression/linear_simple_3D.rs"
-
-[[example]]
-name = "lm_regression_linear_tricky_3D"
-path = "examples/linear_model/regression/linear_tricky_3D.rs"
-
-[[example]]
-name = "lm_regression_non_linear_simple_2D"
-path = "examples/linear_model/regression/non_linear_simple_2D.rs"
-
-[[example]]
-name = "lm_regression_non_linear_simple_3D"
-path = "examples/linear_model/regression/non_linear_simple_3D.rs"
-
 # <-------------------------------------------------- mlp ----------------------------------------------------->
 # classification
 
@@ -83,7 +43,6 @@ name = "mlp_classification_linear_simple"
 path = "examples/multilayer_perceptron/classification/linear_simple.rs"
 
 [[example]]
-<<<<<<< HEAD
 name = "mlp_classification_multi_linear_3_classes"
 path = "examples/multilayer_perceptron/classification/multi_linear_3_classes.rs"
 
@@ -160,33 +119,6 @@ path = "examples/radial_basis_function/regression/non_linear_simple_2D.rs"
 name = "rbf_regression_non_linear_simple_3D"
 path = "examples/radial_basis_function/regression/non_linear_simple_3D.rs"
 
-# <-------------------------------------------------- svm ----------------------------------------------------->
-# classification
-
-[[example]]
-name = "svm_classification_cross"
-path = "examples/support_vector_machine/classification/cross.rs"
-
-[[example]]
-name = "svm_classification_linear_simple"
-path = "examples/support_vector_machine/classification/linear_simple.rs"
-
-[[example]]
-name = "svm_classification_linear_multiple"
-path = "examples/support_vector_machine/classification/linear_multiple.rs"
-
-[[example]]
-name = "svm_classification_multi_cross"
-path = "examples/support_vector_machine/classification/multi_cross.rs"
-
-[[example]]
-name = "svm_classification_multi_linear_3_classes"
-path = "examples/support_vector_machine/classification/multi_linear_3_classes.rs"
-
-[[example]]
-name = "svm_classification_xor"
-path = "examples/support_vector_machine/classification/xor.rs"
-
 # <-------------------------------------------------- model training ----------------------------------------------------->
 # train with datasets
 
@@ -209,12 +141,4 @@ path = "examples/training_with_datasets/train_svm.rs"
 [[example]]
 name = "create_ml_dataset"
 path = "examples/training_with_datasets/create_ml_dataset.rs"
-=======
-name="mlp_resgression_non_linear_simple_3D"
-path="examples/pmc/regression/non_linear_simple_3D.rs"
 
-# <-------------------------------------------------- svc ----------------------------------------------------->
-[[example]]
-name="svc_linear_simple"
-path="examples/svc/linear_simple.rs"
->>>>>>> d1b2aa022c8381ff76f94d45571c96fd31112854

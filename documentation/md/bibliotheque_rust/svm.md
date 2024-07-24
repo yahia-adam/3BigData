@@ -57,7 +57,31 @@ Pour chaque cas de test, des visualisations ont été générées pour illustrer
 
   ![Classification XOR](images/svm_classification_xor.png)
 
+---
 
+Le modèle SVM utilisant un noyau linéaire a démontré des difficultés de convergence, nécessitant un nombre d'itérations supérieur à 4000 
+pour atteindre une solution satisfaisante. Cette observation suggère que la complexité du problème pourrait dépasser les capacités de séparation 
+linéaire du modèle dans l'espace des caractéristiques actuel.
+
+   ![SVM_1](images/svm_1.png)
+
+Une première expérimentation du modèle SVM a été réalisée en utilisant un noyau RBF, avec les hyperparamètres gamma = 10 et C = 1. Cette configuration, exploitant le 'kernel trick', 
+a produit des résultats initiaux avec une précision (accuracy) d'environ 0,6.
+Ces résultats préliminaires, bien que prometteurs, suggèrent qu'il existe une marge d'amélioration potentielle. 
+Une exploration plus approfondie de l'espace des hyperparamètres s'avère nécessaire pour optimiser les performances du modèle. Des expérimentations supplémentaires avec différentes valeurs de gamma et 
+C sont recommandées pour affiner le modèle et potentiellement améliorer sa précision.
+
+   ![SVM_3](images/svm_3.png)
+
+
+   ![SVM_4](images/svm_4.png)
+
+
+   ![SVM_2](images/svm_2.png)
+
+
+
+---
 
 Pour plus de détails sur l'implémentation et les résultats, veuillez consulter le code source et les commentaires associés dans les fichiers du projet.
 

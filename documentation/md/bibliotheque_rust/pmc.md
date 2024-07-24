@@ -162,7 +162,19 @@ Pour chaque expérimentation, nous avons généré et inclus des images des cour
 - **mlp_regression_non_linear_simple_3D** :
 
      ![Régression Non-Linéaire Simple 3D](images/mlp_regression_non_linear_simple_3D.png)
+---
 
+Dans notre dernière expérience, nous avons testé un modèle de réseau neuronal avec une architecture de 128, 
+64 et 32 neurones dans les couches cachées. 
+Les résultats ont montré une précision d'entraînement d'environ 93% avec une perte de 1,7, 
+tandis que sur l'ensemble de test, nous avons obtenu une précision de 73% et une perte de 1,4.
+Face à ces résultats, nous envisageons d'augmenter la complexité du modèle. Notre prochaine 
+étape sera d'ajouter une couche supplémentaire de 256 neurones et d'augmenter globalement le nombre de neurones dans les couches existantes. 
+Cette modification vise à améliorer la capacité du modèle à capturer des motifs plus complexes dans les données.
+
+   ![BEST_MLP](images/best_mlp.png)
+
+---
 
 Pour plus d'informations sur l'implémentation et les détails techniques, veuillez consulter le code source et les commentaires associés dans les fichiers du projet.
 
