@@ -11,27 +11,32 @@ const GAMMA: f32 = 0.01;
 
 const OUTPUT_DIR: &str = "../serialized_datasets";
 
-fn test_model(model: *mut RadialBasisFunctionNetwork, x_test: &*const f32, y_test: &*const f32, input_count: usize) -> f32 {
+fn predict_on_test_set(
+    model: *mut RadialBasisFunctionNetwork,
+    x_test_ptr: *const f32,
+    y_test_ptr: *const f32,
+    test_data_size: usize,
+    input_count: usize
+) -> f32 {
     let mut correct_predictions = 0;
-    let total_predictions = input_count;
 
-    let x_test_slice = unsafe { slice::from_raw_parts(*x_test, total_predictions * input_count) };
-    let y_test_slice = unsafe { slice::from_raw_parts(*y_test, total_predictions) };
+    unsafe {
+        let y_test_slice = slice::from_raw_parts(y_test_ptr, test_data_size);
 
-    for i in 0..total_predictions {
-        let start = i * input_count;
-        let end = start + input_count;
-        let input = &x_test_slice[start..end];
-        let prediction = predict_rbf_classification(model, input.as_ptr() as *mut f32);
-        let true_label = y_test_slice[i];
+        for i in 0..test_data_size {
+            let input_ptr = x_test_ptr.add(i * input_count);
+            let prediction = predict_rbf_classification(model, input_ptr as *mut f32);
+            let true_label = y_test_slice[i];
 
-        if (prediction > 0.0 && true_label > 0.0) || (prediction <= 0.0 && true_label <= 0.0) {
-            correct_predictions += 1;
+            if (prediction > 0.0 && true_label > 0.0) || (prediction <= 0.0 && true_label <= 0.0) {
+                correct_predictions += 1;
+            }
         }
     }
 
-    (correct_predictions as f32) / (total_predictions as f32)
+    (correct_predictions as f32) / (test_data_size as f32)
 }
+
 fn load_model_dataset(model: &str) -> std::io::Result<(Vec<Vec<f32>>, Vec<f32>, Vec<Vec<f32>>, Vec<f32>)> {
     let file_path = format!("{}/{}.bin", OUTPUT_DIR, model);
     println!("Loading dataset: {}", file_path);
@@ -118,7 +123,7 @@ fn main() {
 
     save_rbf_model(model, c_model_filename.as_ptr());
 
-    let accuracy = test_model(model, &paper_vs_other_x_test_ptr, &paper_vs_other_y_test_ptr, paper_vs_other_test_data_size);
+    let accuracy = predict_on_test_set(model, paper_vs_other_x_test_ptr, paper_vs_other_y_test_ptr, paper_vs_other_test_data_size, paper_vs_other_input_count);
     println!("Paper vs Others model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
 
     free_rbf(model);
@@ -139,7 +144,7 @@ fn main() {
 
     save_rbf_model(model, c_model_filename.as_ptr());
 
-    let accuracy = test_model(model, &metal_vs_other_x_test_ptr, &metal_vs_other_y_test_ptr, metal_vs_other_test_data_size);
+    let accuracy = predict_on_test_set(model, metal_vs_other_x_test_ptr, metal_vs_other_y_test_ptr, metal_vs_other_test_data_size, metal_vs_other_input_count);
     println!("Metal vs Others model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
 
     free_rbf(model);
@@ -160,7 +165,7 @@ fn main() {
 
     save_rbf_model(model, c_model_filename.as_ptr());
 
-    let accuracy = test_model(model, &plastic_vs_other_x_test_ptr, &plastic_vs_other_y_test_ptr, plastic_vs_other_test_data_size);
+    let accuracy = predict_on_test_set(model, plastic_vs_other_x_test_ptr, plastic_vs_other_y_test_ptr, plastic_vs_other_test_data_size, plastic_vs_other_input_count);
     println!("Plastic vs Others model - Training finished, Test accuracy: {:.2}%", accuracy * 100.0);
 
     free_rbf(model);
