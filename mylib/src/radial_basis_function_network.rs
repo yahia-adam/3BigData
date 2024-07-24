@@ -20,9 +20,8 @@ use ndarray_rand::rand::Rng;
 use std::slice::{from_raw_parts};
 use libm::*;
 use std::fs::File;
-use std::io::{Write, BufReader};
+use std::io::{Write, BufReader, Read};
 use std::os::raw::c_char;
-// use pbr::ProgressBar;
 // use tensorboard_rs::summary_writer::SummaryWriter;
 // use std::collections::HashMap;
 
@@ -410,4 +409,39 @@ pub extern "C" fn save_rbf_model(model : *mut RadialBasisFunctionNetwork, path :
     let serialized = serde_json::to_string(&model).unwrap();
     let mut output = File::create(path).unwrap();
     write!(output, "{}", &serialized).unwrap();
+}
+
+#[no_mangle]
+pub extern "C" fn load_rbf_model(filepath: *const std::ffi::c_char) -> *mut RadialBasisFunctionNetwork {
+    let path_str = match unsafe { CStr::from_ptr(filepath) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("Invalid filepath");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let mut file = match File::open(path_str) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Error opening file: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let mut json_str = String::new();
+    if let Err(e) = file.read_to_string(&mut json_str) {
+        eprintln!("Error reading file: {}", e);
+        return std::ptr::null_mut();
+    }
+
+    let model: RadialBasisFunctionNetwork = match serde_json::from_str(&json_str) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("Error deserializing JSON: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    Box::into_raw(Box::new(model))
 }

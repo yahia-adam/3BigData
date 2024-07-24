@@ -17,7 +17,13 @@ les modèles linéaires et le réseau de fonction à base radicale.
 - Analyser et commenter les résultats obtenus.
 - Fournir une documentation détaillée et complète.
 
-## Lien importants
+## comment run le project
+
+la lib: ```cd mylib && cargo build --release```
+
+flask-app: ```python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt && cd flask-app && python3 app.py```
+
+log experimentaion: ```python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt &&  tensorboard --logdir logs```
 
 #### github
 

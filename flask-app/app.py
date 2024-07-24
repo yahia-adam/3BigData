@@ -17,9 +17,25 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 my_lib = init_lib()
 
-ML_PAPER_VS_OTHER_MODEL_PATH= b"./models/best_paper_vs_other.json"
-ML_METAL_VS_OTHER_MODEL_PATH= b"./models/best_metal_vs_other.json"
-ML_PLASTIC_VS_OTHER_MODEL_PATH= b"./models/best_plastic_vs_other.json"
+ML_PAPER_VS_OTHER_MODEL_PATH = b"./models/best_paper_vs_other.json"
+ML_METAL_VS_OTHER_MODEL_PATH = b"./models/best_metal_vs_other.json"
+ML_PLASTIC_VS_OTHER_MODEL_PATH = b"./models/best_plastic_vs_other.json"
+
+paper_vs_other_model = my_lib.loads_linear_model(ML_PAPER_VS_OTHER_MODEL_PATH)
+metal_vs_other_model = my_lib.loads_linear_model(ML_METAL_VS_OTHER_MODEL_PATH)
+plastic_vs_other_model = my_lib.loads_linear_model(ML_PLASTIC_VS_OTHER_MODEL_PATH)
+
+MLP_MODEL_PATH = b"./models/best_mlp_model.json"
+mlp_model = my_lib.loads_mlp_model(MLP_MODEL_PATH)
+
+
+RBF_PAPER_VS_OTHER_MODEL_PATH = b"./models/rbf_best_paper_vs_other.json"
+RBF_METAL_VS_OTHER_MODEL_PATH = b"./models/rbf_best_metal_vs_other.json"
+RBF_PLASTIC_VS_OTHER_MODEL_PATH = b"./models/rbf_best_plastic_vs_other.json"
+
+rbf_paper_vs_other_model = my_lib.load_rbf_model(RBF_PAPER_VS_OTHER_MODEL_PATH)
+rbf_metal_vs_other_model = my_lib.load_rbf_model(RBF_METAL_VS_OTHER_MODEL_PATH)
+rbf_plastic_vs_other_model = my_lib.load_rbf_model(RBF_PLASTIC_VS_OTHER_MODEL_PATH)
 
 paper_vs_other_model = my_lib.loads_linear_model(ML_PAPER_VS_OTHER_MODEL_PATH)
 metal_vs_other_model = my_lib.loads_linear_model(ML_METAL_VS_OTHER_MODEL_PATH)
@@ -46,7 +62,6 @@ def process_image(file_path, image_size):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-
     result = None
     if request.method == 'POST':
         if 'image' not in request.files:
@@ -72,10 +87,17 @@ def index():
             session['image'] = new_filename
 
         selected_action = request.form.get('selectedAction')
+<<<<<<< HEAD
     
         image_vec = process_image(new_file_path, 32)
         image_vec_p = np.ctypeslib.as_ctypes(np.array(image_vec, dtype=ctypes.c_float))
             
+=======
+
+        image_vec = process_image(new_file_path, 32)
+        image_vec_p = np.ctypeslib.as_ctypes(np.array(image_vec, dtype=ctypes.c_float))
+
+>>>>>>> 1caf009cf6cae5235db2a39205b439a5ebaa2cba
         if selected_action == "mlp":
             res_arr = my_lib.predict_mlp(mlp_model, image_vec_p)
             tab = [res_arr[0], res_arr[1], res_arr[2]]
@@ -94,18 +116,39 @@ def index():
             paper_predict = my_lib.predict_linear_model(paper_vs_other_model, image_vec_p)
             plastic_predict = my_lib.predict_linear_model(plastic_vs_other_model, image_vec_p)
 
+<<<<<<< HEAD
             if (metal_predict > paper_predict and metal_predict > plastic_predict ):
                 result = "Metal"
             elif (paper_predict > metal_predict and paper_predict > plastic_predict ):
               result = "Paper"
             elif (plastic_predict > metal_predict and plastic_predict > paper_predict):
               result = "Plastic"
+=======
+            if (metal_predict > paper_predict and metal_predict > plastic_predict):
+                result = "Metal"
+            elif (paper_predict > metal_predict and paper_predict > plastic_predict):
+                result = "Paper"
+            elif (plastic_predict > metal_predict and plastic_predict > paper_predict):
+                result = "Plastic"
+        if selected_action == "rbf":
+            metal_predict = my_lib.predict_rbf_classification(metal_vs_other_model, image_vec_p)
+            paper_predict = my_lib.predict_rbf_classification(paper_vs_other_model, image_vec_p)
+            plastic_predict = my_lib.predict_rbf_classification(plastic_vs_other_model, image_vec_p)
+
+            if (metal_predict > paper_predict and metal_predict > plastic_predict):
+                result = "Metal"
+            elif (paper_predict > metal_predict and paper_predict > plastic_predict):
+                result = "Paper"
+            elif (plastic_predict > metal_predict and plastic_predict > paper_predict):
+                result = "Plastic"
+>>>>>>> 1caf009cf6cae5235db2a39205b439a5ebaa2cba
 
         session['result'] = result
 
         return redirect(url_for('index'))
 
     return render_template('index.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

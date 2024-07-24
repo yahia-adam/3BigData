@@ -203,7 +203,7 @@ def init_lib():
         input_dim : i32, 
         cluster_num : i32, 
         gamma : f32
-    ) -> *mut RadicalBasisFunctionNetwork
+    ) -> *mut RadialBasisFunctionNetwork
     """
 
     my_lib.init_rbf.argtypes = [
@@ -216,7 +216,7 @@ def init_lib():
 
     """
     train_rbf_regression(
-        model : *mut RadicalBasisFunctionNetwork, 
+        model : *mut RadialBasisFunctionNetwork, 
         sample_inputs_flat : *mut f32,
         expected_outputs : *mut f32, 
         inputs_size : i32, 
@@ -236,7 +236,7 @@ def init_lib():
 
     """
     predict_rbf_regression(
-        model : *mut RadicalBasisFunctionNetwork, 
+        model : *mut RadialBasisFunctionNetwork, 
         inputs : *mut f32
     ) -> f32
     """
@@ -250,7 +250,7 @@ def init_lib():
 
     """
     train_rbf_rosenblatt(
-        model : *mut RadicalBasisFunctionNetwork, 
+        model : *mut RadialBasisFunctionNetwork, 
         sample_inputs_flat : *mut f32,
         expected_outputs : *mut f32, 
         iterations_count : i32, 
@@ -274,7 +274,7 @@ def init_lib():
 
     """
     predict_rbf_classification(
-        model : *mut RadicalBasisFunctionNetwork, 
+        model : *mut RadialBasisFunctionNetwork, 
         inputs : *mut f32
     )-> f32
     """
@@ -288,12 +288,24 @@ def init_lib():
 
     """
     free_rbf(
-        model : *mut RadicalBasisFunctionNetwork
+        model : *mut RadialBasisFunctionNetwork
     )
     """
 
     my_lib.free_rbf.argtypes = [ctypes.c_void_p]
 
     my_lib.free_rbf.restype = None
+    
+    """
+    load_rbf_model(
+        filepath: *const c_char
+    ) -> *mut RadialBasisFunctionNetwork
+    """
+
+    my_lib.load_rbf_model.argtypes = [
+        ctypes.POINTER(ctypes.c_char)
+    ]
+
+    my_lib.load_rbf_model.restype = ctypes.c_void_p
 
     return my_lib
