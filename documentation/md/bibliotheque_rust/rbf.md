@@ -103,7 +103,21 @@ Pour chaque cas de test, nous avons généré et inclus des images des courbes e
 
   ![Régression Non-Linéaire Simple 3D](images/rbf_regression_non_linear_simple_3D.png)
 
+---
 
+Suite au lancement de l'entraînement avec le dataset, avec les paramètres Epoch : 500, Learning Rate : 0.01, Gamma : 1.0 et Cluster Num : 200, nous avons observé que la fonction de perte (loss) ne diminue pas de manière significative au fil des époques. Cela suggère que le modèle ne parvient pas à apprendre efficacement à partir des données. L'augmentation du taux d'apprentissage (learning rate) et du paramètre gamma 
+n'a pas produit l'amélioration escomptée dans les performances du modèle.
+
+   ![Loss_1.0](images/loss_1.png)
+
+La perte commence à 1.0000 pour les époques 0, 10 et 20. À partir de l'époque 30, on constate une très légère baisse à 0.9999, qui se maintient jusqu'à l'époque 70. Finalement, à l'époque 80, la perte diminue encore très légèrement pour atteindre 0.9998.
+Cette diminution est extrêmement faible, passant de 1.0000 à 0.9998 sur 80 époques, ce qui représente une réduction de seulement 0.0002 ou 0.02%.
+Il est important de noter que malgré cette légère baisse de la perte, l'exactitude (accuracy) reste constante à 68.4374% tout au long des époques affichées.
+Cette évolution indique que le modèle apprend, mais à un rythme extrêmement lent, et que les améliorations sont minimales sur la plage d'époques observée.
+
+   ![Loss_2.0](images/loss_2.png)
+
+---
 
 Pour plus de détails sur l'implémentation et les résultats, veuillez consulter le code source et les commentaires associés dans les fichiers du projet.
 

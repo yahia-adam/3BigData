@@ -12,11 +12,11 @@ ainsi quelques photos prises avec nos propres moyens.
 
 Totalité : 39 046 images
 
-1. **Paper :** -> Train : 10154 images, Test : 2159 images
+1. **Paper :** -> Train : 10 154 images, Test : 2 159 images
 
-2. **Metal :** -> Train : 11 877 images, Test : 2833 images
+2. **Metal :** -> Train : 11 877 images, Test : 2 833 images
 
-3. **Plastic :** -> Train : 10 114 images, Test : 1858 images 
+3. **Plastic :** -> Train : 10 114 images, Test : 1 858 images 
 
 ### Nomenclature des Fichiers
 
