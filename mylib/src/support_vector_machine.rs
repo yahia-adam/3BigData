@@ -53,7 +53,7 @@ pub extern "C" fn init_svm(dimensions: u32, kernel: u32, kernel_value: f32) -> *
 }
 
 fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
-    if model.kernel == 1 {  //poduit scalaire
+    if model.kernel == 1 {  //poduit scalaire pour noyau linéaire
         xi.iter().zip(xj.iter()).map(|(i, j)| i * j).sum()
     } else if model.kernel == 2 { //Polynome de degrès = kernel_value
         xi.iter().zip(xj).map(|(i, j)| f32::powi(1f32 + i * j, model.kernel_value as i32)).sum()
@@ -215,20 +215,7 @@ fn set_a_matrix(model: &SVMModel, dimensions: usize, input_length: usize, inputs
 
     let matrix_width = if model.kernel == 1 { dimensions + input_length + 1 } else { input_length + 1 };
     let mut a_matrix = vec![vec![0f64; matrix_width]; 2 * input_length];
-    // let a_matrix: Vec<Vec<f64>> =
     if model.kernel == 1 {
-        // let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; 2 * input_length];
-        // for row in 0..input_length {
-        //     for col in 0..dimensions {
-        //         a_matrix[row][col] = (labels[row] * inputs[row][col]) as f64
-        //     }
-        //     a_matrix[row][dimensions] = labels[row] as f64;
-        //     a_matrix[row][row + dimensions + 1] = -1f64;
-        //     a_matrix[row + input_length][row + dimensions + 1] = 1f64;
-        // }
-
-        // a_matrix
-
         for row in 0..input_length {
             let label = labels[row] as f64;
             for col in 0..dimensions {
@@ -239,14 +226,11 @@ fn set_a_matrix(model: &SVMModel, dimensions: usize, input_length: usize, inputs
             a_matrix[row + input_length][row + dimensions + 1] = 1f64;
         }
     } else {
-        // let mut a_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; 2 * input_length];
         for row in 0..input_length {
             a_matrix[row][row] = labels[row] as f64;
             a_matrix[row][input_length] = labels[row] as f64;
             a_matrix[row + input_length][row] = 1f64;
         }
-
-        // a_matrix
     };
     a_matrix
 }
@@ -256,25 +240,11 @@ fn set_p_matrix<'a>(model: &'a SVMModel, dimensions: usize, input_length: usize,
     let matrix_size = if model.kernel == 1 { dimensions + input_length + 1 } else { input_length + 1 };
     let mut big_matrix = vec![vec![0f64; matrix_size]; matrix_size];
 
-    // let mut big_matrix: Vec<Vec<f64>> =
     if model.kernel == 1 {
-        // let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; dimensions + input_length + 1]; dimensions + input_length + 1];
         for i in 0..dimensions {
             big_matrix[i][i] = 1f64;
         }
-
-        // big_matrix
     } else {
-        // let mut big_matrix: Vec<Vec<f64>> = vec![vec![0f64; input_length + 1]; input_length + 1];
-        // for i in 0..input_length {
-        //     for j in 0..input_length {
-        //         let kernel_value = get_kernel(model, &inputs[i], &inputs[j]);
-        //         big_matrix[i][j] = (labels[i] * labels[j] * kernel_value) as f64;
-        //     }
-        // }
-
-        // big_matrix
-
         for i in 0..input_length {
             let label_i = labels[i] as f64;
             let input_i = &inputs[i];
@@ -307,8 +277,6 @@ pub extern "C" fn predict_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut
     let model: &mut SVMModel = unsafe { &mut *model_pointer };
     let inputs_slice: &[f32] = unsafe { slice::from_raw_parts(inputs_pointer, model.dimensions as usize) };
     let inputs: Vec<f32> = inputs_slice.to_vec();
-
-    //let result: f32 = inputs.iter().zip(&model.weight).map(|(i, w)| i * w).sum::<f32>() + model.biais;
 
     predict_svm_intern(model, &inputs)
 }
