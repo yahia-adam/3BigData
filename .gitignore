@@ -11,6 +11,7 @@ venv/
 datasets/ 
 dataset/
 dataset2/
+serialized_datasets/
 dataset.zip
 mini_dataset/
 mini_dataset.zip
@@ -28,6 +29,7 @@ Cargo.lock
 .ipynb_checkpoints
 mylib/target
 /interoperability/.ipynb_checkpoints/
+/interoperability/python_interlop/wrapper/__pycache__/
 /interoperability/python_interlop/.venv/
 /interoperability/python_interlop/.ipynb_checkpoints/
 venv
@@ -39,3 +41,5 @@ serialized_dataset_mlp.bin
 datasets.zip
 models/*
 experiences/*
+
+/models/

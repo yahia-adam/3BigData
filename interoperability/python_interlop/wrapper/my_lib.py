@@ -8,8 +8,8 @@ my_lib = init_lib()
 
 class MyModel:
     def __init__(self, model_type: str, size: (int, tuple), is_classification: bool = False, is_3_classes: bool = False,
-                 cluster_size: int = 0, gamma: float = 0, ):
-        if model_type not in ["ml", "mlp", "rbf"]:
+                 cluster_size: int = 0, gamma: float = 0, kernel:int = 1, kernel_value:float = 1.0,):
+        if model_type not in ["ml", "mlp", "rbf", "svm"]:
             raise ValueError(f"Invalid model type: {model_type}")
         if not isinstance(size, (int, tuple)):
             raise ValueError("Size must be an integer or a list of integers")
@@ -25,18 +25,18 @@ class MyModel:
         self.__is_classification = is_classification
         self.__cluster_size = cluster_size
         self.__gamma = gamma
+        self.kernel = kernel
+        self.kernel_value = kernel_value
+        self.epsilon = 0
 
         if is_classification:
-            # print(model_type)
             self.__is_3_classes = is_3_classes
         else:
             self.__is_3_classes = False
 
         print("Initializing the model...")
-        # print(f"Initializing RBF with dims={self.__dims}, cluster_size={self.__cluster_size}, gamma={self.__gamma}")
 
-        if not self.__is_3_classes or self.__type not in ["ml", "rbf"]:
-            # print(model_type)
+        if not self.__is_3_classes or self.__type not in ["ml", "rbf", "svm"]:
             self.model = self._init_model()
         else:
             # Initialise 3 modèles pour comparer les résultats de chaque One vs Rest
@@ -53,14 +53,16 @@ class MyModel:
             raw_size = np.ctypeslib.as_ctypes(np.array(self.__dims, dtype=ctypes.c_uint32))
             return my_lib.init_mlp(raw_size, len(self.__dims), self.__is_classification, self.__is_3_classes)
         elif self.__type == "rbf":
-            # print(self.__dims, self.__cluster_size, self.__gamma)
             return my_lib.init_rbf(self.__dims, self.__cluster_size, self.__gamma)
+        elif self.__type == "svm":
+            return my_lib.init_svm(self.__dims, self.kernel, self.kernel_value)
 
     def train(self, x_train: np.ndarray, y_train: np.ndarray, x_test=None, y_test=None,
               learning_rate=0.01, epochs=10_000, log_filename="model", model_filename="model",
-              display_loss=False, display_tensorboard=False, save_model=False, sample_count=3):
+              display_loss=False, display_tensorboard=False, save_model=False, sample_count=3, epsilon:float = 1e-3):
         """
         Trains the model on the given data
+        :param epsilon:
         :param save_model:
         :param display_tensorboard:
         :param display_loss:
@@ -86,6 +88,7 @@ class MyModel:
 
         print("Training the model...")
 
+        self.epsilon = epsilon
         train_data_size = len(y_train)
         test_data_size = len(y_test)
 
@@ -108,7 +111,7 @@ class MyModel:
         x_test_flat = x_test.flatten().astype(ctypes.c_float)
         x_test_flat_ptr = x_test_flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
-        if not self.__is_3_classes or self.__type not in ["ml", "rbf"]:
+        if not self.__is_3_classes or self.__type not in ["ml", "rbf", "svm"]:
             y_train_flat_ptr = y_train.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             y_test_flat_ptr = y_test.flatten().astype(ctypes.c_float).ctypes.data_as(ctypes.POINTER(ctypes.c_float))
             self._train_model(x_train_flat_ptr, y_train_flat_ptr, train_data_size, x_test_flat_ptr, y_test_flat_ptr,
@@ -158,15 +161,18 @@ class MyModel:
                 print("finish training the mlp")
 
             elif self.__type == "rbf":
-                # print("je rentre ici ?")
                 if self.__is_classification:
-                    # print(sample_count)
                     my_lib.train_rbf_rosenblatt(self.model if index is None else self.model[index]
                                                 , x_train_flat_ptr, y_train_flat_ptr, epochs, learning_rate,
                                                 self.__dims, sample_count)
                 else:
                     my_lib.train_rbf_regression(self.model, x_train_flat_ptr, y_train_flat_ptr, self.__dims,
                                                 sample_count)
+            elif self.__type == "svm":
+                # the variable learning_rate is used for the parameter c of train_svm
+                my_lib.train_svm(self.model if index is None else self.model[index], x_train_flat_ptr, y_train_flat_ptr,
+                                 train_data_size, learning_rate, self.epsilon, x_train_flat_ptr, y_train_flat_ptr,
+                                 train_data_size,)
         except Exception as e:
             print(f"Training failed due to {e}")
             raise
@@ -178,7 +184,9 @@ class MyModel:
             self.print_regression(start=start_x, end=end_x)
 
     def print_classification(self, end_x, end_y, step, start_x=0, start_y=0):
+        print("Printing the classification results...")
         background_points = np.mgrid[start_x:end_x:step, start_y:end_y:step].reshape(2, -1).T
+        background_points = np.round(background_points, decimals=3)
         background_colors = np.array(list(map(self._get_prediction_color, background_points)))
         # np.apply_along_axis(self._get_prediction_color, 1, background_points)
 
@@ -191,7 +199,6 @@ class MyModel:
 
     def print_dataset(self):
         print("Printing the training data...")
-
         if self.__is_classification:
             plt.scatter(self.train_data[0], self.train_data[1], c=self._get_train_colors())
         else:
@@ -236,17 +243,17 @@ class MyModel:
                 return np.ctypeslib.as_array(my_lib.predict_mlp(self.model, point_pointer), (3,))
         elif self.__type == "rbf":
             if self.__is_classification:
-                # var = my_lib.predict_rbf_classification(self.model, point_pointer)
-                # print(var)
-                # print(point_pointer)
-                # prediction = my_lib.predict_rbf_classification(self.model, point_pointer)
-                # print(f"Predicting for point {point}, result: {prediction}")
                 if not self.__is_3_classes:
                     return my_lib.predict_rbf_classification(self.model, point_pointer)
                 else:
                     return [my_lib.predict_rbf_regression(self.model[i], point_pointer) for i in range(3)]
             else:
                 return my_lib.predict_rbf_regression(self.model, point_pointer)
+        elif self.__type == "svm":
+            if not self.__is_3_classes:
+                return my_lib.predict_svm(self.model, point_pointer)
+            else:
+                return [my_lib.predict_svm(self.model[i], point_pointer) for i in range(3)]
 
     def print_regression(self, start: float = 0, end: float = 3.2):
         x = [i * 0.1 for i in range(round(start * 10), round(end * 10))]
@@ -290,7 +297,12 @@ class MyModel:
                 else:
                     for i in range(3):
                         my_lib.free_rbf(self.model[i])
-
+            elif self.__type == "svm":
+                if not self.__is_3_classes:
+                    my_lib.free_svm(self.model)
+                else:
+                    for i in range(3):
+                        my_lib.free_svm(self.model[i])
             self.model = None
 
     def __enter__(self):

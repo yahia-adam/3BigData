@@ -10,140 +10,409 @@
 /*                                                                                                           */
 /* ********************************************************************************************************* */
 
-use rand::Rng;
-use serde::{Deserialize, Serialize};
-use serde_json::{self, json};
-use std::ffi::CString;
-use std::ffi::{c_char, c_float, CStr};
-use std::fs;
+use std::ffi::{c_char, c_float, CStr, CString};
 use std::fs::File;
+use std::io::Read;
+use std::slice;
 use std::io::Write;
+use itertools::Itertools;
+use libm::expf;
+use osqp::{CscMatrix, Problem, Settings};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 
-#[derive(Serialize, Deserialize)]
-pub struct SupportVectorClassifier {
-    pub weights: Vec<f32>,
-    pub weights_count: usize,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SVMModel {
+    dimensions: u32,
+    weight: Vec<f32>,
+    biais: f32,
+    kernel: u32,
+    kernel_value: f32,
+    support_vectors: Vec<Vec<f32>>,
+    support_labels: Vec<f32>,
+    alphas: Vec<f32>,
 }
 
 #[no_mangle]
-pub extern "C" fn init_svc(input_count: u32) -> *mut SupportVectorClassifier {
-    let model: SupportVectorClassifier = SupportVectorClassifier {
-        weights: vec![rand::thread_rng().gen_range(-1.0..1.0); (input_count + 1) as usize],
-        weights_count: input_count as usize,
+#[allow(dead_code)]
+pub extern "C" fn init_svm(dimensions: u32, kernel: u32, kernel_value: f32) -> *mut SVMModel {
+    let model: SVMModel = SVMModel {
+        dimensions,
+        weight: Vec::new(),
+        biais: 1f32,
+        kernel,
+        kernel_value,
+        support_vectors: vec![],
+        support_labels: vec![],
+        alphas: vec![],
     };
 
-    let boxed_model: Box<SupportVectorClassifier> = Box::new(model);
-    let leaked_boxed_model: *mut SupportVectorClassifier = Box::leak(boxed_model);
+    let boxed_model: Box<SVMModel> = Box::new(model);
+    let leaked_boxed_model: *mut SVMModel = Box::leak(boxed_model);
     leaked_boxed_model.into()
 }
 
-#[no_mangle]
-pub extern "C" fn train_svc(
-    model: *mut SupportVectorClassifier,
-    features: *const c_float,
-    labels: *const c_float,
-    data_size: u32,
-    learning_rate: f32,
-    epochs: u32,
-) {
-    let data_size: usize = data_size as usize;
-
-    let model_ref: &mut SupportVectorClassifier = unsafe { model.as_mut().unwrap() };
-    let features: &[f32] = unsafe {
-        std::slice::from_raw_parts(features, (data_size * model_ref.weights_count) as usize)
-    };
-    let labels: &[f32] = unsafe { std::slice::from_raw_parts(labels, data_size as usize) };
-
-    let features: Vec<f32> = features.to_vec().clone();
-    let labels: Vec<f32> = labels.to_vec().clone();
-
-
+fn get_kernel(model: &SVMModel, xi: &Vec<f32>, xj: &Vec<f32>) -> f32 {
+    if model.kernel == 1 {  //poduit scalaire pour noyau linéaire
+        xi.iter().zip(xj.iter()).map(|(i, j)| i * j).sum()
+    } else if model.kernel == 2 { //Polynome de degrès = kernel_value
+        xi.iter().zip(xj).map(|(i, j)| f32::powi(1f32 + i * j, model.kernel_value as i32)).sum()
+    } else if model.kernel == 3 { //RBF avec gamma = kernel_value
+        let squared_distance: f32 = xi.iter().zip(xj).map(|(i, j)| (i - j).powi(2)).sum();
+        expf(-model.kernel_value * squared_distance)
+    } else { 0.0 }
 }
 
 #[no_mangle]
-pub extern "C" fn predict_svc(
-    model: *mut SupportVectorClassifier,
-    inputs: *mut f32,
-) -> c_float {
-    let model_ref: &mut SupportVectorClassifier = unsafe { model.as_mut().unwrap() };
-    let inputs: &[f32] = unsafe { std::slice::from_raw_parts(inputs, model_ref.weights_count) };
-    guess(model_ref, inputs.to_vec())
-}
+#[allow(dead_code)]
+pub extern "C" fn train_svm(model_pointer: *mut SVMModel, inputs_pointer: *const f32, labels_pointer: *const c_float, input_length: u32, c: f32, epsilon: f32, test_input: *const f32, test_label: *const f32, test_length: u32) {
+    let model: &mut SVMModel = unsafe { model_pointer.as_mut().unwrap() };
 
-pub fn guess(model: &mut SupportVectorClassifier, inputs: Vec<f32>) -> f32 {
-    let mut sum: f32 = 0.0;
-    for i in 1..(model.weights_count + 1) {
-        sum += inputs[i - 1] * model.weights[i]
+    let dimensions: usize = model.dimensions as usize;
+    let input_length: usize = input_length as usize;
+    let test_length: usize = test_length as usize;
+
+    let flat_input = unsafe { slice::from_raw_parts(inputs_pointer, dimensions * input_length) };
+    let inputs: Vec<Vec<f32>> = flat_input.chunks(dimensions).map(|c| c.to_vec()).collect();
+
+    let labels: Vec<c_float> = unsafe { slice::from_raw_parts(labels_pointer, input_length) }.to_vec();
+
+    let flat_test_input = unsafe { slice::from_raw_parts(test_input, dimensions * test_length) };
+    let test_inputs: Vec<Vec<f32>> = flat_test_input.chunks(dimensions).map(|c| c.to_vec()).collect();
+
+    let test_labels: Vec<c_float> = unsafe { slice::from_raw_parts(test_label, test_length) }.to_vec();
+
+    let p_matrix = set_p_matrix(&model, dimensions, input_length, &inputs, &labels);
+
+    let a_matrix = set_a_matrix(&model, dimensions, input_length, &inputs, &labels);
+
+    let (q, l, u) = set_constraints(c, model, dimensions, input_length);
+
+    println!("Setting up problem...");
+    let settings = Settings::default()
+        .verbose(true);
+    let mut problem = Problem::new(&p_matrix, &*q, &a_matrix, &*l, &*u, &settings).expect("OSQP Setup Error");
+
+    println!("Solving problem...");
+    let result = problem.solve();
+    model.alphas = result.x().expect("failed to solve problem").iter().map(|x| *x as f32).collect();
+
+    model.weight = get_weights(dimensions, &inputs, &labels, &model.alphas);
+    model.biais = get_bias(c, epsilon, input_length, &inputs, &labels, &model.alphas, &model.weight);
+
+    let mut support_vectors: Vec<Vec<f32>> = Vec::new();
+    let mut support_labels: Vec<f32> = Vec::new();
+    //let mut alphas:Vec<f32> = Vec::new();
+
+
+    for i in 0..input_length {
+        if model.alphas[i].abs() > 1e-3 {
+            support_vectors.push(inputs[i].clone());
+            support_labels.push(labels[i]);
+        }
     }
-    sum += model.weights[0];
-    if sum >= 0.0 {
-        sum = 1.0;
+
+    model.support_vectors = support_vectors;
+    model.support_labels = support_labels;
+
+
+    println!("Getting prediction for train dataset");
+    let train_predictions: Vec<f32> = inputs
+        .iter()
+        .map(|input| predict_svm_intern(model, input))
+        .collect();
+    println!("Train  loss:{}, accuracy:{}", mse_svm(&labels, &train_predictions), get_accuracy(&labels, &train_predictions));
+
+    println!("Getting predictions for test dataset");
+    let test_predictions: Vec<f32> = test_inputs
+        .iter()
+        .map(|input| predict_svm_intern(model, input))
+        .collect();
+    println!("Test  loss:{}, accuracy:{}", mse_svm(&test_labels, &test_predictions), get_accuracy(&test_labels, &test_predictions) )
+}
+
+fn get_accuracy(prediction: &Vec<f32>, expected: &Vec<f32>) -> f32 {
+    let correct = expected
+        .iter()
+        .zip(prediction)
+        .filter(|(expected, prediction)| expected.signum() == prediction.signum())
+        .count();
+
+    correct as f32 / expected.len() as f32
+}
+
+fn get_bias(c: f32, epsilon: f32, input_length: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>, alphas: &Vec<f32>, w: &Vec<f32>) -> f32 {
+    println!("Calculating Bias");
+    let mut bias = 0f32;
+    let mut sv_count = 0;
+    for i in 0..input_length {
+        if alphas[i].abs() > epsilon && alphas[i].abs() < c - epsilon {
+            bias += labels[i] - inputs[i].iter().zip(w).map(|(x, w)| x * w).sum::<f32>();
+            sv_count += 1;
+        }
+    }
+    if sv_count > 0 {
+        bias /= sv_count as f32;
     } else {
-        sum = -1.0;
+        println!("Warning: No support vectors found. The model may not be well-fitted.");
     }
-    sum
+    bias
 }
 
-#[no_mangle]
-pub extern "C" fn svc_to_json(model: *const SupportVectorClassifier) -> *const c_char {
-    let model: &SupportVectorClassifier = unsafe { model.as_ref().unwrap() };
-    let json_obj: serde_json::Value = json!({
-        "weights": model.weights,
-    });
-    let json_str: String =
-        serde_json::to_string_pretty(&json_obj).unwrap_or_else(|_| "".to_string());
-    let c_str: CString = CString::new(json_str).expect("Failed to convert string to CString");
-    let ptr: *const c_char = c_str.into_raw();
-    ptr
+fn get_weights(dimensions: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>, alphas: &Vec<f32>) -> Vec<f32> {
+    println!("Calculating weights");
+    let w: Vec<f32> = (0..dimensions)
+        .map(
+            |dim|
+            alphas.iter()
+                .zip(labels)
+                .zip(inputs)
+                .map(
+                    |((alpha, label), input)|
+                    *alpha * label * input[dim])
+                .sum::<f32>())
+        .collect();
+    w
 }
 
-#[no_mangle]
-pub extern "C" fn save_svc(model: *const SupportVectorClassifier, filepath: *const std::ffi::c_char) {
-    let path_cstr: &CStr = unsafe { CStr::from_ptr(filepath) };
-    let path_str: &str = match path_cstr.to_str() {
-        Ok(s) => s,
-        Err(_e) => {
-            println!("Unable to save model error converting filepath to str");
-            return;
+fn set_constraints(c: f32, model: &SVMModel, dimensions: usize, input_length: usize) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
+    println!("Setting up constraints");
+    let (q, l, u) = if model.kernel == 1 {
+        let mut q = vec![0f64; dimensions + 1 + input_length];
+        for i in 0..input_length {
+            q[dimensions + 1 + i] = 1f64;
+        }
+
+        let mut l: Vec<f64> = Vec::new();
+        l.extend(vec![1f64; input_length]);
+        l.extend(vec![0f64; input_length]);
+
+        let mut u: Vec<f64> = vec![f64::INFINITY; 2 * input_length];
+
+        (q, l, u)
+    } else {
+        let mut q = vec![0f64; input_length + 1];
+        for i in 0..input_length {
+            q[i] = -1f64;
+        }
+
+        let l: Vec<f64> = vec![0f64; 2 * input_length];
+
+        let mut u: Vec<f64> = vec![0f64; 2 * input_length];
+        for i in 0..input_length {
+            u[i] = c as f64;
+        }
+        for i in input_length..(2 * input_length) {
+            u[i] = f64::INFINITY;
+        }
+        (q, l, u)
+    };
+    (q, l, u)
+}
+
+fn set_a_matrix(model: &SVMModel, dimensions: usize, input_length: usize, inputs: &Vec<Vec<f32>>, labels: &Vec<c_float>) -> Vec<Vec<f64>> {
+    println!("Setting up matrix A");
+
+    let matrix_width = if model.kernel == 1 { dimensions + input_length + 1 } else { input_length + 1 };
+    let mut a_matrix = vec![vec![0f64; matrix_width]; 2 * input_length];
+    if model.kernel == 1 {
+        for row in 0..input_length {
+            let label = labels[row] as f64;
+            for col in 0..dimensions {
+                a_matrix[row][col] = label * inputs[row][col] as f64;
+            }
+            a_matrix[row][dimensions] = label;
+            a_matrix[row][row + dimensions + 1] = -1f64;
+            a_matrix[row + input_length][row + dimensions + 1] = 1f64;
+        }
+    } else {
+        for row in 0..input_length {
+            a_matrix[row][row] = labels[row] as f64;
+            a_matrix[row][input_length] = labels[row] as f64;
+            a_matrix[row + input_length][row] = 1f64;
         }
     };
-    let weights_str: &str = unsafe {
-        let weights_ptr: *const c_char = svc_to_json(model);
-        std::ffi::CStr::from_ptr(weights_ptr).to_str().unwrap_or("")
-    };
+    a_matrix
+}
 
-    if let Ok(mut file) = File::create(path_str) {
-        if let Err(_) = write!(file, "{}", weights_str) {
-            println!("Unable to save model error writing to file");
+fn set_p_matrix<'a>(model: &'a SVMModel, dimensions: usize, input_length: usize, inputs: &'a Vec<Vec<f32>>, labels: &'a Vec<c_float>) -> CscMatrix<'a> {
+    println!("Setting up matrix P");
+    let matrix_size = if model.kernel == 1 { dimensions + input_length + 1 } else { input_length + 1 };
+    let mut big_matrix = vec![vec![0f64; matrix_size]; matrix_size];
+
+    if model.kernel == 1 {
+        for i in 0..dimensions {
+            big_matrix[i][i] = 1f64;
         }
     } else {
-        println!("Unable to save model error creating file");
+        for i in 0..input_length {
+            let label_i = labels[i] as f64;
+            let input_i = &inputs[i];
+            for j in i..input_length {
+                let kernel_value = get_kernel(model, input_i, &inputs[j]) as f64;
+                let value = label_i * labels[j] as f64 * kernel_value;
+                big_matrix[i][j] = value;
+                big_matrix[j][i] = value; // Symmetric matrix
+            }
+        }
     }
-    println!("Model saved successfully on: {}", path_str);
+
+    for i in 0..big_matrix.len() {
+        big_matrix[i][i] += 1e-6;
+    }
+
+    CscMatrix::from(&big_matrix).into_upper_tri()
+}
+
+pub fn mse_svm(expected: &Vec<f32>, prediction: &Vec<f32>) -> f64 {
+    let error: f64 = expected.iter().zip(prediction).map(|(exp, pred)| (*exp as f64 - *pred as f64).powi(2)).sum::<f64>();
+    let result: f64 = error / expected.len() as f64;
+
+    result
 }
 
 #[no_mangle]
-pub extern "C" fn load_svc(json_str_ptr: *const c_char) -> *mut SupportVectorClassifier {
-    let json_str_cstr = unsafe { CStr::from_ptr(json_str_ptr) };
-    let json_str: &str = match json_str_cstr.to_str() {
+#[allow(dead_code)]
+pub extern "C" fn predict_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float) -> c_float {
+    let model: &mut SVMModel = unsafe { &mut *model_pointer };
+    let inputs_slice: &[f32] = unsafe { slice::from_raw_parts(inputs_pointer, model.dimensions as usize) };
+    let inputs: Vec<f32> = inputs_slice.to_vec();
+
+    predict_svm_intern(model, &inputs)
+}
+
+fn predict_svm_intern(model: &mut SVMModel, inputs: &Vec<f32>) -> f32 {
+    let result: f32 = model.support_vectors.iter()
+        .zip(&model.alphas)
+        .zip(&model.support_labels)
+        .map(|((sv, alpha), label)| {
+            *alpha * *label * get_kernel(model, &inputs, sv)
+        })
+        .sum::<f32>() + model.biais;
+
+    // println!("Input: {:?}, Raw score: {}", inputs, result);
+    result
+}
+
+#[no_mangle]
+#[allow(dead_code)]
+pub extern "C" fn free_svm(model_pointer: *mut SVMModel) {
+    if !model_pointer.is_null() {
+        unsafe {
+            let _ = Box::from_raw(model_pointer);
+        }
+    }
+}
+
+pub extern "C" fn get_svm_state(model: *mut SVMModel) -> *mut c_char {
+    let model = unsafe { &*model };
+    let state = format!("SVs: {}, bias: {}", model.support_vectors.len(), model.biais);
+    CString::new(state).unwrap().into_raw()
+}
+
+#[no_mangle]
+pub extern "C" fn save_svm(
+    model: *const SVMModel,
+    filepath: *const c_char,
+) -> bool {
+    let path_str = match unsafe { CStr::from_ptr(filepath) }.to_str() {
         Ok(s) => s,
         Err(_) => {
-            println!("Unable to load model: Failed to convert C string to Rust string");
+            eprintln!("Invalid filepath");
+            return false;
+        }
+    };
+
+    let model_ref = unsafe { &*model };
+
+    let json_str = match serde_json::to_string_pretty(model_ref) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("JSON serialization error: {}", e);
+            return false;
+        }
+    };
+
+    match File::create(path_str) {
+        Ok(mut file) => {
+            if let Err(e) = write!(file, "{}", json_str) {
+                eprintln!("Error writing to file: {}", e);
+                false
+            } else {
+                println!("Model saved successfully to: {}", path_str);
+                true
+            }
+        }
+        Err(e) => {
+            eprintln!("Error creating file: {}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn svm_to_json(model: *const SVMModel) -> *mut c_char {
+    let model_ref = unsafe { &*model };
+
+    let json_obj = json!({
+        "dim":model_ref.dimensions,
+        "w":model_ref.weight,
+        "b":model_ref.biais,
+        "k":model_ref.kernel,
+        "kv":model_ref.kernel_value,
+        "sv":model_ref.support_vectors,
+        "sl":model_ref.support_labels,
+        "a":model_ref.alphas,
+    });
+
+    let json_str = match serde_json::to_string_pretty(&json_obj) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("JSON serialization error: {}", e);
             return std::ptr::null_mut();
         }
     };
 
-    let model: SupportVectorClassifier = {
-        let data: String = fs::read_to_string(json_str).expect("LogRocket: error reading file");
-        serde_json::from_str(&data).unwrap()
-    };
-
-    // Box the model and return a raw pointer to it
-    let boxed_model: Box<SupportVectorClassifier> = Box::new(model);
-    Box::into_raw(boxed_model)
+    match CString::new(json_str) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(e) => {
+            eprintln!("CString conversion error: {}", e);
+            std::ptr::null_mut()
+        }
+    }
 }
 
 #[no_mangle]
-pub extern "C" fn free_svc(model: *mut SupportVectorClassifier) {
-    let _: &mut SupportVectorClassifier = unsafe { model.as_mut().unwrap() };
+pub extern "C" fn loads_svm_model(filepath: *const c_char) -> *mut SVMModel {
+    let path_str = match unsafe { CStr::from_ptr(filepath) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            eprintln!("Invalid filepath");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let mut file = match File::open(path_str) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Error opening file: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let mut json_str = String::new();
+    if let Err(e) = file.read_to_string(&mut json_str) {
+        eprintln!("Error reading file: {}", e);
+        return std::ptr::null_mut();
+    }
+
+    let model: SVMModel = match serde_json::from_str(&json_str) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("Error deserializing JSON: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    Box::into_raw(Box::new(model))
 }

@@ -4,8 +4,6 @@ import sys
 
 def init_lib():
     if sys.platform == 'win32':
-        # lib_path = (r"C:/Users/csalhab/OneDrive/Online Sessions/3iabd1/projet "
-        #             r"annuel/3BigData/mylib/target/release/mylib.dll")
         lib_path = "../../mylib/target/release/mylib.dll"
     else:
         lib_path = "../../mylib/target/release/libmylib.so"
@@ -99,11 +97,11 @@ def init_lib():
     ) -> *mut LinearModel
     """
 
-    my_lib.load_linear_model.argtypes = [
-        ctypes.POINTER(ctypes.c_char)
-    ]
-
-    my_lib.load_linear_model.restype = ctypes.c_void_p
+    # my_lib.load_linear_model.argtypes = [
+    #     ctypes.POINTER(ctypes.c_char)
+    # ]
+    #
+    # my_lib.load_linear_model.restype = ctypes.c_void_p
 
     # -------------------------- mlp --------------------------
     """
@@ -183,7 +181,7 @@ def init_lib():
     my_lib.free_mlp.argtypes = [
         ctypes.c_void_p
     ]
-    
+
     my_lib.free_mlp.restype = None
 
     """
@@ -294,7 +292,23 @@ def init_lib():
     """
 
     my_lib.free_rbf.argtypes = [ctypes.c_void_p]
-
     my_lib.free_rbf.restype = None
+
+    # --------------------------------------------- SVM ----------------------------------------------------------------
+    # pub extern "C" fn init_svm(dimensions: u32, kernel: u32) -> *mut SVMModel
+    my_lib.init_svm.argtypes = [ctypes.c_uint32, ctypes.c_uint32, ctypes.c_float]
+    my_lib.init_svm.restype = ctypes.c_void_p
+
+    # pub extern "C" fn train(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float, labels_pointer: *mut c_float,
+    #   input_length: u32, c: f32)
+    my_lib.train_svm.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_uint32, ctypes.c_float, ctypes.c_float, ctypes.POINTER(ctypes.c_float), ctypes.POINTER(ctypes.c_float), ctypes.c_uint32]
+    my_lib.restype = None
+
+    # pub extern "C" fn predict_svm(model_pointer: *mut SVMModel, inputs_pointer: *mut c_float) -> f32
+    my_lib.predict_svm.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float)]
+    my_lib.predict_svm.restype = ctypes.c_float
+
+    my_lib.free_svm.argtypes = [ctypes.c_void_p]
+    my_lib.free_svm.restype = None
 
     return my_lib
