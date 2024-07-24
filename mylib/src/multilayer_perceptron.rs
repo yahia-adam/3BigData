@@ -411,10 +411,16 @@ fn evaluate(
 
     let test_mean_accuracy =
         test_accuracy.iter().filter(|&n| *n == 1f64).count() as f32 / test_accuracy.len() as f32;
-    let test_mean_loss =
-        test_loss.iter().sum::<f64>() / test_loss.len() as f64 * model.d[model.l] as f64;
 
-    Ok((test_mean_accuracy, test_mean_loss))
+    let sum: f64 = test_loss.iter()
+        .filter(|&&x| !x.is_nan())
+        .sum();
+    let count = test_loss.iter()
+        .filter(|&&x| !x.is_nan())
+        .count();
+    let mean = sum / count as f64;
+
+    Ok((test_mean_accuracy, mean))
 }
 
 #[no_mangle]
