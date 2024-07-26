@@ -14,12 +14,12 @@ Pour les tâches de classification, nous avons utilisé deux méthodes principal
     - C'est un algorithme de classification linéaire basé sur la règle de mise à jour du perceptron.
     - Equation de mise à jour :
    
-        ![Règle de Rosenblatt](images/rosenblatt_ml.png)
+        ![Règle de Rosenblatt](./assets/images/rosenblatt_ml.png)
 2. **Régression Logistique** :
     - Utilisée pour la classification binaire avec une sortie probabiliste.
     - Fonction sigmoïde :
       
-        ![Fonction sigmoïde](images/sigmoide_ml.png)
+        ![Fonction sigmoïde](./assets/images/sigmoide_ml.png)
 
 ### Régression
 
@@ -29,13 +29,13 @@ Pour les tâches de régression, nous avons utilisé les méthodes suivantes :
     - Utilisée pour trouver la solution optimale dans les moindres carrés.
     - Equation :
    
-        ![Pseudo-Inverse](images/pseudoinverse_ml.png)
+        ![Pseudo-Inverse](./assets/images/pseudoinverse_ml.png)
 
 2. **Descente de Gradient** :
     - Utilisée pour minimiser la fonction de coût en ajustant les poids de manière itérative.
     - Mise à jour des poids :
    
-        ![Descente de Gradient](images/descentedegradient_ml.png)
+        ![Descente de Gradient](./assets/images/descentedegradient_ml.png)
 
 ## Cas de Tests
 
@@ -59,57 +59,57 @@ Pour chaque cas de test, nous avons généré et inclus des images des courbes e
 
 - **ml_classification_linear_simple** : 
 
-     ![Classification Linéaire Simple](images/ml_classification_linear_simple.png)
+     ![Classification Linéaire Simple](./assets/images/ml_classification_linear_simple.png)
 
 
 - **ml_classification_linear_multiple** : 
 
-     ![Classification Linéaire Multiple](images/ml_classification_linear_multiple.png)
+     ![Classification Linéaire Multiple](./assets/images/ml_classification_linear_multiple.png)
 
 
 - **ml_classification_linear_multiple** :
 
-  ![Classification Linéaire Multiple 3 Classes](images/ml_classification_multi_linear_3_classes.png)
+  ![Classification Linéaire Multiple 3 Classes](./assets/images/ml_classification_multi_linear_3_classes.png)
 
 
 - **ml_classification_cross** :
 
-     ![Classification CRO](images/ml_classification_cros.png)
+     ![Classification CRO](./assets/images/ml_classification_cros.png)
 
 
 - **ml_classification_multi_cross** :
 
-     ![Classification CRO](images/ml_classification_multi_cros.png)
+     ![Classification CRO](./assets/images/ml_classification_multi_cros.png)
 
 
 - **ml_classification_xor** : 
 
-     ![Classification XOR](images/ml_classification_xor.png)
+     ![Classification XOR](./assets/images/ml_classification_xor.png)
 
 
 - **ml_regression_linear_simple_2D** : 
 
-     ![Régression Linéaire Simple 2D](images/ml_regression_linear_simple_2D.png)
+     ![Régression Linéaire Simple 2D](./assets/images/ml_regression_linear_simple_2D.png)
 
 
 - **ml_regression_linear_simple_3D** : 
       
-     ![Régression Linéaire Simple 3D](images/ml_regression_linear_simple_3D.png)
+     ![Régression Linéaire Simple 3D](./assets/images/ml_regression_linear_simple_3D.png)
 
 
 - **ml_regression_linear_tricky_3D** : 
 
-     ![Régression Linéaire Complexe 3D](images/ml_regression_linear_tricky_3D.png)
+     ![Régression Linéaire Complexe 3D](./assets/images/ml_regression_linear_tricky_3D.png)
 
 
 - **ml_regression_non_linear_simple_2D** : 
 
-     ![Régression Non-Linéaire Simple 2D](images/ml_regression_non_linear_simple_2D.png)
+     ![Régression Non-Linéaire Simple 2D](./assets/images/ml_regression_non_linear_simple_2D.png)
 
 
 - **ml_regression_non_linear_simple_3D** : 
 
-     ![Régression Non-Linéaire Simple 3D](images/ml_regression_non_linear_simple_3D.png)
+     ![Régression Non-Linéaire Simple 3D](./assets/images/ml_regression_non_linear_simple_3D.png)
 
 
 

@@ -22,13 +22,13 @@ Pour constituer notre dataset, nous avons suivi les étapes suivantes :
     - Nous avons développé un script Python pour importer des images de différents types de déchets depuis Bing.
     - Nous avons également intégré et mélangé plusieurs datasets existants disponibles sur Kaggle pour compléter notre dataset.
 
-2. **Classification des Images** : Tri des images en trois catégories principales basées sur la couleur des poubelles (jaune, rouge, verte) et création de sous-catégories spécifiques.
+2. **Classification des images** : Tri des images en trois catégories principales basées sur la couleur des poubelles (jaune, rouge, verte) et création de sous-catégories spécifiques.
 
-3. **Prétraitement des Images** : Redimensionnement des images à une résolution uniforme de 64 x 64 pixels et renommage des fichiers selon la nomenclature `type_count.extension`.
+3. **Prétraitement des images** : Redimensionnement des images à une résolution uniforme de 64 x 64 pixels et renommage des fichiers selon la nomenclature `type_count.extension`.
 
 4. **Répartition des Données** : Division du dataset en ensembles d'entraînement et de test, avec 10% des images dédiées au test et le reste à l'entraînement.
 
-### Résolution des Images
+### Résolution des images
 
 Toutes les images du dataset ont une résolution de 32 x 32 pixels.
 

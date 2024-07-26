@@ -6,7 +6,6 @@ Notre Dataset Finale est utilisé pour entraîner et tester le modèle de classi
 
 ### Structure du Dataset
 
-
 Le dataset est constitué d'une combinaison d'images téléchargées depuis Bing et de divers ensembles de données récupérés sur Kaggle 
 ainsi quelques photos prises avec nos propres moyens.
 
@@ -22,7 +21,7 @@ Totalité : 39 046 images
 
 Les fichiers d'images suivent une nomenclature spécifique : `type_count.extension` (par exemple, `metal_1.jpg`).
 
-### Résolution des Images
+### Résolution des images
 
 Toutes les images du dataset ont une résolution de 32 x 32 pixels.
 
@@ -35,7 +34,7 @@ Toutes les images du dataset ont une résolution de 32 x 32 pixels.
 
 Voici une illustration de la hiérarchie du dataset :
 
-![Hiérarchie du Dataset](img.png)
+![Hiérarchie du Dataset](./assets/images/img.png)
 
 ### Exemple de Structure de Répertoire
 

@@ -20,7 +20,7 @@ Cette application web développée en Flask permet d'uploader une image d'un dé
 
 ```bash
 git clone https://github.com/yahia-adam/3BigData.git
-cd 3BigData/web-app
+cd 3BigData/flask-app
 ```
 
 2. Créez un environnement virtuel et activez-le
@@ -60,7 +60,7 @@ Par défaut, l'application sera accessible à l'adresse http://127.0.0.1:5000.
 Pour ajouter de nouvelles fonctionnalités ou modifier l'existant, vous pouvez éditer les fichiers suivants :
    - ```app.py``` : Point d'entrée principal de l'application
    - ```templates/``` : Dossier contenant les templates HTML
-   - ```static/``` : Dossier pour les fichiers statiques (CSS, JS, images)
+   - ```static/``` : Dossier pour les fichiers statiques (CSS, JS, priv/assets/images)
 
 
 8. N'oubliez pas de mettre à jour le fichier requirements.txt si vous ajoutez de nouvelles dépendances :
